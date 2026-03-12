@@ -1,0 +1,142 @@
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from typing import Any
+
+
+BEAD_OPEN = "open"
+BEAD_READY = "ready"
+BEAD_IN_PROGRESS = "in_progress"
+BEAD_HANDED_OFF = "handed_off"
+BEAD_BLOCKED = "blocked"
+BEAD_DONE = "done"
+
+ACTIVE_STATUSES = {BEAD_OPEN, BEAD_READY, BEAD_IN_PROGRESS, BEAD_HANDED_OFF, BEAD_BLOCKED}
+TERMINAL_STATUSES = {BEAD_DONE}
+AGENT_TYPES = {"planner", "developer", "tester", "documentation", "review", "scheduler"}
+MUTATING_AGENTS = {"developer", "tester", "documentation"}
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+@dataclass
+class Lease:
+    owner: str
+    expires_at: str
+
+
+@dataclass
+class ExecutionRecord:
+    timestamp: str
+    event: str
+    agent_type: str
+    summary: str
+
+
+@dataclass
+class HandoffSummary:
+    completed: str = ""
+    remaining: str = ""
+    risks: str = ""
+    changed_files: list[str] = field(default_factory=list)
+    updated_docs: list[str] = field(default_factory=list)
+    next_action: str = ""
+
+
+@dataclass
+class Bead:
+    bead_id: str
+    title: str
+    agent_type: str
+    description: str
+    status: str = BEAD_OPEN
+    bead_type: str = "task"
+    parent_id: str | None = None
+    dependencies: list[str] = field(default_factory=list)
+    acceptance_criteria: list[str] = field(default_factory=list)
+    linked_docs: list[str] = field(default_factory=list)
+    changed_files: list[str] = field(default_factory=list)
+    updated_docs: list[str] = field(default_factory=list)
+    handoff_summary: HandoffSummary = field(default_factory=HandoffSummary)
+    block_reason: str = ""
+    branch_name: str = ""
+    worktree_path: str = ""
+    lease: Lease | None = None
+    retries: int = 0
+    execution_history: list[ExecutionRecord] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Bead":
+        handoff = HandoffSummary(**data.get("handoff_summary", {}))
+        lease_data = data.get("lease")
+        lease = Lease(**lease_data) if lease_data else None
+        history = [ExecutionRecord(**item) for item in data.get("execution_history", [])]
+        return cls(
+            bead_id=data["bead_id"],
+            title=data["title"],
+            agent_type=data["agent_type"],
+            description=data["description"],
+            status=data.get("status", BEAD_OPEN),
+            bead_type=data.get("bead_type", "task"),
+            parent_id=data.get("parent_id"),
+            dependencies=list(data.get("dependencies", [])),
+            acceptance_criteria=list(data.get("acceptance_criteria", [])),
+            linked_docs=list(data.get("linked_docs", [])),
+            changed_files=list(data.get("changed_files", [])),
+            updated_docs=list(data.get("updated_docs", [])),
+            handoff_summary=handoff,
+            block_reason=data.get("block_reason", ""),
+            branch_name=data.get("branch_name", ""),
+            worktree_path=data.get("worktree_path", ""),
+            lease=lease,
+            retries=int(data.get("retries", 0)),
+            execution_history=history,
+            metadata=dict(data.get("metadata", {})),
+        )
+
+
+@dataclass
+class PlanChild:
+    title: str
+    agent_type: str
+    description: str
+    acceptance_criteria: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    linked_docs: list[str] = field(default_factory=list)
+
+
+@dataclass
+class PlanProposal:
+    epic_title: str
+    epic_description: str
+    linked_docs: list[str] = field(default_factory=list)
+    children: list[PlanChild] = field(default_factory=list)
+
+
+@dataclass
+class AgentRunResult:
+    outcome: str
+    summary: str
+    completed: str = ""
+    remaining: str = ""
+    risks: str = ""
+    changed_files: list[str] = field(default_factory=list)
+    updated_docs: list[str] = field(default_factory=list)
+    next_action: str = ""
+    next_agent: str = ""
+    new_beads: list[dict[str, Any]] = field(default_factory=list)
+    block_reason: str = ""
+
+
+@dataclass
+class SchedulerResult:
+    started: list[str] = field(default_factory=list)
+    completed: list[str] = field(default_factory=list)
+    blocked: list[str] = field(default_factory=list)

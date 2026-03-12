@@ -1,0 +1,128 @@
+from __future__ import annotations
+
+import json
+import subprocess
+import tempfile
+from pathlib import Path
+
+from .models import AgentRunResult, Bead, PlanChild, PlanProposal
+from .prompts import build_planner_prompt, build_worker_prompt
+
+
+AGENT_OUTPUT_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "outcome": {"type": "string", "enum": ["completed", "blocked", "failed"]},
+        "summary": {"type": "string"},
+        "completed": {"type": "string"},
+        "remaining": {"type": "string"},
+        "risks": {"type": "string"},
+        "changed_files": {"type": "array", "items": {"type": "string"}},
+        "updated_docs": {"type": "array", "items": {"type": "string"}},
+        "next_action": {"type": "string"},
+        "next_agent": {"type": "string"},
+        "block_reason": {"type": "string"},
+        "new_beads": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "title": {"type": "string"},
+                    "agent_type": {"type": "string"},
+                    "description": {"type": "string"},
+                    "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+                    "dependencies": {"type": "array", "items": {"type": "string"}},
+                    "linked_docs": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["title", "agent_type", "description"],
+            },
+        },
+    },
+    "required": ["outcome", "summary", "completed", "remaining", "risks", "changed_files", "updated_docs", "next_action", "next_agent", "block_reason", "new_beads"],
+}
+
+PLANNER_OUTPUT_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "epic_title": {"type": "string"},
+        "epic_description": {"type": "string"},
+        "linked_docs": {"type": "array", "items": {"type": "string"}},
+        "children": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "title": {"type": "string"},
+                    "agent_type": {"type": "string"},
+                    "description": {"type": "string"},
+                    "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+                    "dependencies": {"type": "array", "items": {"type": "string"}},
+                    "linked_docs": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["title", "agent_type", "description", "acceptance_criteria", "dependencies", "linked_docs"],
+            },
+        },
+    },
+    "required": ["epic_title", "epic_description", "linked_docs", "children"],
+}
+
+
+class AgentRunner:
+    def run_bead(self, bead: Bead, *, workdir: Path, context_paths: list[Path]) -> AgentRunResult:
+        raise NotImplementedError
+
+    def propose_plan(self, spec_text: str) -> PlanProposal:
+        raise NotImplementedError
+
+
+class CodexAgentRunner(AgentRunner):
+    def __init__(self, codex_bin: str = "codex") -> None:
+        self.codex_bin = codex_bin
+
+    def _exec_json(self, prompt: str, *, schema: dict, workdir: Path) -> dict:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as schema_file:
+            json.dump(schema, schema_file)
+            schema_path = Path(schema_file.name)
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as output_file:
+            output_path = Path(output_file.name)
+        cmd = [
+            self.codex_bin,
+            "exec",
+            "--skip-git-repo-check",
+            "--full-auto",
+            "--color",
+            "never",
+            "--output-schema",
+            str(schema_path),
+            "--output-last-message",
+            str(output_path),
+            "-C",
+            str(workdir),
+            "-",
+        ]
+        try:
+            proc = subprocess.run(cmd, input=prompt, text=True, capture_output=True, check=False)
+            if proc.returncode != 0:
+                raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or "codex exec failed")
+            return json.loads(output_path.read_text(encoding="utf-8"))
+        finally:
+            schema_path.unlink(missing_ok=True)
+            output_path.unlink(missing_ok=True)
+
+    def run_bead(self, bead: Bead, *, workdir: Path, context_paths: list[Path]) -> AgentRunResult:
+        payload = self._exec_json(build_worker_prompt(bead, context_paths, workdir), schema=AGENT_OUTPUT_SCHEMA, workdir=workdir)
+        return AgentRunResult(**payload)
+
+    def propose_plan(self, spec_text: str) -> PlanProposal:
+        payload = self._exec_json(build_planner_prompt(spec_text), schema=PLANNER_OUTPUT_SCHEMA, workdir=Path.cwd())
+        children = [PlanChild(**item) for item in payload["children"]]
+        return PlanProposal(
+            epic_title=payload["epic_title"],
+            epic_description=payload["epic_description"],
+            linked_docs=payload["linked_docs"],
+            children=children,
+        )

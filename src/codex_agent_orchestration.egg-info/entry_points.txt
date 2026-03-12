@@ -1,0 +1,2 @@
+[console_scripts]
+orchestrator = codex_orchestrator.cli:main

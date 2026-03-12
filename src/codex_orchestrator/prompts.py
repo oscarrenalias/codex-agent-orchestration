@@ -1,0 +1,57 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from .models import Bead
+
+
+def render_context_snippets(context_paths: list[Path], root: Path) -> str:
+    if not context_paths:
+        return "No linked repository documents were provided."
+    return "\n".join(f"- {path.relative_to(root)}" for path in context_paths)
+
+
+def role_instructions(agent_type: str) -> str:
+    rules = {
+        "planner": "Decompose the feature into a parent epic and child beads with dependencies. Do not implement code.",
+        "developer": "Implement only the assigned bead. Do not redesign unrelated architecture. You may create sub-beads for discovered follow-up work.",
+        "tester": "Write or update automated tests, run relevant checks, and report defects with clear follow-up recommendations.",
+        "documentation": "Update only documentation relevant to the assigned bead and keep examples aligned with code.",
+        "review": "Validate acceptance criteria, code quality, and the presence of tests and docs. Do not implement feature work.",
+        "scheduler": "Coordinate work deterministically and keep handoff summaries concise and structured.",
+    }
+    return rules[agent_type]
+
+
+def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> str:
+    payload = {
+        "bead_id": bead.bead_id,
+        "title": bead.title,
+        "agent_type": bead.agent_type,
+        "description": bead.description,
+        "status": bead.status,
+        "acceptance_criteria": bead.acceptance_criteria,
+        "dependencies": bead.dependencies,
+        "linked_docs": bead.linked_docs,
+        "handoff_summary": bead.handoff_summary.__dict__,
+    }
+    return (
+        f"You are the {bead.agent_type} agent for a Codex orchestration system.\n"
+        f"{role_instructions(bead.agent_type)}\n\n"
+        "Assigned bead:\n"
+        f"{json.dumps(payload, indent=2)}\n\n"
+        "Available repository context files:\n"
+        f"{render_context_snippets(context_paths, root)}\n\n"
+        "Return a JSON object matching the required schema. "
+        "Always include a concise summary, structured handoff fields, and any newly discovered sub-beads."
+    )
+
+
+def build_planner_prompt(spec_text: str) -> str:
+    return (
+        "Read the feature specification below and propose an orchestration plan. "
+        "Return JSON with keys epic_title, epic_description, linked_docs, and children. "
+        "Each child must include title, agent_type, description, acceptance_criteria, dependencies, and linked_docs.\n\n"
+        f"{spec_text}"
+    )

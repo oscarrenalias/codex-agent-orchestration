@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+
+class GitError(RuntimeError):
+    pass
+
+
+class WorktreeManager:
+    def __init__(self, root: Path, worktrees_dir: Path) -> None:
+        self.root = root.resolve()
+        self.worktrees_dir = worktrees_dir.resolve()
+
+    def _run_git(self, *args: str) -> str:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=self.root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise GitError(proc.stderr.strip() or proc.stdout.strip())
+        return proc.stdout.strip()
+
+    def ensure_repository(self) -> None:
+        self._run_git("rev-parse", "--show-toplevel")
+
+    def current_ref(self) -> str:
+        return self._run_git("rev-parse", "HEAD")
+
+    def branch_exists(self, branch_name: str) -> bool:
+        proc = subprocess.run(
+            ["git", "show-ref", "--verify", "--quiet", f"refs/heads/{branch_name}"],
+            cwd=self.root,
+            check=False,
+        )
+        return proc.returncode == 0
+
+    def worktree_path(self, bead_id: str) -> Path:
+        return self.worktrees_dir / bead_id
+
+    def ensure_worktree(self, bead_id: str, branch_name: str) -> Path:
+        self.ensure_repository()
+        self.worktrees_dir.mkdir(parents=True, exist_ok=True)
+        target = self.worktree_path(bead_id)
+        if target.exists():
+            return target
+        head_ref = self.current_ref()
+        if self.branch_exists(branch_name):
+            self._run_git("worktree", "add", str(target), branch_name)
+        else:
+            self._run_git("worktree", "add", "-b", branch_name, str(target), head_ref)
+        return target
+
+    def merge_branch(self, branch_name: str) -> None:
+        self.ensure_repository()
+        self._run_git("merge", "--no-ff", branch_name, "-m", f"Merge {branch_name}")
