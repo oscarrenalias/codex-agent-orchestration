@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: codex-agent-orchestration
-Version: 0.1.0
-Summary: Codex-based multi-agent orchestration MVP
-Requires-Python: >=3.11
