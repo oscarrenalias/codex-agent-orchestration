@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Protocol
 
@@ -66,9 +67,30 @@ class Scheduler:
         if reporter:
             for bead_id in expired:
                 reporter.lease_expired(bead_id)
-        for bead in self.storage.ready_beads()[:max_workers]:
-            result.started.append(bead.bead_id)
-            self._process(bead, result, reporter=reporter)
+        ready = self.storage.ready_beads()
+        selected: list[Bead] = []
+        active = self.storage.active_beads()
+        for bead in ready:
+            conflict_reason = self._find_conflict_reason(bead, active + selected)
+            if conflict_reason:
+                bead.block_reason = conflict_reason
+                self.storage.update_bead(bead, event="deferred", summary=conflict_reason)
+                result.deferred.append(bead.bead_id)
+                if reporter:
+                    reporter.bead_deferred(bead, conflict_reason)
+                continue
+            if len(selected) >= max_workers:
+                continue
+            selected.append(bead)
+        result.started.extend(bead.bead_id for bead in selected)
+        if len(selected) <= 1:
+            for bead in selected:
+                self._process(bead, result, reporter=reporter)
+            return result
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(self._process, bead, result, reporter=reporter) for bead in selected]
+            for future in futures:
+                future.result()
         return result
 
     def _process(self, bead: Bead, result: SchedulerResult, *, reporter: "SchedulerReporter | None" = None) -> None:
@@ -105,11 +127,24 @@ class Scheduler:
                 summary=f"Worker execution failed: {exc}",
                 block_reason=str(exc),
             )
+        if bead.worktree_path:
+            try:
+                touched = self.worktrees.changed_files(Path(bead.worktree_path))
+            except GitError as exc:
+                touched = []
+                if not agent_result.block_reason:
+                    agent_result.block_reason = str(exc)
+            agent_result.touched_files = sorted(dict.fromkeys([*agent_result.touched_files, *touched]))
+            agent_result.changed_files = sorted(dict.fromkeys([*agent_result.changed_files, *agent_result.touched_files]))
         self._finalize(bead, agent_result, result, reporter=reporter)
 
     def _finalize(self, bead: Bead, agent_result: AgentRunResult, result: SchedulerResult, *, reporter: "SchedulerReporter | None" = None) -> None:
         bead.lease = None
         bead.block_reason = agent_result.block_reason
+        bead.expected_files = list(agent_result.expected_files or bead.expected_files)
+        bead.expected_globs = list(agent_result.expected_globs or bead.expected_globs)
+        bead.touched_files = list(agent_result.touched_files)
+        bead.conflict_risks = agent_result.conflict_risks
         handoff = HandoffSummary(
             completed=agent_result.completed,
             remaining=agent_result.remaining,
@@ -117,6 +152,10 @@ class Scheduler:
             changed_files=agent_result.changed_files,
             updated_docs=agent_result.updated_docs,
             next_action=agent_result.next_action,
+            expected_files=bead.expected_files,
+            expected_globs=bead.expected_globs,
+            touched_files=bead.touched_files,
+            conflict_risks=bead.conflict_risks,
         )
         bead.handoff_summary = handoff
         bead.changed_files = list(agent_result.changed_files)
@@ -149,6 +188,9 @@ class Scheduler:
 
     def _create_followups(self, bead: Bead, agent_result: AgentRunResult) -> list[Bead]:
         created: list[Bead] = []
+        if bead.agent_type != "developer":
+            return created
+
         for new_bead in agent_result.new_beads:
             child_id = self.storage.allocate_child_bead_id(bead.bead_id, "subtask")
             created.append(self.storage.create_bead(
@@ -160,11 +202,10 @@ class Scheduler:
                 dependencies=list(new_bead.get("dependencies", [])),
                 acceptance_criteria=list(new_bead.get("acceptance_criteria", [])),
                 linked_docs=list(new_bead.get("linked_docs", [])),
+                expected_files=list(new_bead.get("expected_files", [])),
+                expected_globs=list(new_bead.get("expected_globs", [])),
                 metadata={"discovered_by": bead.bead_id},
             ))
-
-        if bead.agent_type != "developer":
-            return created
 
         test_id = self._existing_or_new_child_id(bead.bead_id, FOLLOWUP_SUFFIXES["tester"])
         doc_id = self._existing_or_new_child_id(bead.bead_id, FOLLOWUP_SUFFIXES["documentation"])
@@ -179,6 +220,10 @@ class Scheduler:
                 parent_id=bead.bead_id,
                 dependencies=[bead.bead_id],
                 linked_docs=bead.linked_docs,
+                expected_files=bead.touched_files or bead.expected_files,
+                expected_globs=bead.expected_globs,
+                touched_files=bead.touched_files,
+                conflict_risks=bead.conflict_risks,
             ))
         if not self.storage.bead_path(doc_id).exists():
             created.append(self.storage.create_bead(
@@ -189,6 +234,10 @@ class Scheduler:
                 parent_id=bead.bead_id,
                 dependencies=[bead.bead_id],
                 linked_docs=bead.linked_docs,
+                expected_files=bead.touched_files or bead.expected_files,
+                expected_globs=bead.expected_globs,
+                touched_files=bead.touched_files,
+                conflict_risks=bead.conflict_risks,
             ))
         if not self.storage.bead_path(review_id).exists():
             created.append(self.storage.create_bead(
@@ -199,6 +248,10 @@ class Scheduler:
                 parent_id=bead.bead_id,
                 dependencies=[bead.bead_id, test_id, doc_id],
                 linked_docs=bead.linked_docs,
+                expected_files=bead.touched_files or bead.expected_files,
+                expected_globs=bead.expected_globs,
+                touched_files=bead.touched_files,
+                conflict_risks=bead.conflict_risks,
             ))
         return created
 
@@ -209,6 +262,74 @@ class Scheduler:
                 return bead.bead_id
         return self.storage.allocate_child_bead_id(parent_id, suffix)
 
+    def _find_conflict_reason(self, bead: Bead, active_beads: list[Bead]) -> str:
+        for active in active_beads:
+            if active.bead_id == bead.bead_id:
+                continue
+            if self._beads_conflict(bead, active):
+                return f"Deferred due to file-scope conflict with active bead {active.bead_id}"
+        return ""
+
+    def _beads_conflict(self, bead: Bead, active: Bead) -> bool:
+        if bead.agent_type not in MUTATING_AGENTS or active.agent_type not in MUTATING_AGENTS:
+            return False
+        if not bead.has_scope() or not active.has_scope():
+            return (
+                bead.agent_type == "developer"
+                and active.agent_type == "developer"
+                and self._same_epic(bead, active)
+            )
+        return self._scopes_overlap(bead, active)
+
+    def _same_epic(self, first: Bead, second: Bead) -> bool:
+        return self._epic_root(first) == self._epic_root(second)
+
+    def _epic_root(self, bead: Bead) -> str:
+        current = bead
+        while current.parent_id:
+            current = self.storage.load_bead(current.parent_id)
+        return current.bead_id
+
+    def _scopes_overlap(self, first: Bead, second: Bead) -> bool:
+        first_source = first.scope_source()
+        second_source = second.scope_source()
+        first_entries = first.scope_entries()
+        second_entries = second.scope_entries()
+
+        if first_source in {"touched_files", "expected_files"} and second_source in {"touched_files", "expected_files"}:
+            return bool(set(first_entries) & set(second_entries))
+        if first_source == "expected_globs" and second_source == "expected_globs":
+            return self._globs_overlap(first_entries, second_entries)
+        if first_source == "expected_globs":
+            return self._files_match_globs(second_entries, first_entries)
+        if second_source == "expected_globs":
+            return self._files_match_globs(first_entries, second_entries)
+        return False
+
+    def _files_match_globs(self, files: list[str], globs: list[str]) -> bool:
+        for file_path in files:
+            for pattern in globs:
+                if fnmatch(file_path, pattern):
+                    return True
+        return False
+
+    def _globs_overlap(self, first_globs: list[str], second_globs: list[str]) -> bool:
+        for first in first_globs:
+            first_prefix = self._glob_prefix(first)
+            for second in second_globs:
+                second_prefix = self._glob_prefix(second)
+                if first == second:
+                    return True
+                if first_prefix.startswith(second_prefix) or second_prefix.startswith(first_prefix):
+                    return True
+        return False
+
+    def _glob_prefix(self, pattern: str) -> str:
+        wildcard_positions = [index for index in (pattern.find("*"), pattern.find("?"), pattern.find("[")) if index != -1]
+        if not wildcard_positions:
+            return pattern
+        return pattern[:min(wildcard_positions)]
+
 
 class SchedulerReporter(Protocol):
     def lease_expired(self, bead_id: str) -> None: ...
@@ -218,6 +339,8 @@ class SchedulerReporter(Protocol):
     def worktree_ready(self, bead: Bead, branch_name: str, worktree_path: Path) -> None: ...
 
     def bead_completed(self, bead: Bead, summary: str, created: list[Bead]) -> None: ...
+
+    def bead_deferred(self, bead: Bead, summary: str) -> None: ...
 
     def bead_blocked(self, bead: Bead, summary: str) -> None: ...
 

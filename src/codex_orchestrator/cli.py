@@ -41,6 +41,10 @@ def build_parser() -> argparse.ArgumentParser:
     create_parser.add_argument("--dependency", action="append", default=[])
     create_parser.add_argument("--criterion", action="append", default=[])
     create_parser.add_argument("--linked-doc", action="append", default=[])
+    create_parser.add_argument("--expected-file", action="append", default=[])
+    create_parser.add_argument("--expected-glob", action="append", default=[])
+    create_parser.add_argument("--touched-file", action="append", default=[])
+    create_parser.add_argument("--conflict-risks", default="")
 
     show_parser = bead_subparsers.add_parser("show")
     show_parser.add_argument("bead_id")
@@ -50,8 +54,13 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument("--status")
     update_parser.add_argument("--description")
     update_parser.add_argument("--block-reason")
+    update_parser.add_argument("--expected-file", action="append", default=[])
+    update_parser.add_argument("--expected-glob", action="append", default=[])
+    update_parser.add_argument("--touched-file", action="append", default=[])
+    update_parser.add_argument("--conflict-risks")
 
     bead_subparsers.add_parser("list")
+    bead_subparsers.add_parser("claims")
 
     handoff_parser = subparsers.add_parser("handoff")
     handoff_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
@@ -103,6 +112,9 @@ class CliSchedulerReporter(SchedulerReporter):
         for child in created:
             self.console.detail(f"created handoff bead {child.bead_id} ({child.agent_type})")
 
+    def bead_deferred(self, bead: Bead, summary: str) -> None:
+        self.console.warn(f"{bead.bead_id} deferred: {summary}")
+
     def bead_blocked(self, bead: Bead, summary: str) -> None:
         if self._spinner:
             self._spinner.warn(f"{bead.bead_id} blocked")
@@ -147,6 +159,10 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
             dependencies=args.dependency,
             acceptance_criteria=args.criterion,
             linked_docs=args.linked_doc,
+            expected_files=args.expected_file,
+            expected_globs=args.expected_glob,
+            touched_files=args.touched_file,
+            conflict_risks=args.conflict_risks,
         )
         console.success(f"Created bead {bead.bead_id}")
         return 0
@@ -160,6 +176,10 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         console.dump_json([bead.to_dict() for bead in storage.list_beads()])
         return 0
 
+    if args.bead_command == "claims":
+        console.dump_json(storage.active_claims())
+        return 0
+
     if args.bead_command == "update":
         bead = storage.load_bead(args.bead_id)
         if args.status:
@@ -168,6 +188,14 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
             bead.description = args.description
         if args.block_reason is not None:
             bead.block_reason = args.block_reason
+        if args.expected_file:
+            bead.expected_files = list(args.expected_file)
+        if args.expected_glob:
+            bead.expected_globs = list(args.expected_glob)
+        if args.touched_file:
+            bead.touched_files = list(args.touched_file)
+        if args.conflict_risks is not None:
+            bead.conflict_risks = args.conflict_risks
         storage.update_bead(bead, event="updated", summary="Bead updated via CLI")
         console.success(f"Updated bead {bead.bead_id}")
         return 0
@@ -185,6 +213,10 @@ def command_handoff(args: argparse.Namespace, storage: RepositoryStorage, consol
         parent_id=bead.bead_id,
         dependencies=[bead.bead_id],
         linked_docs=bead.linked_docs,
+        expected_files=bead.touched_files or bead.expected_files,
+        expected_globs=bead.expected_globs,
+        touched_files=bead.touched_files,
+        conflict_risks=bead.conflict_risks,
     )
     console.success(f"Created handoff bead {handoff.bead_id}")
     return 0
@@ -213,7 +245,7 @@ def command_merge(args: argparse.Namespace, storage: RepositoryStorage, console:
 
 def command_run(args: argparse.Namespace, scheduler: Scheduler, console: ConsoleReporter) -> int:
     reporter = CliSchedulerReporter(console)
-    aggregate = {"started": [], "completed": [], "blocked": []}
+    aggregate = {"started": [], "completed": [], "blocked": [], "deferred": []}
     console.section("Scheduler")
     console.info(f"Starting scheduler loop with max_workers={args.max_workers}")
     while True:
@@ -221,13 +253,14 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
         aggregate["started"].extend(result.started)
         aggregate["completed"].extend(result.completed)
         aggregate["blocked"].extend(result.blocked)
+        aggregate["deferred"].extend(result.deferred)
         if args.once or not result.started:
             break
     if not aggregate["started"]:
         console.warn("No ready beads to run")
     else:
         console.success(
-            f"Cycle summary: started {len(aggregate['started'])}, completed {len(aggregate['completed'])}, blocked {len(aggregate['blocked'])}"
+            f"Cycle summary: started {len(aggregate['started'])}, completed {len(aggregate['completed'])}, blocked {len(aggregate['blocked'])}, deferred {len(aggregate['deferred'])}"
         )
     console.dump_json(aggregate)
     return 0

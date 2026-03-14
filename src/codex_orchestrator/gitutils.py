@@ -58,3 +58,23 @@ class WorktreeManager:
     def merge_branch(self, branch_name: str) -> None:
         self.ensure_repository()
         self._run_git("merge", "--no-ff", branch_name, "-m", f"Merge {branch_name}")
+
+    def changed_files(self, worktree_path: Path) -> list[str]:
+        proc = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=worktree_path,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise GitError(proc.stderr.strip() or proc.stdout.strip())
+        changed: list[str] = []
+        for line in proc.stdout.splitlines():
+            if not line:
+                continue
+            path = line[3:]
+            if " -> " in path:
+                path = path.split(" -> ", 1)[1]
+            changed.append(path)
+        return sorted(dict.fromkeys(changed))

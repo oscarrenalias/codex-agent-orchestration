@@ -9,7 +9,14 @@ from .models import Bead
 def render_context_snippets(context_paths: list[Path], root: Path) -> str:
     if not context_paths:
         return "No linked repository documents were provided."
-    return "\n".join(f"- {path.relative_to(root)}" for path in context_paths)
+    rendered: list[str] = []
+    for path in context_paths:
+        try:
+            label = str(path.relative_to(root))
+        except ValueError:
+            label = path.name
+        rendered.append(f"- {label}")
+    return "\n".join(rendered)
 
 
 def role_instructions(agent_type: str) -> str:
@@ -34,6 +41,10 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
         "acceptance_criteria": bead.acceptance_criteria,
         "dependencies": bead.dependencies,
         "linked_docs": bead.linked_docs,
+        "expected_files": bead.expected_files,
+        "expected_globs": bead.expected_globs,
+        "touched_files": bead.touched_files,
+        "conflict_risks": bead.conflict_risks,
         "handoff_summary": bead.handoff_summary.__dict__,
     }
     return (
@@ -44,7 +55,8 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
         "Available repository context files:\n"
         f"{render_context_snippets(context_paths, root)}\n\n"
         "Return a JSON object matching the required schema. "
-        "Always include a concise summary, structured handoff fields, and any newly discovered sub-beads."
+        "Always include a concise summary, structured handoff fields, actual touched files, "
+        "updated scope if it changed, conflict risks for downstream agents, and any newly discovered sub-beads."
     )
 
 
@@ -52,6 +64,7 @@ def build_planner_prompt(spec_text: str) -> str:
     return (
         "Read the feature specification below and propose an orchestration plan. "
         "Return JSON with keys epic_title, epic_description, linked_docs, and children. "
-        "Each child must include title, agent_type, description, acceptance_criteria, dependencies, and linked_docs.\n\n"
+        "Each child must include title, agent_type, description, acceptance_criteria, dependencies, linked_docs, "
+        "expected_files, and expected_globs. Infer file scope when the spec gives enough signal; otherwise return empty arrays.\n\n"
         f"{spec_text}"
     )

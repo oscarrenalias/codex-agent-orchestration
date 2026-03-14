@@ -44,6 +44,10 @@ class HandoffSummary:
     changed_files: list[str] = field(default_factory=list)
     updated_docs: list[str] = field(default_factory=list)
     next_action: str = ""
+    expected_files: list[str] = field(default_factory=list)
+    expected_globs: list[str] = field(default_factory=list)
+    touched_files: list[str] = field(default_factory=list)
+    conflict_risks: str = ""
 
 
 @dataclass
@@ -58,10 +62,14 @@ class Bead:
     dependencies: list[str] = field(default_factory=list)
     acceptance_criteria: list[str] = field(default_factory=list)
     linked_docs: list[str] = field(default_factory=list)
+    expected_files: list[str] = field(default_factory=list)
+    expected_globs: list[str] = field(default_factory=list)
+    touched_files: list[str] = field(default_factory=list)
     changed_files: list[str] = field(default_factory=list)
     updated_docs: list[str] = field(default_factory=list)
     handoff_summary: HandoffSummary = field(default_factory=HandoffSummary)
     block_reason: str = ""
+    conflict_risks: str = ""
     branch_name: str = ""
     worktree_path: str = ""
     lease: Lease | None = None
@@ -71,6 +79,27 @@ class Bead:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    def scope_source(self) -> str:
+        if self.touched_files:
+            return "touched_files"
+        if self.expected_files:
+            return "expected_files"
+        if self.expected_globs:
+            return "expected_globs"
+        return "none"
+
+    def scope_entries(self) -> list[str]:
+        if self.touched_files:
+            return list(self.touched_files)
+        if self.expected_files:
+            return list(self.expected_files)
+        if self.expected_globs:
+            return list(self.expected_globs)
+        return []
+
+    def has_scope(self) -> bool:
+        return self.scope_source() != "none"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Bead":
@@ -89,10 +118,14 @@ class Bead:
             dependencies=list(data.get("dependencies", [])),
             acceptance_criteria=list(data.get("acceptance_criteria", [])),
             linked_docs=list(data.get("linked_docs", [])),
+            expected_files=list(data.get("expected_files", [])),
+            expected_globs=list(data.get("expected_globs", [])),
+            touched_files=list(data.get("touched_files", [])),
             changed_files=list(data.get("changed_files", [])),
             updated_docs=list(data.get("updated_docs", [])),
             handoff_summary=handoff,
             block_reason=data.get("block_reason", ""),
+            conflict_risks=data.get("conflict_risks", ""),
             branch_name=data.get("branch_name", ""),
             worktree_path=data.get("worktree_path", ""),
             lease=lease,
@@ -110,6 +143,8 @@ class PlanChild:
     acceptance_criteria: list[str] = field(default_factory=list)
     dependencies: list[str] = field(default_factory=list)
     linked_docs: list[str] = field(default_factory=list)
+    expected_files: list[str] = field(default_factory=list)
+    expected_globs: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -127,12 +162,16 @@ class AgentRunResult:
     completed: str = ""
     remaining: str = ""
     risks: str = ""
+    expected_files: list[str] = field(default_factory=list)
+    expected_globs: list[str] = field(default_factory=list)
+    touched_files: list[str] = field(default_factory=list)
     changed_files: list[str] = field(default_factory=list)
     updated_docs: list[str] = field(default_factory=list)
     next_action: str = ""
     next_agent: str = ""
     new_beads: list[dict[str, Any]] = field(default_factory=list)
     block_reason: str = ""
+    conflict_risks: str = ""
 
 
 @dataclass
@@ -140,3 +179,4 @@ class SchedulerResult:
     started: list[str] = field(default_factory=list)
     completed: list[str] = field(default_factory=list)
     blocked: list[str] = field(default_factory=list)
+    deferred: list[str] = field(default_factory=list)

@@ -72,8 +72,12 @@ class RepositoryStorage:
         dependencies: list[str] | None = None,
         acceptance_criteria: list[str] | None = None,
         linked_docs: list[str] | None = None,
+        expected_files: list[str] | None = None,
+        expected_globs: list[str] | None = None,
+        touched_files: list[str] | None = None,
         bead_id: str | None = None,
         metadata: dict | None = None,
+        conflict_risks: str = "",
     ) -> Bead:
         bead = Bead(
             bead_id=bead_id or self.allocate_bead_id(),
@@ -86,7 +90,11 @@ class RepositoryStorage:
             dependencies=list(dependencies or []),
             acceptance_criteria=list(acceptance_criteria or []),
             linked_docs=list(linked_docs or []),
+            expected_files=list(expected_files or []),
+            expected_globs=list(expected_globs or []),
+            touched_files=list(touched_files or []),
             metadata=dict(metadata or {}),
+            conflict_risks=conflict_risks,
         )
         bead.execution_history.append(
             ExecutionRecord(timestamp=utc_now(), event="created", agent_type="scheduler", summary="Bead created")
@@ -137,8 +145,35 @@ class RepositoryStorage:
             candidates.extend(sorted(path for path in self.memory_dir.rglob("*") if path.is_file()))
         return [path for path in candidates if path.exists()]
 
+    def active_beads(self) -> list[Bead]:
+        return [
+            bead for bead in self.list_beads()
+            if bead.status == "in_progress" and bead.lease is not None
+        ]
+
+    def active_claims(self) -> list[dict]:
+        claims = []
+        for bead in self.active_beads():
+            claims.append({
+                "bead_id": bead.bead_id,
+                "agent_type": bead.agent_type,
+                "title": bead.title,
+                "scope_source": bead.scope_source(),
+                "expected_files": bead.expected_files,
+                "expected_globs": bead.expected_globs,
+                "touched_files": bead.touched_files,
+                "conflict_risks": bead.conflict_risks,
+                "block_reason": bead.block_reason,
+                "lease": bead.lease.__dict__ if bead.lease else None,
+            })
+        return claims
+
     def set_handoff(self, bead: Bead, handoff: HandoffSummary) -> None:
         bead.handoff_summary = handoff
         bead.changed_files = list(handoff.changed_files)
         bead.updated_docs = list(handoff.updated_docs)
+        bead.expected_files = list(handoff.expected_files)
+        bead.expected_globs = list(handoff.expected_globs)
+        bead.touched_files = list(handoff.touched_files)
+        bead.conflict_risks = handoff.conflict_risks
         self.save_bead(bead)

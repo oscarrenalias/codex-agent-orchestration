@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .models import BEAD_READY, PlanProposal
+from .models import BEAD_DONE, BEAD_READY, PlanProposal
 from .runner import AgentRunner
 from .storage import RepositoryStorage
 
@@ -20,7 +20,7 @@ class PlanningService:
             title=proposal.epic_title,
             agent_type="planner",
             description=proposal.epic_description,
-            status=BEAD_READY,
+            status=BEAD_DONE,
             bead_type="epic",
             linked_docs=proposal.linked_docs,
         )
@@ -38,6 +38,8 @@ class PlanningService:
                 dependencies=[],
                 acceptance_criteria=child.acceptance_criteria,
                 linked_docs=child.linked_docs,
+                expected_files=child.expected_files,
+                expected_globs=child.expected_globs,
             )
             title_to_id[child.title] = bead.bead_id
             created.append(bead.bead_id)
