@@ -169,6 +169,44 @@ class OrchestratorTests(unittest.TestCase):
         child_ids = [child.bead_id for child in self.storage.list_beads() if child.parent_id == bead.bead_id]
         self.assertEqual([], child_ids)
 
+    def test_review_with_remaining_findings_is_forced_blocked(self) -> None:
+        bead = self.storage.create_bead(title="Review work", agent_type="review", description="inspect")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="Review finished",
+                    remaining="Unresolved defect in prompt template resolution.",
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertEqual([bead.bead_id], result.blocked)
+        self.assertEqual([], result.completed)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_BLOCKED, bead.status)
+        self.assertIn("unresolved", bead.block_reason.lower())
+
+    def test_tester_with_remaining_findings_is_forced_blocked(self) -> None:
+        bead = self.storage.create_bead(title="Test work", agent_type="tester", description="validate")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="Tests run complete",
+                    remaining="Known failing test remains unresolved.",
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertEqual([bead.bead_id], result.blocked)
+        self.assertEqual([], result.completed)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_BLOCKED, bead.status)
+        self.assertIn("unresolved", bead.block_reason.lower())
+
     def test_scheduler_blocks_bead_when_git_is_unavailable(self) -> None:
         subprocess.run(["rm", "-rf", ".git"], cwd=self.root, check=True)
         bead = self.storage.create_bead(title="Implement", agent_type="developer", description="do work")

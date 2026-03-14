@@ -23,9 +23,9 @@ def role_instructions(agent_type: str) -> str:
     rules = {
         "planner": "Decompose the feature into a parent epic and child beads with dependencies. Do not implement code.",
         "developer": "Implement only the assigned bead. Do not redesign unrelated architecture. You may create sub-beads for discovered follow-up work.",
-        "tester": "Write or update automated tests, run relevant checks, and report defects with clear follow-up recommendations.",
+        "tester": "Write or update automated tests, run relevant checks, and report defects with clear follow-up recommendations. If unresolved defects remain, return outcome='blocked' with a clear block_reason and next_action.",
         "documentation": "Update only documentation relevant to the assigned bead and keep examples aligned with code.",
-        "review": "Validate acceptance criteria, code quality, and the presence of tests and docs. Do not implement feature work.",
+        "review": "Validate acceptance criteria, code quality, and the presence of tests and docs. Do not implement feature work. If unresolved defects remain, return outcome='blocked' with a clear block_reason and next_action.",
         "scheduler": "Coordinate work deterministically and keep handoff summaries concise and structured.",
     }
     return rules[agent_type]

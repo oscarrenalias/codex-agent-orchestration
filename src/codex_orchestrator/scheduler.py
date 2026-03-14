@@ -182,6 +182,23 @@ class Scheduler:
         bead.changed_files = list(agent_result.changed_files)
         bead.updated_docs = list(agent_result.updated_docs)
 
+        # Review/test signoff is strict: unresolved remaining work cannot be marked completed.
+        if (
+            bead.agent_type in {"review", "tester"}
+            and agent_result.outcome == "completed"
+            and agent_result.remaining.strip()
+        ):
+            agent_result.outcome = "blocked"
+            if not agent_result.block_reason:
+                agent_result.block_reason = (
+                    f"{bead.agent_type.title()} reported unresolved findings in remaining."
+                )
+            agent_result.summary = (
+                f"{agent_result.summary} "
+                f"{bead.agent_type.title()} reported unresolved findings and requires follow-up."
+            ).strip()
+            bead.block_reason = agent_result.block_reason
+
         if agent_result.outcome == "blocked":
             bead.status = BEAD_BLOCKED
             self.storage.update_bead(bead, event="blocked", summary=agent_result.summary)
