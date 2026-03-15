@@ -5,6 +5,9 @@ from pathlib import Path
 
 from .models import Bead
 
+BUILT_IN_AGENT_TYPES = ("planner", "developer", "tester", "documentation", "review")
+DEFAULT_TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates" / "agents"
+
 
 def render_context_snippets(context_paths: list[Path], root: Path) -> str:
     if not context_paths:
@@ -18,20 +21,28 @@ def render_context_snippets(context_paths: list[Path], root: Path) -> str:
         rendered.append(f"- {label}")
     return "\n".join(rendered)
 
+def guardrail_template_path(agent_type: str, *, root: Path | None = None) -> Path:
+    if agent_type not in BUILT_IN_AGENT_TYPES:
+        raise ValueError(f"Unsupported agent type for worker prompt: {agent_type}")
+    if root is None:
+        templates_dir = DEFAULT_TEMPLATES_DIR
+    else:
+        templates_dir = Path(root) / "templates" / "agents"
+    return templates_dir / f"{agent_type}.md"
 
-def role_instructions(agent_type: str) -> str:
-    rules = {
-        "planner": "Decompose the feature into a parent epic and child beads with dependencies. Do not implement code.",
-        "developer": "Implement only the assigned bead. Do not redesign unrelated architecture. You may create sub-beads for discovered follow-up work.",
-        "tester": "Write or update automated tests, run relevant checks, and report defects with clear follow-up recommendations. If unresolved defects remain, return outcome='blocked' with a clear block_reason and next_action.",
-        "documentation": "Update only documentation relevant to the assigned bead and keep examples aligned with code.",
-        "review": "Validate acceptance criteria, code quality, and the presence of tests and docs. Do not implement feature work. If unresolved defects remain, return outcome='blocked' with a clear block_reason and next_action.",
-        "scheduler": "Coordinate work deterministically and keep handoff summaries concise and structured.",
-    }
-    return rules[agent_type]
+
+def load_guardrail_template(agent_type: str, *, root: Path | None = None) -> tuple[Path, str]:
+    path = guardrail_template_path(agent_type, root=root)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Missing guardrail template for built-in agent '{agent_type}' at {path}. "
+            "Add the matching templates/agents/<agent_type>.md file before running this worker."
+        )
+    return path, path.read_text(encoding="utf-8").strip()
 
 
 def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> str:
+    guardrail_path, guardrail_text = load_guardrail_template(bead.agent_type, root=root)
     payload = {
         "bead_id": bead.bead_id,
         "feature_root_id": bead.feature_root_id,
@@ -52,7 +63,11 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
     }
     return (
         f"You are the {bead.agent_type} agent for a Codex orchestration system.\n"
-        f"{role_instructions(bead.agent_type)}\n\n"
+        "Your role-specific guardrails come from a required local template. "
+        "Follow them exactly. If the bead requires work outside that scope, return a blocked result with block_reason and next_agent.\n\n"
+        "Agent guardrails:\n"
+        f"Template: {guardrail_path}\n"
+        f"{guardrail_text}\n\n"
         "Execution context:\n"
         "You are running inside a shared feature worktree. Sibling sub-beads may also run in this same feature tree, "
         "but only when dependencies and file-scope claims allow it. Stay within this bead's scope.\n\n"

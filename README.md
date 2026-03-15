@@ -8,6 +8,7 @@ This repository contains a local Python CLI for orchestrating specialized Codex 
 - Deterministic scheduler with dependency resolution, conflict-aware file claims, and worker leases
 - Isolated Git worktrees per active bead
 - Structured handoffs between developer, tester, documentation, and review agents
+- Template-backed guardrails for planner, developer, tester, documentation, and review workers
 - Assisted planner command backed by Codex CLI
 
 ## Quick start
@@ -32,6 +33,23 @@ uv build
 - `.orchestrator/logs/events.jsonl`: scheduler event log
 - `.orchestrator/worktrees/`: per-bead Git worktrees
 - `docs/memory/`: shared project memory
+- `templates/agents/`: editable guardrail templates for built-in agent types
+
+## Specialized agent guardrails
+
+Built-in worker guardrails live in `templates/agents/` and are the primary editable source of truth for role behavior. The current built-in set is:
+
+- `templates/agents/planner.md`
+- `templates/agents/developer.md`
+- `templates/agents/tester.md`
+- `templates/agents/documentation.md`
+- `templates/agents/review.md`
+
+At runtime, `build_worker_prompt(...)` resolves the template for the active `agent_type` from the active execution root (repository root or bead worktree), injects an `Agent guardrails:` section with the template path and Markdown body, and then appends the serialized bead execution context. There is no hardcoded fallback for built-in agents: if `templates/agents/<agent_type>.md` is missing, prompt construction fails with `FileNotFoundError` and the worker run is blocked instead of running without guardrails.
+
+Before a worker executes, the scheduler stores the applied template under `metadata.guardrails` and the serialized prompt payload under `metadata.worker_prompt_context`. It also appends a `guardrails_applied` entry to `execution_history`, so `orchestrator bead show <bead_id>` exposes which guardrails were used for that run.
+
+If an agent blocks because the work belongs to another specialization, the result is preserved on the bead rather than treated like an unstructured failure. Inspect `handoff_summary.block_reason`, `handoff_summary.next_agent`, `metadata.last_agent_result`, `status`, and `execution_history` in `orchestrator bead show <bead_id>` to see why the role-scope handoff was blocked and which agent should take over next.
 
 ## Conflict-aware scope
 

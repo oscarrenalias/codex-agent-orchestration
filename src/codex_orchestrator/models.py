@@ -34,6 +34,7 @@ class ExecutionRecord:
     event: str
     agent_type: str
     summary: str
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -44,6 +45,8 @@ class HandoffSummary:
     changed_files: list[str] = field(default_factory=list)
     updated_docs: list[str] = field(default_factory=list)
     next_action: str = ""
+    next_agent: str = ""
+    block_reason: str = ""
     expected_files: list[str] = field(default_factory=list)
     expected_globs: list[str] = field(default_factory=list)
     touched_files: list[str] = field(default_factory=list)

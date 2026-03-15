@@ -36,6 +36,30 @@ Out of scope:
 - dynamic creation of entirely new agent types through the scheduler
 - policy engines or external rule configuration systems beyond local template files
 
+## B0004 Implementation Snapshot
+
+This bead extends the earlier template-loading work with persisted guardrail metadata and explicit blocked handoff storage for role-scope violations.
+
+Implemented behavior in the current code:
+
+- built-in guardrails live in `templates/agents/` as Markdown files named after the fixed built-in agent types: `planner`, `developer`, `tester`, `documentation`, and `review`
+- those files are the primary editable source of truth for built-in worker role boundaries; there is no separate hardcoded fallback policy for those agent types
+- `src/codex_orchestrator/prompts.py` resolves template paths through `guardrail_template_path(agent_type)` and loads the file contents through `load_guardrail_template(agent_type)`
+- `build_worker_prompt(...)` injects an `Agent guardrails:` section that includes both the resolved template path and the full Markdown template contents before the execution-context payload
+- missing built-in templates raise `FileNotFoundError` with a path-specific message instead of silently falling back to an inline prompt string
+- `src/codex_orchestrator/scheduler.py` loads the applied guardrail template before each worker run and records it through `RepositoryStorage.record_guardrail_context(...)`
+- `src/codex_orchestrator/storage.py` persists guardrail state under `bead.metadata["guardrails"]` with `agent_type`, `template_path`, `template_text`, and `captured_at`
+- the scheduler also persists the serialized worker prompt payload under `bead.metadata["worker_prompt_context"]` so operators can inspect the execution context that accompanied the guardrails
+- applying guardrails appends a `guardrails_applied` entry to `execution_history`, and `orchestrator bead show <bead_id>` exposes both `metadata` and `execution_history` because it returns the full bead JSON
+- worker results already support `outcome = "blocked"` with `summary`, `block_reason`, and `next_agent`; the scheduler now preserves those fields in both `handoff_summary` and `metadata["last_agent_result"]`
+- blocked role-scope handoffs therefore remain actionable after execution: `completed`, `remaining`, `risks`, `next_action`, `next_agent`, and `block_reason` are all retained on the bead
+- automated coverage verifies prompt generation, missing-template failure, guardrail metadata persistence, and blocked role-scope handoff preservation
+
+Still tracked by the broader feature, but not delivered by this bead:
+
+- dedicated CLI formatting for guardrail metadata beyond the raw JSON already available through `bead show`
+- enforcement stronger than prompt instructions plus blocked-result reporting, such as policy validation of actual file edits
+
 ## Functional Requirements
 
 ### 1. External Agent Template Files
@@ -90,8 +114,9 @@ Worker prompt construction should load the template file for the current `agent_
 Behavior requirements:
 
 - if the matching template exists, include its contents in the worker prompt
+- include the resolved local template path in the prompt so operators can see which file supplied the guardrails
 - if the template file is missing, fail safely with a clear error instead of silently dropping guardrails
-- the implementation may keep a minimal hardcoded fallback only if it is used solely to produce a readable error or bootstrap message, not as the main policy source
+- do not silently fall back to hardcoded role text for built-in agents; the template file is the policy source of truth
 
 ### 3. Prompt Injection
 
@@ -114,6 +139,12 @@ When a worker determines that the bead requires work outside its specialization,
 - a `block_reason` explaining the role mismatch
 - a recommended `next_agent`
 
+In the implemented flow, the scheduler must also preserve the blocked handoff details on the bead itself:
+
+- `handoff_summary.block_reason` and `handoff_summary.next_agent`
+- `metadata["last_agent_result"]` with the final `outcome`, `summary`, `next_agent`, and `block_reason`
+- the bead status transitioning to `blocked`
+
 This allows the scheduler and operator to see that the failure was due to role boundaries rather than runtime failure.
 
 ### 5. Guardrail Visibility
@@ -124,6 +155,13 @@ Minimum visibility requirement:
 
 - the worker prompt payload should include the loaded guardrail template content or template path
 - bead metadata or execution history should preserve enough information to understand which guardrails were applied during execution
+
+Current implementation details:
+
+- `metadata["guardrails"]` stores the applied template path and full template text
+- `metadata["worker_prompt_context"]` stores the serialized execution payload that was sent alongside the guardrails
+- `execution_history` records a `guardrails_applied` event with the template path
+- `orchestrator bead show <bead_id>` exposes this state because it dumps the full persisted bead JSON, including `metadata`, `handoff_summary`, `block_reason`, `status`, and `execution_history`
 
 This does not need a separate CLI command if the information is already visible via `bead show`.
 
@@ -156,6 +194,21 @@ The feature is complete when all of the following are true:
 5. `bead show` exposes enough information to understand the applied guardrails or template context.
 6. Tests cover prompt generation for at least two agent types, template loading, missing-template failure, and blocked role-violation handling.
 
+For the earlier B0003 slice specifically, the delivered acceptance signal was narrower:
+
+1. `build_worker_prompt(...)` loads guardrails from `templates/agents/<agent_type>.md`.
+2. The worker prompt includes both the template path and rendered Markdown body.
+3. Missing built-in templates fail with a clear `FileNotFoundError`.
+4. Tests cover prompt generation for at least two built-in agent types and the missing-template failure path.
+
+For the B0004 slice, the additional delivered acceptance signal is:
+
+1. The scheduler persists applied guardrails into bead metadata before worker execution.
+2. The persisted guardrail record includes template path, template text, and captured prompt context.
+3. `bead show` exposes the guardrail metadata and `guardrails_applied` execution event via the bead JSON.
+4. Blocked role-scope results preserve `block_reason` and `next_agent` in the stored handoff state.
+5. Tests cover guardrail metadata persistence and blocked role-scope handoff preservation.
+
 ## Suggested Implementation Notes
 
 - replace the current flat role instruction strings with template loading from `templates/agents/`
@@ -176,6 +229,14 @@ Given a `documentation` bead:
 
 - the worker prompt should clearly state that runtime feature changes are out of scope
 - the agent should update docs only, or block if code changes are required first
+
+Example inspection flow after a blocked role-scope handoff:
+
+- run `orchestrator bead show B0006`
+- inspect `status: "blocked"` to confirm the worker stopped on role boundaries
+- inspect `handoff_summary.block_reason` and `handoff_summary.next_agent` for the actionable handoff
+- inspect `metadata["guardrails"].template_path` and `metadata["worker_prompt_context"].agent_type` to confirm which guardrail template and execution payload were applied
+- inspect the `guardrails_applied` item in `execution_history` to see when the template context was captured
 
 ## Deliverables
 

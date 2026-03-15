@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -13,8 +14,13 @@ from codex_orchestrator.console import ConsoleReporter
 from codex_orchestrator.gitutils import GitError, WorktreeManager
 from codex_orchestrator.models import AgentRunResult, BEAD_BLOCKED, BEAD_DONE, BEAD_IN_PROGRESS, BEAD_READY, Bead, Lease, PlanChild, PlanProposal
 from codex_orchestrator.planner import PlanningService
-from codex_orchestrator.prompts import build_worker_prompt
-from codex_orchestrator.prompts import render_context_snippets
+from codex_orchestrator.prompts import (
+    BUILT_IN_AGENT_TYPES,
+    build_worker_prompt,
+    guardrail_template_path,
+    load_guardrail_template,
+    render_context_snippets,
+)
 from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA
 from codex_orchestrator.scheduler import Scheduler
 from codex_orchestrator.storage import RepositoryStorage
@@ -52,7 +58,13 @@ class OrchestratorTests(unittest.TestCase):
         subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=self.root, check=True)
         subprocess.run(["git", "config", "user.name", "Test User"], cwd=self.root, check=True)
         (self.root / "README.md").write_text("seed\n", encoding="utf-8")
+        source_templates = Path(__file__).resolve().parents[1] / "templates" / "agents"
+        target_templates = self.root / "templates" / "agents"
+        target_templates.mkdir(parents=True, exist_ok=True)
+        for template in BUILT_IN_AGENT_TYPES:
+            shutil.copy2(source_templates / f"{template}.md", target_templates / f"{template}.md")
         subprocess.run(["git", "add", "README.md"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "templates/agents"], cwd=self.root, check=True)
         subprocess.run(["git", "commit", "-m", "init"], cwd=self.root, check=True, capture_output=True)
         self.storage = RepositoryStorage(self.root)
         self.storage.initialize()
@@ -426,6 +438,146 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(["src/new_file.py"], bead.touched_files)
         self.assertEqual(["src/new_file.py"], bead.changed_files)
 
+    def test_scheduler_persists_guardrail_metadata_and_prompt_context(self) -> None:
+        bead = self.storage.create_bead(
+            title="Implement with guardrails",
+            agent_type="developer",
+            description="do work",
+            expected_files=["src/new_file.py"],
+        )
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="done",
+                    expected_files=["src/new_file.py"],
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler.run_once()
+
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual("developer", bead.metadata["guardrails"]["agent_type"])
+        self.assertTrue(bead.metadata["guardrails"]["template_path"].endswith("templates/agents/developer.md"))
+        self.assertIn("Primary responsibility: Implement only the assigned bead", bead.metadata["guardrails"]["template_text"])
+        self.assertTrue(bead.metadata["guardrails"]["captured_at"])
+        self.assertEqual(bead.bead_id, bead.metadata["worker_prompt_context"]["bead_id"])
+        guardrail_records = [record for record in bead.execution_history if record.event == "guardrails_applied"]
+        self.assertEqual(1, len(guardrail_records))
+        self.assertTrue(guardrail_records[0].details["template_path"].endswith("templates/agents/developer.md"))
+
+    def test_scheduler_preserves_blocked_role_scope_handoff_details(self) -> None:
+        bead = self.storage.create_bead(title="Review implementation work", agent_type="review", description="inspect")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="blocked",
+                    summary="Review guardrails prevent implementation changes",
+                    completed="Reviewed current implementation and identified required code changes.",
+                    remaining="Developer needs to update runtime behavior before review can continue.",
+                    risks="Review signoff is blocked until implementation is complete.",
+                    next_action="Hand off to a developer to implement the requested changes.",
+                    next_agent="developer",
+                    block_reason="The bead requires implementation work outside review scope.",
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+
+        self.assertEqual([bead.bead_id], result.blocked)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_BLOCKED, bead.status)
+        self.assertEqual(
+            "Reviewed current implementation and identified required code changes.",
+            bead.handoff_summary.completed,
+        )
+        self.assertEqual(
+            "Developer needs to update runtime behavior before review can continue.",
+            bead.handoff_summary.remaining,
+        )
+        self.assertEqual("Review signoff is blocked until implementation is complete.", bead.handoff_summary.risks)
+        self.assertEqual("Hand off to a developer to implement the requested changes.", bead.handoff_summary.next_action)
+        self.assertEqual("developer", bead.handoff_summary.next_agent)
+        self.assertEqual("The bead requires implementation work outside review scope.", bead.handoff_summary.block_reason)
+        self.assertEqual("blocked", bead.metadata["last_agent_result"]["outcome"])
+        self.assertEqual(
+            "Review guardrails prevent implementation changes",
+            bead.metadata["last_agent_result"]["summary"],
+        )
+        self.assertEqual("developer", bead.metadata["last_agent_result"]["next_agent"])
+        self.assertEqual(
+            "The bead requires implementation work outside review scope.",
+            bead.metadata["last_agent_result"]["block_reason"],
+        )
+        self.assertIn("review.md", bead.metadata["guardrails"]["template_path"])
+        self.assertIn("Inspect code, tests, docs, and acceptance criteria", bead.metadata["guardrails"]["template_text"])
+
+    def test_tester_role_violation_block_preserves_next_agent_and_guardrails(self) -> None:
+        bead = self.storage.create_bead(title="Implement runtime fix", agent_type="tester", description="validate coverage")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="blocked",
+                    summary="Tester guardrails prevent implementing the missing runtime fix",
+                    completed="Confirmed the failing scenario and isolated the missing runtime behavior.",
+                    remaining="A developer must implement the runtime fix before testing can finish.",
+                    risks="Coverage remains incomplete until the implementation gap is resolved.",
+                    next_action="Hand off to a developer to implement the runtime behavior, then rerun the tests.",
+                    next_agent="developer",
+                    block_reason="The bead requires feature logic changes outside tester scope.",
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+
+        self.assertEqual([bead.bead_id], result.blocked)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_BLOCKED, bead.status)
+        self.assertEqual("developer", bead.handoff_summary.next_agent)
+        self.assertEqual("The bead requires feature logic changes outside tester scope.", bead.handoff_summary.block_reason)
+        self.assertEqual("blocked", bead.metadata["last_agent_result"]["outcome"])
+        self.assertEqual("developer", bead.metadata["last_agent_result"]["next_agent"])
+        self.assertEqual(
+            "The bead requires feature logic changes outside tester scope.",
+            bead.metadata["last_agent_result"]["block_reason"],
+        )
+        self.assertIn("tester.md", bead.metadata["guardrails"]["template_path"])
+        self.assertIn("Add or update automated tests", bead.metadata["guardrails"]["template_text"])
+
+    def test_cli_bead_show_exposes_guardrail_template_context(self) -> None:
+        bead = self.storage.create_bead(
+            title="Implement with guardrails",
+            agent_type="developer",
+            description="do work",
+            expected_files=["src/new_file.py"],
+        )
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="done",
+                    expected_files=["src/new_file.py"],
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler.run_once()
+
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_bead(Namespace(bead_command="show", bead_id=bead.bead_id), self.storage, console)
+
+        self.assertEqual(0, exit_code)
+        payload = stream.getvalue()
+        self.assertIn('"guardrails"', payload)
+        self.assertIn('"template_path"', payload)
+        self.assertIn("templates/agents/developer.md", payload)
+        self.assertIn('"worker_prompt_context"', payload)
+        self.assertIn('"guardrails_applied"', payload)
+
     def test_active_claims_report_in_progress_scope(self) -> None:
         bead = self.storage.create_bead(
             title="Active bead",
@@ -599,6 +751,58 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn('"feature_root_id"', prompt)
         self.assertIn('"execution_branch_name"', prompt)
         self.assertIn("shared feature worktree", prompt)
+        self.assertIn("Agent guardrails:", prompt)
+        self.assertIn(str(guardrail_template_path("developer", root=self.root)), prompt)
+        self.assertIn("Primary responsibility: Implement only the assigned bead", prompt)
+
+    def test_worker_prompt_loads_matching_guardrail_template_for_review(self) -> None:
+        bead = self.storage.create_bead(title="Review", agent_type="review", description="inspect changes")
+        prompt = build_worker_prompt(bead, [], self.root)
+        self.assertIn(str(guardrail_template_path("review", root=self.root)), prompt)
+        self.assertIn("Primary responsibility: Inspect code, tests, docs, and acceptance criteria", prompt)
+        self.assertIn("return a blocked result with block_reason and next_agent", prompt)
+
+    def test_load_guardrail_template_returns_path_and_trimmed_contents_for_each_builtin_agent(self) -> None:
+        for agent_type in BUILT_IN_AGENT_TYPES:
+            with self.subTest(agent_type=agent_type):
+                path, template_text = load_guardrail_template(agent_type, root=self.root)
+                self.assertEqual(guardrail_template_path(agent_type, root=self.root), path)
+                self.assertTrue(template_text.startswith(f"# {agent_type.capitalize()} Guardrails"))
+                self.assertFalse(template_text.endswith("\n"))
+
+    def test_worker_prompt_references_every_builtin_template_file(self) -> None:
+        for agent_type in BUILT_IN_AGENT_TYPES:
+            with self.subTest(agent_type=agent_type):
+                bead = self.storage.create_bead(title=f"{agent_type} bead", agent_type=agent_type, description="scoped work")
+                prompt = build_worker_prompt(bead, [], self.root)
+                self.assertIn(f"Template: {guardrail_template_path(agent_type, root=self.root)}", prompt)
+
+    def test_worker_prompt_uses_templates_from_provided_root(self) -> None:
+        alt_root = self.root / "alt-root"
+        for agent_type in BUILT_IN_AGENT_TYPES:
+            template_path = alt_root / "templates" / "agents" / f"{agent_type}.md"
+            template_path.parent.mkdir(parents=True, exist_ok=True)
+            template_path.write_text(f"# {agent_type.capitalize()} Guardrails\n\nRoot marker: alt-root\n", encoding="utf-8")
+
+        bead = self.storage.create_bead(title="Implement", agent_type="developer", description="do work")
+        prompt = build_worker_prompt(bead, [], alt_root)
+        self.assertIn(f"Template: {guardrail_template_path('developer', root=alt_root)}", prompt)
+        self.assertIn("Root marker: alt-root", prompt)
+
+    def test_worker_prompt_raises_clear_error_when_guardrail_template_missing(self) -> None:
+        template_path = guardrail_template_path("developer", root=self.root)
+        original_text = template_path.read_text(encoding="utf-8")
+        template_path.unlink()
+
+        def restore_template() -> None:
+            template_path.parent.mkdir(parents=True, exist_ok=True)
+            template_path.write_text(original_text, encoding="utf-8")
+
+        self.addCleanup(restore_template)
+
+        bead = self.storage.create_bead(title="Implement", agent_type="developer", description="do work")
+        with self.assertRaisesRegex(FileNotFoundError, "Missing guardrail template for built-in agent 'developer'"):
+            build_worker_prompt(bead, [], self.root)
 
     def test_merge_uses_feature_root_branch_for_descendants(self) -> None:
         epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
