@@ -136,6 +136,38 @@ class RepositoryStorage:
             )
         self.save_bead(bead)
 
+    def record_guardrail_context(
+        self,
+        bead: Bead,
+        *,
+        template_path: Path,
+        template_text: str,
+        prompt_context: dict | None = None,
+    ) -> None:
+        try:
+            relative_template_path = str(template_path.relative_to(self.root))
+        except ValueError:
+            relative_template_path = str(template_path)
+        guardrails = {
+            "agent_type": bead.agent_type,
+            "template_path": relative_template_path,
+            "template_text": template_text,
+            "captured_at": utc_now(),
+        }
+        bead.metadata["guardrails"] = guardrails
+        if prompt_context is not None:
+            bead.metadata["worker_prompt_context"] = prompt_context
+        bead.execution_history.append(
+            ExecutionRecord(
+                timestamp=utc_now(),
+                event="guardrails_applied",
+                agent_type=bead.agent_type,
+                summary=f"Applied guardrails from {relative_template_path}",
+                details={"template_path": relative_template_path},
+            )
+        )
+        self.save_bead(bead)
+
     def dependency_satisfied(self, bead: Bead) -> bool:
         return all(self.load_bead(dep).status == BEAD_DONE for dep in bead.dependencies)
 
@@ -205,6 +237,7 @@ class RepositoryStorage:
         bead.expected_files = list(handoff.expected_files)
         bead.expected_globs = list(handoff.expected_globs)
         bead.touched_files = list(handoff.touched_files)
+        bead.block_reason = handoff.block_reason
         bead.conflict_risks = handoff.conflict_risks
         self.save_bead(bead)
 

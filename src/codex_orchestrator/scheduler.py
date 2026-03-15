@@ -22,6 +22,7 @@ from .models import (
     SchedulerResult,
     utc_now,
 )
+from .prompts import load_guardrail_template
 from .runner import AgentRunner
 from .storage import RepositoryStorage
 
@@ -141,6 +142,13 @@ class Scheduler:
         self.storage.update_bead(bead, event="started", summary="Worker started")
         context_paths = self.storage.linked_context_paths(bead)
         try:
+            guardrail_path, guardrail_text = load_guardrail_template(bead.agent_type, root=Path(workdir))
+            self.storage.record_guardrail_context(
+                bead,
+                template_path=guardrail_path,
+                template_text=guardrail_text,
+                prompt_context=self._worker_prompt_context(bead),
+            )
             agent_result = self.runner.run_bead(bead, workdir=Path(workdir), context_paths=context_paths)
         except Exception as exc:
             agent_result = AgentRunResult(
@@ -173,6 +181,8 @@ class Scheduler:
             changed_files=agent_result.changed_files,
             updated_docs=agent_result.updated_docs,
             next_action=agent_result.next_action,
+            next_agent=agent_result.next_agent,
+            block_reason=agent_result.block_reason,
             expected_files=bead.expected_files,
             expected_globs=bead.expected_globs,
             touched_files=bead.touched_files,
@@ -181,6 +191,12 @@ class Scheduler:
         bead.handoff_summary = handoff
         bead.changed_files = list(agent_result.changed_files)
         bead.updated_docs = list(agent_result.updated_docs)
+        bead.metadata["last_agent_result"] = {
+            "outcome": agent_result.outcome,
+            "summary": agent_result.summary,
+            "next_agent": agent_result.next_agent,
+            "block_reason": agent_result.block_reason,
+        }
 
         if agent_result.outcome == "blocked":
             bead.status = BEAD_BLOCKED
@@ -317,6 +333,26 @@ class Scheduler:
                 and same_feature_tree
             )
         return self._scopes_overlap(bead, active)
+
+    def _worker_prompt_context(self, bead: Bead) -> dict[str, object]:
+        return {
+            "bead_id": bead.bead_id,
+            "feature_root_id": bead.feature_root_id,
+            "title": bead.title,
+            "agent_type": bead.agent_type,
+            "description": bead.description,
+            "status": bead.status,
+            "acceptance_criteria": list(bead.acceptance_criteria),
+            "dependencies": list(bead.dependencies),
+            "linked_docs": list(bead.linked_docs),
+            "execution_branch_name": bead.execution_branch_name,
+            "execution_worktree_path": bead.execution_worktree_path,
+            "expected_files": list(bead.expected_files),
+            "expected_globs": list(bead.expected_globs),
+            "touched_files": list(bead.touched_files),
+            "conflict_risks": bead.conflict_risks,
+            "handoff_summary": bead.handoff_summary.__dict__,
+        }
 
     def _scopes_overlap(self, first: Bead, second: Bead) -> bool:
         first_source = first.scope_source()
