@@ -23,19 +23,25 @@ orchestrator summary
 
 ## Summary command
 
-Use `orchestrator summary` to get a lightweight JSON rollup of orchestration state:
+Use `orchestrator summary` to print a lightweight JSON snapshot of current orchestration state.
+
+Example:
+
+```bash
+orchestrator summary
+```
 
 - `counts`: per-status totals for `open`, `ready`, `in_progress`, `blocked`, `done`, and `handed_off`
 - `next_up`: up to five `ready` beads (sorted by bead id)
 - `attention`: up to five `blocked` beads (sorted by bead id), including `block_reason`
 
-To scope output to one feature tree, pass a feature root bead id:
+To optionally scope output to one feature tree, pass `--feature-root <bead_id>`:
 
 ```bash
 orchestrator summary --feature-root B0002
 ```
 
-The `--feature-root` filter only returns data when the id is a valid feature root. Invalid ids or non-feature-root ids return empty counts and empty lists.
+Without `--feature-root`, the command summarizes all beads in the current execution root. With `--feature-root`, it only returns data when the id is a valid feature root; invalid ids or non-feature-root ids return empty counts and empty lists.
 
 ## Development
 
