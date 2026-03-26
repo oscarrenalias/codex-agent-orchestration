@@ -319,9 +319,10 @@ class Scheduler:
         text = " ".join(remaining.strip().lower().split())
         if not text:
             return False
-        if text in {"none", "n/a", "na"}:
+        if text in {"none", "n/a", "na", "none.", "n/a.", "na."}:
             return False
         benign_phrases = (
+            "none for this bead",
             "no additional",
             "no further",
             "no remaining",
