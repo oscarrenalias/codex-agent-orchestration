@@ -10,7 +10,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
-from codex_orchestrator.cli import command_bead, command_merge, command_plan, command_summary
+from codex_orchestrator.cli import LIST_PLAIN_COLUMNS, command_bead, command_merge, command_plan, command_summary
 from codex_orchestrator.console import ConsoleReporter
 from codex_orchestrator.gitutils import GitError, WorktreeManager
 from codex_orchestrator.models import (
@@ -628,6 +628,80 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn(bead.bead_id, stream.getvalue())
         self.assertIn("feature_root_id", stream.getvalue())
         self.assertIn("expected_files", stream.getvalue())
+
+    def test_cli_bead_list_defaults_to_json(self) -> None:
+        bead = self.storage.create_bead(
+            title="List bead",
+            agent_type="developer",
+            description="for json output",
+        )
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_bead(Namespace(bead_command="list"), self.storage, console)
+        self.assertEqual(0, exit_code)
+        rendered = stream.getvalue()
+        payload = json.loads(rendered)
+        self.assertEqual(1, len(payload))
+        self.assertEqual(bead.bead_id, payload[0]["bead_id"])
+        self.assertEqual("developer", payload[0]["agent_type"])
+        self.assertEqual("task", payload[0]["bead_type"])
+        self.assertIn("title", payload[0])
+        self.assertNotIn("BEAD_ID", rendered)
+
+    def test_cli_bead_list_plain_outputs_headers_rows_and_missing_values(self) -> None:
+        self.storage.create_bead(
+            title="Epic Root",
+            agent_type="planner",
+            description="feature root placeholder",
+            bead_type="epic",
+        )
+        self.storage.create_bead(
+            title="Child Task",
+            agent_type="developer",
+            description="child task",
+            parent_id="B0001",
+        )
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_bead(Namespace(bead_command="list", plain=True), self.storage, console)
+        self.assertEqual(0, exit_code)
+        output = stream.getvalue()
+        lines = output.splitlines()
+        self.assertEqual(3, len(lines))
+        for header, _ in LIST_PLAIN_COLUMNS:
+            self.assertIn(header, lines[0])
+        self.assertIn("B0001", lines[1])
+        self.assertIn("B0002", lines[2])
+        self.assertIn(" - ", lines[1])  # feature_root_id and parent_id render as "-"
+        self.assertNotIn('"bead_id"', output)
+        self.assertFalse(output.lstrip().startswith("["))
+
+    def test_cli_bead_list_plain_rows_are_sorted_by_bead_id(self) -> None:
+        bead_a = self.storage.create_bead(
+            title="A bead",
+            agent_type="developer",
+            description="first bead",
+        )
+        bead_b = self.storage.create_bead(
+            title="B bead",
+            agent_type="developer",
+            description="second bead",
+        )
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with patch.object(self.storage, "list_beads", return_value=[bead_b, bead_a]):
+            exit_code = command_bead(Namespace(bead_command="list", plain=True), self.storage, console)
+        self.assertEqual(0, exit_code)
+        lines = stream.getvalue().splitlines()
+        self.assertEqual(bead_a.bead_id, lines[1].split()[0])
+        self.assertEqual(bead_b.bead_id, lines[2].split()[0])
+
+    def test_cli_bead_list_plain_empty_state(self) -> None:
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_bead(Namespace(bead_command="list", plain=True), self.storage, console)
+        self.assertEqual(0, exit_code)
+        self.assertEqual("No beads found.\n", stream.getvalue())
 
     def test_command_plan_write_outputs_created_bead_details(self) -> None:
         spec_path = self.root / "spec.md"
