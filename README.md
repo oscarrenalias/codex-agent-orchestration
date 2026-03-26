@@ -93,6 +93,8 @@ If there are no active claims, plain output prints:
 No active claims.
 ```
 
+When a `review` bead is validating the `bead claims --plain` change, sign-off stays blocked if the output still needs implementation work. In that case, `orchestrator bead show <bead_id>` preserves the developer handoff under `handoff_summary.next_agent`, `handoff_summary.block_reason`, and `metadata.last_agent_result`, so the next owner is explicit instead of being inferred from a failed run.
+
 The current regression checks cover:
 
 - default `orchestrator bead claims` output remaining machine-readable JSON
