@@ -43,6 +43,31 @@ orchestrator summary --feature-root B0002
 
 Without `--feature-root`, the command summarizes all beads in the current execution root. With `--feature-root`, it only returns data when the id is a valid feature root; invalid ids or non-feature-root ids return empty counts and empty lists.
 
+## Bead list command
+
+Use `orchestrator bead list` to print all beads as JSON.
+
+Example:
+
+```bash
+orchestrator bead list
+```
+
+Use `orchestrator bead list --plain` to print a human-readable table with aligned columns.
+
+Example:
+
+```bash
+orchestrator bead list --plain
+```
+
+The plain output:
+
+- Sorts rows by `bead_id`
+- Includes columns: `BEAD_ID`, `STATUS`, `AGENT`, `TYPE`, `TITLE`, `FEATURE_ROOT`, `PARENT`
+- Renders missing or empty values as `-`
+- Prints `No beads found.` when no beads exist
+
 ## Development
 
 ```bash
