@@ -24,6 +24,7 @@ from .models import (
 )
 from .prompts import load_guardrail_template
 from .runner import AgentRunner
+from .skills import prepare_isolated_execution_root
 from .storage import RepositoryStorage
 
 
@@ -62,13 +63,24 @@ class Scheduler:
                 expired.append(bead.bead_id)
         return expired
 
-    def run_once(self, *, max_workers: int = 1, reporter: "SchedulerReporter | None" = None) -> SchedulerResult:
+    def run_once(
+        self,
+        *,
+        max_workers: int = 1,
+        feature_root_id: str | None = None,
+        reporter: "SchedulerReporter | None" = None,
+    ) -> SchedulerResult:
         result = SchedulerResult()
         expired = self.expire_stale_leases()
         if reporter:
             for bead_id in expired:
                 reporter.lease_expired(bead_id)
         ready = self.storage.ready_beads()
+        if feature_root_id:
+            ready = [
+                bead for bead in ready
+                if self.storage.feature_root_id_for(bead) == feature_root_id
+            ]
         selected: list[Bead] = []
         active = self.storage.active_beads()
         for bead in ready:
@@ -96,6 +108,8 @@ class Scheduler:
 
     def _process(self, bead: Bead, result: SchedulerResult, *, reporter: "SchedulerReporter | None" = None) -> None:
         workdir = self.storage.root
+        runner_workdir = Path(workdir)
+        execution_env: dict[str, str] | None = None
         feature_root_id = self.storage.feature_root_id_for(bead)
         bead.status = BEAD_IN_PROGRESS
         bead.lease = Lease(owner=f"{bead.agent_type}:{bead.bead_id}", expires_at=(datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat())
@@ -137,19 +151,55 @@ class Scheduler:
                 feature_root.execution_worktree_path = str(worktree_path)
                 self.storage.save_bead(feature_root)
             workdir = worktree_path
+            runner_workdir = Path(worktree_path)
             if reporter:
                 reporter.worktree_ready(bead, branch_name, worktree_path)
+        try:
+            exec_root, skill_metadata = prepare_isolated_execution_root(
+                orchestrator_state_dir=self.storage.state_dir,
+                catalog_repo_root=self.storage.root,
+                workspace_repo_root=runner_workdir,
+                bead=bead,
+            )
+            bead.metadata.update(skill_metadata)
+            bead.execution_history.append(
+                ExecutionRecord(
+                    timestamp=utc_now(),
+                    event="skills_loaded",
+                    agent_type=bead.agent_type,
+                    summary=f"Loaded {len(skill_metadata.get('loaded_skills', []))} skill(s) for isolated execution",
+                    details={"loaded_skills": list(skill_metadata.get("loaded_skills", []))},
+                )
+            )
+            runner_workdir = exec_root / "repo"
+            home = exec_root / "home"
+            execution_env = {"HOME": str(home), "CODEX_HOME": str(exec_root)}
+        except Exception as exc:
+            bead.metadata["skills_warning"] = f"Skill isolation unavailable: {exc}"
+            bead.execution_history.append(
+                ExecutionRecord(
+                    timestamp=utc_now(),
+                    event="skills_isolation_unavailable",
+                    agent_type="scheduler",
+                    summary=str(exc),
+                )
+            )
         self.storage.update_bead(bead, event="started", summary="Worker started")
         context_paths = self.storage.linked_context_paths(bead)
         try:
-            guardrail_path, guardrail_text = load_guardrail_template(bead.agent_type, root=Path(workdir))
+            guardrail_path, guardrail_text = load_guardrail_template(bead.agent_type, root=runner_workdir)
             self.storage.record_guardrail_context(
                 bead,
                 template_path=guardrail_path,
                 template_text=guardrail_text,
                 prompt_context=self._worker_prompt_context(bead),
             )
-            agent_result = self.runner.run_bead(bead, workdir=Path(workdir), context_paths=context_paths)
+            agent_result = self.runner.run_bead(
+                bead,
+                workdir=runner_workdir,
+                context_paths=context_paths,
+                execution_env=execution_env,
+            )
         except Exception as exc:
             agent_result = AgentRunResult(
                 outcome="failed",
@@ -202,7 +252,7 @@ class Scheduler:
         if (
             bead.agent_type in {"review", "tester"}
             and agent_result.outcome == "completed"
-            and agent_result.remaining.strip()
+            and self._remaining_requires_followup(agent_result.remaining)
         ):
             agent_result.outcome = "blocked"
             if not agent_result.block_reason:
@@ -264,6 +314,27 @@ class Scheduler:
         if reporter:
             reporter.bead_completed(bead, agent_result.summary, created)
         result.completed.append(bead.bead_id)
+
+    def _remaining_requires_followup(self, remaining: str) -> bool:
+        text = " ".join(remaining.strip().lower().split())
+        if not text:
+            return False
+        if text in {"none", "n/a", "na"}:
+            return False
+        benign_phrases = (
+            "no additional",
+            "no further",
+            "no remaining",
+            "nothing remaining",
+            "nothing further",
+            "no unresolved",
+            "no action required",
+            "no follow-up required",
+            "no followup required",
+            "no tester-scope work required",
+            "no review-scope work required",
+        )
+        return not any(phrase in text for phrase in benign_phrases)
 
     def _create_followups(self, bead: Bead, agent_result: AgentRunResult) -> list[Bead]:
         created: list[Bead] = []

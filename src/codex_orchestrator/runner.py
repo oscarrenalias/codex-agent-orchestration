@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -81,7 +82,14 @@ PLANNER_OUTPUT_SCHEMA = {
 
 
 class AgentRunner:
-    def run_bead(self, bead: Bead, *, workdir: Path, context_paths: list[Path]) -> AgentRunResult:
+    def run_bead(
+        self,
+        bead: Bead,
+        *,
+        workdir: Path,
+        context_paths: list[Path],
+        execution_env: dict[str, str] | None = None,
+    ) -> AgentRunResult:
         raise NotImplementedError
 
     def propose_plan(self, spec_text: str) -> PlanProposal:
@@ -92,7 +100,14 @@ class CodexAgentRunner(AgentRunner):
     def __init__(self, codex_bin: str = "codex") -> None:
         self.codex_bin = codex_bin
 
-    def _exec_json(self, prompt: str, *, schema: dict, workdir: Path) -> dict:
+    def _exec_json(
+        self,
+        prompt: str,
+        *,
+        schema: dict,
+        workdir: Path,
+        execution_env: dict[str, str] | None = None,
+    ) -> dict:
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as schema_file:
             json.dump(schema, schema_file)
             schema_path = Path(schema_file.name)
@@ -114,7 +129,10 @@ class CodexAgentRunner(AgentRunner):
             "-",
         ]
         try:
-            proc = subprocess.run(cmd, input=prompt, text=True, capture_output=True, check=False)
+            env = os.environ.copy()
+            if execution_env:
+                env.update(execution_env)
+            proc = subprocess.run(cmd, input=prompt, text=True, capture_output=True, check=False, env=env)
             if proc.returncode != 0:
                 raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or "codex exec failed")
             return json.loads(output_path.read_text(encoding="utf-8"))
@@ -122,8 +140,20 @@ class CodexAgentRunner(AgentRunner):
             schema_path.unlink(missing_ok=True)
             output_path.unlink(missing_ok=True)
 
-    def run_bead(self, bead: Bead, *, workdir: Path, context_paths: list[Path]) -> AgentRunResult:
-        payload = self._exec_json(build_worker_prompt(bead, context_paths, workdir), schema=AGENT_OUTPUT_SCHEMA, workdir=workdir)
+    def run_bead(
+        self,
+        bead: Bead,
+        *,
+        workdir: Path,
+        context_paths: list[Path],
+        execution_env: dict[str, str] | None = None,
+    ) -> AgentRunResult:
+        payload = self._exec_json(
+            build_worker_prompt(bead, context_paths, workdir),
+            schema=AGENT_OUTPUT_SCHEMA,
+            workdir=workdir,
+            execution_env=execution_env,
+        )
         return AgentRunResult(**payload)
 
     def propose_plan(self, spec_text: str) -> PlanProposal:

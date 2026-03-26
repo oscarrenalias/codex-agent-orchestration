@@ -76,6 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
     run_parser.add_argument("--once", action="store_true")
     run_parser.add_argument("--max-workers", type=int, default=1)
+    run_parser.add_argument("--feature-root", help="Run only beads in the specified feature root")
 
     bead_parser = subparsers.add_parser("bead")
     bead_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
@@ -324,9 +325,14 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
     reporter = CliSchedulerReporter(console)
     aggregate = {"started": [], "completed": [], "blocked": [], "deferred": []}
     console.section("Scheduler")
-    console.info(f"Starting scheduler loop with max_workers={args.max_workers}")
+    scope = f", feature_root={args.feature_root}" if args.feature_root else ""
+    console.info(f"Starting scheduler loop with max_workers={args.max_workers}{scope}")
     while True:
-        result = scheduler.run_once(max_workers=args.max_workers, reporter=reporter)
+        result = scheduler.run_once(
+            max_workers=args.max_workers,
+            feature_root_id=args.feature_root,
+            reporter=reporter,
+        )
         aggregate["started"].extend(result.started)
         aggregate["completed"].extend(result.completed)
         aggregate["blocked"].extend(result.blocked)

@@ -51,7 +51,14 @@ class FakeRunner:
         self.proposal_value = proposal
         self.writes = writes or {}
 
-    def run_bead(self, bead: Bead, *, workdir: Path, context_paths: list[Path]) -> AgentRunResult:
+    def run_bead(
+        self,
+        bead: Bead,
+        *,
+        workdir: Path,
+        context_paths: list[Path],
+        execution_env: dict[str, str] | None = None,
+    ) -> AgentRunResult:
         for relative_path, content in self.writes.get(bead.bead_id, {}).items():
             target = workdir / relative_path
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -239,6 +246,24 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(BEAD_BLOCKED, bead.status)
         self.assertIn("unresolved", bead.block_reason.lower())
 
+    def test_tester_with_no_additional_work_remaining_stays_completed(self) -> None:
+        bead = self.storage.create_bead(title="Test work", agent_type="tester", description="validate")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="Tests run complete",
+                    remaining="No additional tester-scope work required for this bead.",
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertEqual([bead.bead_id], result.completed)
+        self.assertEqual([], result.blocked)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_DONE, bead.status)
+
     def test_scheduler_blocks_bead_when_git_is_unavailable(self) -> None:
         subprocess.run(["rm", "-rf", ".git"], cwd=self.root, check=True)
         bead = self.storage.create_bead(title="Implement", agent_type="developer", description="do work")
@@ -406,6 +431,58 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(sorted([bead1.bead_id, bead2.bead_id]), sorted(result.started))
         self.assertEqual(sorted([bead1.bead_id, bead2.bead_id]), sorted(result.completed))
         self.assertEqual([], result.deferred)
+
+    def test_scheduler_run_once_feature_root_filter_runs_only_selected_tree(self) -> None:
+        epic = self.storage.create_bead(
+            title="Epic",
+            agent_type="planner",
+            description="root",
+            status=BEAD_DONE,
+            bead_type="epic",
+        )
+        root_a = self.storage.create_bead(
+            title="Feature A",
+            agent_type="developer",
+            description="feature-a",
+            parent_id=epic.bead_id,
+            status=BEAD_DONE,
+        )
+        root_b = self.storage.create_bead(
+            title="Feature B",
+            agent_type="developer",
+            description="feature-b",
+            parent_id=epic.bead_id,
+            status=BEAD_DONE,
+        )
+        bead_a = self.storage.create_bead(
+            title="Task A",
+            agent_type="developer",
+            description="task-a",
+            parent_id=root_a.bead_id,
+            dependencies=[root_a.bead_id],
+            expected_files=["src/a.py"],
+        )
+        bead_b = self.storage.create_bead(
+            title="Task B",
+            agent_type="developer",
+            description="task-b",
+            parent_id=root_b.bead_id,
+            dependencies=[root_b.bead_id],
+            expected_files=["src/b.py"],
+        )
+        runner = FakeRunner(
+            results={
+                bead_a.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=bead_a.expected_files),
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once(feature_root_id=root_a.bead_id, max_workers=2)
+        self.assertEqual([bead_a.bead_id], result.started)
+        self.assertEqual([bead_a.bead_id], result.completed)
+        self.assertEqual([], result.blocked)
+        self.assertEqual([], result.deferred)
+        bead_b_after = self.storage.load_bead(bead_b.bead_id)
+        self.assertEqual(BEAD_READY, bead_b_after.status)
 
     def test_scheduler_handles_missing_scope_conservatively_within_same_feature_tree(self) -> None:
         epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
