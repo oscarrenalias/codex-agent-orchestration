@@ -214,6 +214,6 @@ Filter semantics are aligned to the scheduler status model:
 
 When `--feature-root` is set, the requested feature-root bead stays visible even if the active status filter would otherwise hide it.
 
-The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The footer formatter emits a compact single-line summary such as `filter=default | rows=5 | selected=2 | open=1 | ready=1 | ...`.
+The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The footer formatter emits a compact single-line summary such as `filter=default | rows=5 | selected=2 | open=1 | ready=1 | ... | ? help`.
 
 Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, and merge confirmation flow lives in `tests/test_orchestrator.py` and `tests/test_tui.py`.
