@@ -374,6 +374,8 @@ class TuiRegressionTests(unittest.TestCase):
 
         self.assertIn("Refresh failed:", state.status_message)
         self.assertIn("Refresh failed at", state.activity_message)
+        self.assertEqual("refresh", state.last_action)
+        self.assertTrue(state.last_result.startswith("failed:"))
 
     def test_render_panels_ignores_no_matches_when_overlay_is_active(self) -> None:
         app = build_tui_app(self.storage)
@@ -454,6 +456,144 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual([target.bead_id], merged_ids)
         self.assertFalse(state.awaiting_merge_confirmation)
         self.assertIsNone(state.pending_merge_bead_id)
+
+    def test_runtime_toggle_continuous_run_updates_footer_and_last_action(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+
+        state.toggle_continuous_run()
+
+        self.assertTrue(state.continuous_run_enabled)
+        self.assertEqual("continuous run", state.last_action)
+        self.assertEqual("enabled", state.last_result)
+        self.assertIn("run=continuous", state.footer_text())
+
+    def test_runtime_scheduler_cycle_uses_feature_root_scope_and_records_result(self) -> None:
+        feature_root_id, _ = self._create_feature_tree()
+        state = TuiRuntimeState(self.storage, feature_root_id=feature_root_id, filter_mode=FILTER_ALL)
+
+        fake_scheduler = object()
+
+        with patch("codex_orchestrator.cli.make_services", return_value=(self.storage, fake_scheduler, object())) as make_services_mock:
+            with patch("codex_orchestrator.cli.command_run", return_value=0) as command_run_mock:
+                ran = state.run_scheduler_cycle()
+
+        self.assertTrue(ran)
+        make_services_mock.assert_called_once_with(self.storage.root)
+        command_run_args = command_run_mock.call_args.args[0]
+        self.assertTrue(command_run_args.once)
+        self.assertEqual(1, command_run_args.max_workers)
+        self.assertEqual(feature_root_id, command_run_args.feature_root)
+        self.assertEqual("scheduler run", state.last_action)
+        self.assertEqual("success", state.last_result)
+        self.assertEqual("Scheduler cycle completed.", state.status_message)
+
+    def test_runtime_retry_requeues_only_blocked_beads(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Blocked",
+            agent_type="developer",
+            description="blocked",
+            status=BEAD_BLOCKED,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+
+        retried = state.retry_selected_blocked_bead()
+
+        updated = self.storage.load_bead(bead.bead_id)
+        self.assertTrue(retried)
+        self.assertEqual(BEAD_READY, updated.status)
+        self.assertEqual(f"retry {bead.bead_id}", state.last_action)
+        self.assertEqual("success", state.last_result)
+        self.assertIn(f"Retried {bead.bead_id}.", state.status_message)
+
+    def test_runtime_retry_rejects_non_blocked_selection_without_mutation(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+
+        retried = state.retry_selected_blocked_bead()
+
+        updated = self.storage.load_bead(bead.bead_id)
+        self.assertFalse(retried)
+        self.assertEqual(BEAD_READY, updated.status)
+        self.assertEqual(f"retry {bead.bead_id}", state.last_action)
+        self.assertEqual("invalid", state.last_result)
+        self.assertIn("only blocked beads can be retried", state.status_message)
+
+    def test_runtime_status_update_flow_updates_bead_after_confirmation(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+
+        state.open_status_update_flow()
+        state.choose_status_target(BEAD_DONE)
+        updated = state.confirm_status_update()
+
+        bead_after = self.storage.load_bead(bead.bead_id)
+        self.assertTrue(updated)
+        self.assertEqual(BEAD_DONE, bead_after.status)
+        self.assertFalse(state.status_flow_active)
+        self.assertEqual(f"status update {bead.bead_id}", state.last_action)
+        self.assertEqual(f"success -> {BEAD_DONE}", state.last_result)
+        self.assertIn(f"Updated {bead.bead_id} to {BEAD_DONE}.", state.status_message)
+
+    def test_runtime_status_update_rejects_disallowed_transition_without_mutation(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Blocked",
+            agent_type="developer",
+            description="blocked",
+            status=BEAD_BLOCKED,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+
+        state.open_status_update_flow()
+        state.choose_status_target(BEAD_DONE)
+        updated = state.confirm_status_update()
+
+        bead_after = self.storage.load_bead(bead.bead_id)
+        self.assertFalse(updated)
+        self.assertEqual(BEAD_BLOCKED, bead_after.status)
+        self.assertFalse(state.status_flow_active)
+        self.assertEqual(f"status update {bead.bead_id}", state.last_action)
+        self.assertEqual("invalid", state.last_result)
+        self.assertIn(f"{bead.bead_id} is {BEAD_BLOCKED}; cannot mark it {BEAD_DONE}.", state.status_message)
+
+    def test_app_status_update_flow_uses_keyboard_confirmation(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[str, str]:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                await pilot.press("u")
+                await pilot.press("d")
+                await pilot.press("y")
+                await pilot.pause()
+                bead_after = self.storage.load_bead(bead.bead_id)
+                return app.runtime_state.status_message, bead_after.status
+
+        status_message, bead_status = asyncio.run(exercise_app())
+
+        self.assertEqual(BEAD_DONE, bead_status)
+        self.assertIn(f"Updated {bead.bead_id} to {BEAD_DONE}.", status_message)
 
     def test_build_parser_wires_tui_command_and_run_tui_reports_dependency_hint(self) -> None:
         parser = build_parser()

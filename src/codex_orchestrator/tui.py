@@ -25,6 +25,7 @@ FILTER_ALL = "all"
 FILTER_ACTIONABLE = "actionable"
 FILTER_DEFERRED = "deferred"
 FILTER_DONE = "done"
+STATUS_ACTION_TARGETS = (BEAD_READY, BEAD_BLOCKED, BEAD_DONE)
 
 STATUS_DISPLAY_ORDER = (
     BEAD_OPEN,
@@ -171,9 +172,11 @@ def format_footer(
     filter_mode: str,
     selected_index: int | None,
     total_rows: int,
+    continuous_run_enabled: bool,
 ) -> str:
     cursor = "-" if selected_index is None else str(selected_index + 1)
-    return f"filter={filter_mode} | rows={total_rows} | selected={cursor} | {format_status_counts(beads)} | ? help"
+    run_mode = "continuous" if continuous_run_enabled else "manual"
+    return f"filter={filter_mode} | run={run_mode} | rows={total_rows} | selected={cursor} | {format_status_counts(beads)} | ? help"
 
 
 def format_detail_panel(bead: Bead | None) -> str:
@@ -225,6 +228,12 @@ def format_help_overlay() -> str:
             "k / Up      Move selection up",
             "f           Next filter",
             "r           Refresh now",
+            "s           Run one scheduler cycle",
+            "S           Toggle continuous run mode",
+            "t           Retry blocked bead",
+            "u           Open status update flow",
+            "r / b / d   Choose ready, blocked, done in status flow",
+            "y / n       Confirm or cancel status update",
             "m           Request merge",
             "Enter       Confirm merge",
             "q           Quit",
@@ -266,7 +275,14 @@ class TuiRuntimeState:
     activity_message: str = "Waiting for first refresh."
     awaiting_merge_confirmation: bool = False
     pending_merge_bead_id: str | None = None
+    status_flow_active: bool = False
+    pending_status_bead_id: str | None = None
+    pending_status_target: str | None = None
     help_overlay_visible: bool = False
+    continuous_run_enabled: bool = False
+    last_action: str = "-"
+    last_result: str = "-"
+    last_action_at: str = "-"
 
     def __post_init__(self) -> None:
         self.refresh(activity_message="Loaded bead state.")
@@ -301,12 +317,16 @@ class TuiRuntimeState:
 
     def refresh(self, *, activity_message: str | None = None) -> None:
         pending_merge_bead_id = self.pending_merge_bead_id
+        pending_status_bead_id = self.pending_status_bead_id
         try:
             rows = self.rows
         except Exception as exc:
-            self.awaiting_merge_confirmation = False
-            self.pending_merge_bead_id = None
-            self.status_message = f"Refresh failed: {exc}"
+            self._clear_pending_actions()
+            self._record_action_result(
+                "refresh",
+                f"failed: {exc}",
+                status_message=f"Refresh failed: {exc}",
+            )
             if activity_message is None:
                 activity_message = f"Refresh failed at {datetime.now().strftime('%H:%M:%S')}."
             self.activity_message = activity_message
@@ -325,6 +345,11 @@ class TuiRuntimeState:
                 self.awaiting_merge_confirmation = False
                 self.pending_merge_bead_id = None
                 self.status_message = "Merge confirmation cleared because the requested bead is no longer mergeable."
+        if pending_status_bead_id is not None:
+            pending_bead = next((row.bead for row in rows if row.bead_id == pending_status_bead_id), None)
+            if pending_bead is None:
+                self._clear_pending_status_flow()
+                self.status_message = "Status update cleared because the requested bead is no longer visible."
         if activity_message is None:
             activity_message = f"Refreshed at {datetime.now().strftime('%H:%M:%S')}."
         self.activity_message = activity_message
@@ -335,22 +360,19 @@ class TuiRuntimeState:
             self.selected_index = None
             self.selected_bead_id = None
             self.status_message = "No beads available for the current filter."
-            self.awaiting_merge_confirmation = False
-            self.pending_merge_bead_id = None
+            self._clear_pending_actions()
             return
         current = self.selected_index if self.selected_index is not None else 0
         self.selected_index = max(0, min(current + delta, len(rows) - 1))
         self.selected_bead_id = rows[self.selected_index].bead_id
-        self.awaiting_merge_confirmation = False
-        self.pending_merge_bead_id = None
+        self._clear_pending_actions()
         self.status_message = f"Selected {self.selected_bead_id}."
 
     def cycle_filter(self, step: int = 1) -> None:
         filters = supported_filter_modes()
         index = filters.index(self.filter_mode)
         self.filter_mode = filters[(index + step) % len(filters)]
-        self.awaiting_merge_confirmation = False
-        self.pending_merge_bead_id = None
+        self._clear_pending_actions()
         self.refresh(activity_message=f"Switched filter to {self.filter_mode}.")
         self.status_message = f"Filter set to {self.filter_mode}."
 
@@ -360,12 +382,15 @@ class TuiRuntimeState:
             filter_mode=self.filter_mode,
             selected_index=self.selected_index,
             total_rows=len(self.rows),
+            continuous_run_enabled=self.continuous_run_enabled,
         )
 
     def status_panel_text(self) -> str:
         return "\n".join([
             f"Status: {self.status_message}",
             f"Activity: {self.activity_message}",
+            f"Last Action: {self.last_action}",
+            f"Last Result: {self.last_result} @ {self.last_action_at}",
             self.footer_text(),
         ])
 
@@ -388,6 +413,7 @@ class TuiRuntimeState:
         return True
 
     def request_merge(self) -> None:
+        self._clear_pending_status_flow()
         bead = self.selected_bead()
         if bead is None:
             self.status_message = "No bead selected."
@@ -429,14 +455,22 @@ class TuiRuntimeState:
         try:
             exit_code = merge_callable(Namespace(bead_id=bead.bead_id), self.storage, ConsoleReporter(stream=console_stream))
         except SystemExit as exc:
-            self.status_message = f"Merge failed for {bead.bead_id}."
+            self._record_action_result(
+                f"merge {bead.bead_id}",
+                "failed",
+                status_message=f"Merge failed for {bead.bead_id}.",
+            )
             detail = str(exc.code).strip() if exc.code not in (None, 0) else ""
             self.activity_message = detail or console_stream.getvalue().strip() or "Merge command exited early."
             self.awaiting_merge_confirmation = False
             self.pending_merge_bead_id = None
             return False
         except Exception as exc:
-            self.status_message = f"Merge failed for {bead.bead_id}: {exc}"
+            self._record_action_result(
+                f"merge {bead.bead_id}",
+                f"failed: {exc}",
+                status_message=f"Merge failed for {bead.bead_id}: {exc}",
+            )
             self.activity_message = console_stream.getvalue().strip() or "Merge command raised an exception."
             self.awaiting_merge_confirmation = False
             self.pending_merge_bead_id = None
@@ -444,12 +478,208 @@ class TuiRuntimeState:
         self.awaiting_merge_confirmation = False
         self.pending_merge_bead_id = None
         if exit_code != 0:
-            self.status_message = f"Merge failed for {bead.bead_id}."
+            self._record_action_result(
+                f"merge {bead.bead_id}",
+                f"failed ({exit_code})",
+                status_message=f"Merge failed for {bead.bead_id}.",
+            )
             self.activity_message = console_stream.getvalue().strip() or f"Merge command exited with {exit_code}."
             return False
-        self.status_message = f"Merged {bead.bead_id}."
+        self._record_action_result(
+            f"merge {bead.bead_id}",
+            "success",
+            status_message=f"Merged {bead.bead_id}.",
+        )
         self.refresh(activity_message=console_stream.getvalue().strip() or f"Merged {bead.bead_id}.")
         return True
+
+    def run_scheduler_cycle(self) -> bool:
+        from .cli import command_run, make_services
+
+        console_stream = io.StringIO()
+        try:
+            _, scheduler, _ = make_services(self.storage.root)
+            exit_code = command_run(
+                Namespace(once=True, max_workers=1, feature_root=self.feature_root_id),
+                scheduler,
+                ConsoleReporter(stream=console_stream),
+            )
+        except Exception as exc:
+            self._record_action_result(
+                "scheduler run",
+                f"failed: {exc}",
+                status_message=f"Scheduler run failed: {exc}",
+            )
+            self.refresh(activity_message=console_stream.getvalue().strip() or "Scheduler run raised an exception.")
+            return False
+        result_text = console_stream.getvalue().strip() or "Scheduler cycle completed."
+        if exit_code != 0:
+            self._record_action_result(
+                "scheduler run",
+                f"failed ({exit_code})",
+                status_message="Scheduler run failed.",
+            )
+            self.refresh(activity_message=result_text)
+            return False
+        self._record_action_result("scheduler run", "success", status_message="Scheduler cycle completed.")
+        self.refresh(activity_message=result_text)
+        return True
+
+    def toggle_continuous_run(self) -> None:
+        self.continuous_run_enabled = not self.continuous_run_enabled
+        state = "enabled" if self.continuous_run_enabled else "disabled"
+        self._record_action_result(
+            "continuous run",
+            state,
+            status_message=f"Continuous run mode {state}.",
+        )
+
+    def retry_selected_blocked_bead(self) -> bool:
+        from .cli import command_retry
+
+        bead = self.selected_bead()
+        if bead is None:
+            self._record_action_result("retry", "invalid", status_message="No bead selected.")
+            return False
+        if bead.status != BEAD_BLOCKED:
+            self._record_action_result(
+                f"retry {bead.bead_id}",
+                "invalid",
+                status_message=f"{bead.bead_id} is {bead.status}; only blocked beads can be retried.",
+            )
+            return False
+        console_stream = io.StringIO()
+        try:
+            exit_code = command_retry(Namespace(bead_id=bead.bead_id), self.storage, ConsoleReporter(stream=console_stream))
+        except Exception as exc:
+            self._record_action_result(
+                f"retry {bead.bead_id}",
+                f"failed: {exc}",
+                status_message=f"Retry failed for {bead.bead_id}: {exc}",
+            )
+            self.refresh(activity_message=console_stream.getvalue().strip() or "Retry raised an exception.")
+            return False
+        result_text = console_stream.getvalue().strip() or f"Retried {bead.bead_id}."
+        if exit_code != 0:
+            self._record_action_result(
+                f"retry {bead.bead_id}",
+                f"failed ({exit_code})",
+                status_message=f"Retry failed for {bead.bead_id}.",
+            )
+            self.refresh(activity_message=result_text)
+            return False
+        self._record_action_result(
+            f"retry {bead.bead_id}",
+            "success",
+            status_message=f"Retried {bead.bead_id}.",
+        )
+        self.refresh(activity_message=result_text)
+        return True
+
+    def open_status_update_flow(self) -> None:
+        self._clear_pending_merge()
+        bead = self.selected_bead()
+        if bead is None:
+            self._record_action_result("status update", "invalid", status_message="No bead selected.")
+            return
+        self.status_flow_active = True
+        self.pending_status_bead_id = bead.bead_id
+        self.pending_status_target = None
+        self.status_message = (
+            f"Status update for {bead.bead_id}: press r, b, or d, then y to confirm or n to cancel."
+        )
+
+    def choose_status_target(self, target_status: str) -> None:
+        bead_id = self.pending_status_bead_id
+        if not self.status_flow_active or bead_id is None:
+            self.status_message = "Press u before choosing a status update."
+            return
+        if target_status not in STATUS_ACTION_TARGETS:
+            self.status_message = f"Unsupported status target: {target_status}."
+            return
+        self.pending_status_target = target_status
+        self.status_message = f"Confirm update for {bead_id} -> {target_status} with y; n cancels."
+
+    def cancel_pending_action(self) -> bool:
+        if self.awaiting_merge_confirmation:
+            bead_id = self.pending_merge_bead_id or "selected bead"
+            self._clear_pending_merge()
+            self.status_message = f"Cancelled merge for {bead_id}."
+            return True
+        if self.status_flow_active:
+            bead_id = self.pending_status_bead_id or "selected bead"
+            self._clear_pending_status_flow()
+            self.status_message = f"Cancelled status update for {bead_id}."
+            return True
+        self.status_message = "No pending action to cancel."
+        return False
+
+    def confirm_status_update(self) -> bool:
+        from .cli import apply_operator_status_update
+
+        bead_id = self.pending_status_bead_id
+        target_status = self.pending_status_target
+        if not self.status_flow_active or bead_id is None:
+            self._record_action_result(
+                "status update",
+                "invalid",
+                status_message="No status update pending confirmation.",
+            )
+            return False
+        if target_status is None:
+            self._record_action_result(
+                f"status update {bead_id}",
+                "invalid",
+                status_message=f"Choose ready, blocked, or done for {bead_id} before confirming.",
+            )
+            return False
+        try:
+            apply_operator_status_update(self.storage, bead_id, target_status)
+        except ValueError as exc:
+            self._record_action_result(
+                f"status update {bead_id}",
+                "invalid",
+                status_message=str(exc),
+            )
+            self._clear_pending_status_flow()
+            self.refresh(activity_message=f"No status change applied to {bead_id}.")
+            return False
+        except Exception as exc:
+            self._record_action_result(
+                f"status update {bead_id}",
+                f"failed: {exc}",
+                status_message=f"Status update failed for {bead_id}: {exc}",
+            )
+            self._clear_pending_status_flow()
+            self.refresh(activity_message="Status update raised an exception.")
+            return False
+        self._record_action_result(
+            f"status update {bead_id}",
+            f"success -> {target_status}",
+            status_message=f"Updated {bead_id} to {target_status}.",
+        )
+        self._clear_pending_status_flow()
+        self.refresh(activity_message=f"Updated {bead_id} to {target_status}.")
+        return True
+
+    def _clear_pending_merge(self) -> None:
+        self.awaiting_merge_confirmation = False
+        self.pending_merge_bead_id = None
+
+    def _clear_pending_status_flow(self) -> None:
+        self.status_flow_active = False
+        self.pending_status_bead_id = None
+        self.pending_status_target = None
+
+    def _clear_pending_actions(self) -> None:
+        self._clear_pending_merge()
+        self._clear_pending_status_flow()
+
+    def _record_action_result(self, action: str, result: str, *, status_message: str) -> None:
+        self.last_action = action
+        self.last_result = result
+        self.last_action_at = datetime.now().strftime("%H:%M:%S")
+        self.status_message = status_message
 
 
 def render_tree_panel(rows: list[TreeRow], selected_index: int | None) -> str:
@@ -546,7 +776,7 @@ def build_tui_app(
         }
 
         #status-panel {
-            height: 7;
+            height: 9;
         }
         """
 
@@ -560,8 +790,16 @@ def build_tui_app(
             Binding("shift+f", "filter_previous", "Prev Filter", show=False),
             Binding("question_mark", "toggle_help", "Help", show=False),
             Binding("r", "manual_refresh", "Refresh"),
+            Binding("s", "scheduler_once", "Run Once"),
+            Binding("S", "toggle_continuous_run", "Toggle Auto"),
+            Binding("t", "retry_blocked", "Retry"),
+            Binding("u", "start_status_update", "Status"),
             Binding("m", "request_merge", "Merge"),
             Binding("enter", "confirm_merge", "Confirm", show=False),
+            Binding("b", "choose_blocked_status", "Blocked", show=False),
+            Binding("d", "choose_done_status", "Done", show=False),
+            Binding("y", "confirm_status_update", "Confirm Status", show=False),
+            Binding("n", "cancel_pending_action", "Cancel", show=False),
         ]
 
         def __init__(self) -> None:
@@ -599,10 +837,29 @@ def build_tui_app(
             self._render_panels()
 
         def action_manual_refresh(self) -> None:
-            self.runtime_state.awaiting_merge_confirmation = False
-            self.runtime_state.pending_merge_bead_id = None
+            if self.runtime_state.status_flow_active:
+                self.runtime_state.choose_status_target(BEAD_READY)
+                self._render_panels()
+                return
+            self.runtime_state._clear_pending_actions()
             self.runtime_state.refresh(activity_message="Manual refresh completed.")
             self.runtime_state.status_message = "Refreshed bead state."
+            self._render_panels()
+
+        def action_scheduler_once(self) -> None:
+            self.runtime_state.run_scheduler_cycle()
+            self._render_panels()
+
+        def action_toggle_continuous_run(self) -> None:
+            self.runtime_state.toggle_continuous_run()
+            self._render_panels()
+
+        def action_retry_blocked(self) -> None:
+            self.runtime_state.retry_selected_blocked_bead()
+            self._render_panels()
+
+        def action_start_status_update(self) -> None:
+            self.runtime_state.open_status_update_flow()
             self._render_panels()
 
         def action_toggle_help(self) -> None:
@@ -620,8 +877,27 @@ def build_tui_app(
             self.runtime_state.confirm_merge()
             self._render_panels()
 
+        def action_choose_blocked_status(self) -> None:
+            self.runtime_state.choose_status_target(BEAD_BLOCKED)
+            self._render_panels()
+
+        def action_choose_done_status(self) -> None:
+            self.runtime_state.choose_status_target(BEAD_DONE)
+            self._render_panels()
+
+        def action_confirm_status_update(self) -> None:
+            self.runtime_state.confirm_status_update()
+            self._render_panels()
+
+        def action_cancel_pending_action(self) -> None:
+            self.runtime_state.cancel_pending_action()
+            self._render_panels()
+
         def _refresh_from_storage(self) -> None:
-            self.runtime_state.refresh()
+            if self.runtime_state.continuous_run_enabled:
+                self.runtime_state.run_scheduler_cycle()
+            else:
+                self.runtime_state.refresh()
             self._render_panels()
 
         def _render_panels(self) -> None:
