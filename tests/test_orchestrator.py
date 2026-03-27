@@ -52,6 +52,20 @@ from codex_orchestrator.prompts import (
 from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA
 from codex_orchestrator.scheduler import Scheduler
 from codex_orchestrator.storage import RepositoryStorage
+from codex_orchestrator.tui import (
+    FILTER_ACTIONABLE,
+    FILTER_ALL,
+    FILTER_DEFAULT,
+    FILTER_DEFERRED,
+    FILTER_DONE,
+    build_tree_rows,
+    collect_tree_rows,
+    format_detail_panel,
+    format_footer,
+    resolve_selected_bead,
+    resolve_selected_index,
+    supported_filter_modes,
+)
 
 
 class FakeRunner:
@@ -1670,6 +1684,138 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(
             ["title", "agent_type", "description", "acceptance_criteria", "dependencies", "linked_docs", "expected_files", "expected_globs"],
             required,
+        )
+
+    def test_tui_supports_default_grouped_and_terminal_filters(self) -> None:
+        statuses = [
+            BEAD_OPEN,
+            BEAD_READY,
+            BEAD_IN_PROGRESS,
+            BEAD_BLOCKED,
+            BEAD_HANDED_OFF,
+            BEAD_DONE,
+        ]
+        for index, status in enumerate(statuses, start=1):
+            self.storage.create_bead(
+                bead_id=f"B{index:04d}",
+                title=status,
+                agent_type="developer",
+                description=status,
+                status=status,
+            )
+
+        default_rows = collect_tree_rows(self.storage, filter_mode=FILTER_DEFAULT)
+        self.assertEqual(
+            [BEAD_OPEN, BEAD_READY, BEAD_IN_PROGRESS, BEAD_BLOCKED, BEAD_HANDED_OFF],
+            [row.bead.status for row in default_rows],
+        )
+        self.assertEqual([BEAD_OPEN, BEAD_READY], [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_ACTIONABLE)])
+        self.assertEqual([BEAD_HANDED_OFF], [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_DEFERRED)])
+        self.assertEqual([BEAD_DONE], [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_DONE)])
+        self.assertEqual(statuses, [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_ALL)])
+        self.assertIn(BEAD_DONE, supported_filter_modes())
+
+    def test_tui_tree_rows_are_deterministic_and_indent_descendants(self) -> None:
+        root_b = Bead(bead_id="B0002", title="Root B", agent_type="developer", description="b")
+        child_b2 = Bead(
+            bead_id="B0002-2",
+            title="Child B2",
+            agent_type="developer",
+            description="b2",
+            parent_id="B0002",
+        )
+        root_a = Bead(bead_id="B0001", title="Root A", agent_type="developer", description="a")
+        child_a2 = Bead(
+            bead_id="B0001-2",
+            title="Child A2",
+            agent_type="developer",
+            description="a2",
+            parent_id="B0001",
+        )
+        child_a1 = Bead(
+            bead_id="B0001-1",
+            title="Child A1",
+            agent_type="developer",
+            description="a1",
+            parent_id="B0001",
+        )
+        grandchild = Bead(
+            bead_id="B0001-1-1",
+            title="Grandchild",
+            agent_type="developer",
+            description="a11",
+            parent_id="B0001-1",
+        )
+
+        rows = build_tree_rows([child_b2, child_a2, root_b, grandchild, root_a, child_a1])
+
+        self.assertEqual(
+            ["B0001", "B0001-1", "B0001-1-1", "B0001-2", "B0002", "B0002-2"],
+            [row.bead_id for row in rows],
+        )
+        self.assertEqual([0, 1, 2, 1, 0, 1], [row.depth for row in rows])
+        self.assertEqual("  B0001-1 · Child A1", rows[1].label)
+        self.assertEqual("    B0001-1-1 · Grandchild", rows[2].label)
+
+    def test_tui_selection_preserves_selected_bead_when_visible(self) -> None:
+        first = Bead(bead_id="B0001", title="First", agent_type="developer", description="one")
+        second = Bead(bead_id="B0002", title="Second", agent_type="developer", description="two")
+        rows = build_tree_rows([first, second])
+
+        self.assertEqual(1, resolve_selected_index(rows, selected_bead_id="B0002", previous_index=0))
+        self.assertEqual("B0002", resolve_selected_bead(rows, selected_bead_id="B0002", previous_index=0).bead_id)
+        self.assertEqual(1, resolve_selected_index(rows, selected_bead_id="B9999", previous_index=3))
+        self.assertEqual("B0001", resolve_selected_bead(rows, previous_index=None).bead_id)
+
+    def test_tui_detail_panel_and_footer_include_handoff_scope_and_counts(self) -> None:
+        bead = Bead(
+            bead_id="B0099",
+            title="Implement TUI",
+            agent_type="developer",
+            description="build helpers",
+            status=BEAD_BLOCKED,
+            parent_id="B0090",
+            feature_root_id="B0030",
+            dependencies=["B0098"],
+            acceptance_criteria=["Build rows", "Format detail panel"],
+            expected_files=["src/codex_orchestrator/tui.py"],
+            expected_globs=["tests/test_tui*.py"],
+            touched_files=["src/codex_orchestrator/tui.py"],
+            changed_files=["src/codex_orchestrator/tui.py", "tests/test_orchestrator.py"],
+            updated_docs=["docs/tui.md"],
+            block_reason="Waiting on review",
+            conflict_risks="Coordinate with review bead on footer text.",
+            handoff_summary=HandoffSummary(
+                completed="Implemented the TUI helpers.",
+                remaining="Need review signoff.",
+                risks="Footer wording may change with runtime integration.",
+                changed_files=["src/codex_orchestrator/tui.py", "tests/test_orchestrator.py"],
+                updated_docs=["docs/tui.md"],
+                next_action="Run the review bead.",
+                next_agent="review",
+                block_reason="Waiting on review",
+                expected_files=["src/codex_orchestrator/tui.py"],
+                expected_globs=["tests/test_tui*.py"],
+                touched_files=["src/codex_orchestrator/tui.py"],
+                conflict_risks="Coordinate with review bead on footer text.",
+            ),
+        )
+
+        detail = format_detail_panel(bead)
+        footer = format_footer([bead], filter_mode=FILTER_DEFAULT, selected_index=0, total_rows=1)
+
+        self.assertIn("Bead: B0099", detail)
+        self.assertIn("Status: blocked", detail)
+        self.assertIn("Parent: B0090", detail)
+        self.assertIn("Feature Root: B0030", detail)
+        self.assertIn("Dependencies: B0098", detail)
+        self.assertIn("  - Build rows", detail)
+        self.assertIn("  changed: src/codex_orchestrator/tui.py, tests/test_orchestrator.py", detail)
+        self.assertIn("  next_agent: review", detail)
+        self.assertIn("  conflict_risks: Coordinate with review bead on footer text.", detail)
+        self.assertEqual(
+            "filter=default | rows=1 | selected=1 | open=0 | ready=0 | in_progress=0 | blocked=1 | handed_off=0 | done=0",
+            footer,
         )
 
 
