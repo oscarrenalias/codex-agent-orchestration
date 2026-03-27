@@ -37,6 +37,7 @@ from codex_orchestrator.tui import (
     build_tree_rows,
     collect_tree_rows,
     format_detail_panel,
+    format_help_overlay,
     run_tui,
     supported_filter_modes,
 )
@@ -205,6 +206,44 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(selected.bead_id, state.selected_bead_id)
         self.assertEqual(selected.bead_id, state.selected_bead().bead_id)
         self.assertEqual(3, state.selected_index)
+
+    def test_help_overlay_text_documents_toggle_shortcuts(self) -> None:
+        overlay = format_help_overlay()
+
+        self.assertIn("Shortcuts", overlay)
+        self.assertIn("q           Quit", overlay)
+        self.assertIn("? / Esc     Close help", overlay)
+
+    def test_runtime_help_overlay_toggle_preserves_selection_and_filter(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="First", agent_type="developer", description="first", status=BEAD_READY)
+        selected = self.storage.create_bead(
+            bead_id="B0002",
+            title="Second",
+            agent_type="developer",
+            description="second",
+            status=BEAD_BLOCKED,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+        state.selected_bead_id = selected.bead_id
+        state.selected_index = 1
+
+        opened = state.toggle_help_overlay()
+
+        self.assertTrue(opened)
+        self.assertTrue(state.help_overlay_visible)
+        self.assertEqual(selected.bead_id, state.selected_bead_id)
+        self.assertEqual(1, state.selected_index)
+        self.assertEqual(FILTER_DEFAULT, state.filter_mode)
+        self.assertEqual("Help overlay open. Press ? or Esc to close.", state.status_message)
+
+        closed = state.toggle_help_overlay()
+
+        self.assertFalse(closed)
+        self.assertFalse(state.help_overlay_visible)
+        self.assertEqual(selected.bead_id, state.selected_bead_id)
+        self.assertEqual(1, state.selected_index)
+        self.assertEqual(FILTER_DEFAULT, state.filter_mode)
+        self.assertEqual("Help overlay closed.", state.status_message)
 
     def test_runtime_refresh_falls_back_to_previous_index_when_selected_bead_disappears(self) -> None:
         first = self.storage.create_bead(bead_id="B0001", title="First", agent_type="developer", description="first", status=BEAD_READY)
