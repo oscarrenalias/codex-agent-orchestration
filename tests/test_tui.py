@@ -488,6 +488,61 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual("success", state.last_result)
         self.assertEqual("Scheduler cycle completed.", state.status_message)
 
+    def test_runtime_scheduler_cycle_without_scope_refreshes_global_state_after_completion(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+        fake_scheduler = object()
+
+        def fake_run(args: SimpleNamespace, scheduler: object, console: ConsoleReporter) -> int:
+            self.assertIs(fake_scheduler, scheduler)
+            self.assertIsNone(args.feature_root)
+            updated = self.storage.load_bead(bead.bead_id)
+            updated.status = BEAD_DONE
+            self.storage.save_bead(updated)
+            console.info(f"completed {bead.bead_id}")
+            return 0
+
+        with patch("codex_orchestrator.cli.make_services", return_value=(self.storage, fake_scheduler, object())):
+            with patch("codex_orchestrator.cli.command_run", side_effect=fake_run):
+                ran = state.run_scheduler_cycle()
+
+        refreshed = self.storage.load_bead(bead.bead_id)
+        self.assertTrue(ran)
+        self.assertEqual(BEAD_DONE, refreshed.status)
+        self.assertEqual(bead.bead_id, state.selected_bead_id)
+        self.assertEqual(BEAD_DONE, state.selected_bead().status)
+        self.assertIn("completed B0001", state.activity_message)
+        self.assertIn("Last Action: scheduler run", state.status_panel_text())
+        self.assertIn("Last Result: success", state.status_panel_text())
+
+    def test_runtime_scheduler_cycle_failure_surfaces_in_status_panel_without_crashing(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        with patch("codex_orchestrator.cli.make_services", return_value=(self.storage, object(), object())):
+            with patch("codex_orchestrator.cli.command_run", side_effect=RuntimeError("scheduler exploded")):
+                ran = state.run_scheduler_cycle()
+
+        self.assertFalse(ran)
+        self.assertEqual(bead.bead_id, state.selected_bead_id)
+        self.assertEqual("scheduler run", state.last_action)
+        self.assertEqual("failed: scheduler exploded", state.last_result)
+        self.assertEqual("Scheduler run failed: scheduler exploded", state.status_message)
+        self.assertIn("Last Action: scheduler run", state.status_panel_text())
+        self.assertIn("Last Result: failed: scheduler exploded", state.status_panel_text())
+
     def test_runtime_retry_requeues_only_blocked_beads(self) -> None:
         bead = self.storage.create_bead(
             bead_id="B0001",
@@ -525,6 +580,28 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(f"retry {bead.bead_id}", state.last_action)
         self.assertEqual("invalid", state.last_result)
         self.assertIn("only blocked beads can be retried", state.status_message)
+
+    def test_runtime_status_update_flow_can_mark_bead_blocked(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+
+        state.open_status_update_flow()
+        state.choose_status_target(BEAD_BLOCKED)
+        updated = state.confirm_status_update()
+
+        bead_after = self.storage.load_bead(bead.bead_id)
+        self.assertTrue(updated)
+        self.assertEqual(BEAD_BLOCKED, bead_after.status)
+        self.assertFalse(state.status_flow_active)
+        self.assertEqual(f"status update {bead.bead_id}", state.last_action)
+        self.assertEqual(f"success -> {BEAD_BLOCKED}", state.last_result)
+        self.assertIn(f"Updated {bead.bead_id} to {BEAD_BLOCKED}.", state.status_message)
 
     def test_runtime_status_update_flow_updates_bead_after_confirmation(self) -> None:
         bead = self.storage.create_bead(
@@ -633,6 +710,34 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertIsNone(state.pending_status_bead_id)
         self.assertIsNone(state.pending_status_target)
         self.assertEqual(f"Cancelled status update for {bead.bead_id}.", state.status_message)
+
+    def test_runtime_merge_and_status_actions_clear_each_others_pending_state(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Done",
+            agent_type="developer",
+            description="done",
+            status=BEAD_DONE,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        state.request_merge()
+        self.assertTrue(state.awaiting_merge_confirmation)
+
+        state.open_status_update_flow()
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertTrue(state.status_flow_active)
+        self.assertEqual(bead.bead_id, state.pending_status_bead_id)
+
+        state.choose_status_target(BEAD_BLOCKED)
+        state.request_merge()
+
+        self.assertTrue(state.awaiting_merge_confirmation)
+        self.assertEqual(bead.bead_id, state.pending_merge_bead_id)
+        self.assertFalse(state.status_flow_active)
+        self.assertIsNone(state.pending_status_bead_id)
+        self.assertIsNone(state.pending_status_target)
+        self.assertEqual(f"Confirm merge for {bead.bead_id} with Enter.", state.status_message)
 
     def test_app_status_update_flow_uses_keyboard_confirmation(self) -> None:
         bead = self.storage.create_bead(
