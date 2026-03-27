@@ -44,10 +44,21 @@ class RepositoryStorage:
 
     def save_bead(self, bead: Bead) -> None:
         self.initialize()
-        self.bead_path(bead.bead_id).write_text(json.dumps(bead.to_dict(), indent=2) + "\n", encoding="utf-8")
+        path = self.bead_path(bead.bead_id)
+        tmp_path = path.with_suffix(f"{path.suffix}.tmp")
+        tmp_path.write_text(json.dumps(bead.to_dict(), indent=2) + "\n", encoding="utf-8")
+        tmp_path.replace(path)
 
     def load_bead(self, bead_id: str) -> Bead:
-        return Bead.from_dict(json.loads(self.bead_path(bead_id).read_text(encoding="utf-8")))
+        path = self.bead_path(bead_id)
+        raw = path.read_text(encoding="utf-8")
+        if not raw.strip():
+            raise ValueError(f"Bead file is empty: {path}")
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid bead JSON in {path}: {exc}") from exc
+        return Bead.from_dict(payload)
 
     def list_beads(self) -> list[Bead]:
         if not self.beads_dir.exists():

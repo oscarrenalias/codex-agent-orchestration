@@ -282,7 +282,16 @@ class TuiRuntimeState:
 
     def refresh(self, *, activity_message: str | None = None) -> None:
         pending_merge_bead_id = self.pending_merge_bead_id
-        rows = self.rows
+        try:
+            rows = self.rows
+        except Exception as exc:
+            self.awaiting_merge_confirmation = False
+            self.pending_merge_bead_id = None
+            self.status_message = f"Refresh failed: {exc}"
+            if activity_message is None:
+                activity_message = f"Refresh failed at {datetime.now().strftime('%H:%M:%S')}."
+            self.activity_message = activity_message
+            return
         previous_index = self.selected_index
         self.selected_index = resolve_selected_index(
             rows,

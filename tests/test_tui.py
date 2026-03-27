@@ -220,6 +220,23 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(first.bead_id, state.selected_bead_id)
         self.assertEqual(0, state.selected_index)
 
+    def test_runtime_refresh_handles_corrupt_bead_file_without_crashing(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Valid",
+            agent_type="developer",
+            description="valid",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+        self.assertEqual(bead.bead_id, state.selected_bead_id)
+
+        self.storage.bead_path(bead.bead_id).write_text("", encoding="utf-8")
+        state.refresh()
+
+        self.assertIn("Refresh failed:", state.status_message)
+        self.assertIn("Refresh failed at", state.activity_message)
+
     def test_runtime_merge_returns_failure_for_nonzero_exit_without_crashing(self) -> None:
         bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="done", status=BEAD_DONE)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
