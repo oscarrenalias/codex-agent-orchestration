@@ -375,6 +375,14 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertIn("Refresh failed:", state.status_message)
         self.assertIn("Refresh failed at", state.activity_message)
 
+    def test_render_panels_ignores_no_matches_when_overlay_is_active(self) -> None:
+        app = build_tui_app(self.storage)
+
+        from textual.css.query import NoMatches
+
+        with patch.object(app, "query_one", side_effect=NoMatches()):
+            app._render_panels()
+
     def test_runtime_merge_returns_failure_for_nonzero_exit_without_crashing(self) -> None:
         bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="done", status=BEAD_DONE)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)

@@ -483,6 +483,7 @@ def build_tui_app(
     load_textual_runtime()
     from textual.app import App, ComposeResult
     from textual.binding import Binding
+    from textual.css.query import NoMatches
     from textual.containers import Center, Horizontal, Vertical
     from textual.screen import ModalScreen
     from textual.widgets import Static
@@ -624,13 +625,21 @@ def build_tui_app(
             self._render_panels()
 
         def _render_panels(self) -> None:
-            self.query_one("#bead-list", Static).update(
+            try:
+                bead_list = self.query_one("#bead-list", Static)
+                bead_detail = self.query_one("#bead-detail", Static)
+                status_panel = self.query_one("#status-panel", Static)
+            except NoMatches:
+                # Main panels are not mounted on top-level while modal screens are active.
+                return
+
+            bead_list.update(
                 render_tree_panel(self.runtime_state.rows, self.runtime_state.selected_index)
             )
-            self.query_one("#bead-detail", Static).update(
+            bead_detail.update(
                 format_detail_panel(self.runtime_state.selected_bead())
             )
-            self.query_one("#status-panel", Static).update(self.runtime_state.status_panel_text())
+            status_panel.update(self.runtime_state.status_panel_text())
 
     return OrchestratorTuiApp()
 
