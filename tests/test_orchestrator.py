@@ -1818,6 +1818,24 @@ class OrchestratorTests(unittest.TestCase):
             footer,
         )
 
+    def test_tui_detail_panel_handles_empty_selection_and_empty_scope_lists(self) -> None:
+        self.assertEqual("No bead selected.", format_detail_panel(None))
+
+        bead = Bead(
+            bead_id="B0100",
+            title="Empty detail state",
+            agent_type="tester",
+            description="verify formatter fallbacks",
+        )
+
+        detail = format_detail_panel(bead)
+
+        self.assertIn("Dependencies: -", detail)
+        self.assertIn("Acceptance Criteria:\n  -", detail)
+        self.assertIn("Block Reason: -", detail)
+        self.assertIn("  expected: -", detail)
+        self.assertIn("  conflict_risks: -", detail)
+
 
 if __name__ == "__main__":
     unittest.main()
