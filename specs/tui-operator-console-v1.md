@@ -30,8 +30,8 @@ The helper layer currently exposes:
 
 - `TreeRow` records with `bead`, `depth`, `has_children`, and `label`
 - deterministic row construction sorted by `bead_id`
-- feature-root-aware bead loading with optional filtering before row construction
-- selection helpers that preserve the active bead when it remains visible and otherwise clamp to a valid row index
+- feature-root-aware bead loading that keeps the requested feature root bead plus descendants before row construction
+- selection helpers that preserve the active bead when it remains visible, default to the first row when there is no prior selection, and otherwise clamp to a valid row index
 
 Rows are labeled as `<bead_id> · <title>` with two-space indentation per tree depth level.
 
@@ -72,27 +72,10 @@ When a bead is selected, the detail formatter renders:
 - bead id, title, status, bead type, and agent type
 - parent bead and feature root ids
 - dependencies
-- acceptance criteria as a block list
+- acceptance criteria as a block list, rendering `  -` when the list is empty
 - the effective block reason, preferring bead-level `block_reason` and then `handoff_summary.block_reason`
-- bead scope fields:
-  - `expected_files`
-  - `expected_globs`
-  - `touched_files`
-  - `changed_files`
-  - `updated_docs`
-- handoff summary fields:
-  - `completed`
-  - `remaining`
-  - `risks`
-  - `next_action`
-  - `next_agent`
-  - `block_reason`
-  - `touched_files`
-  - `changed_files`
-  - `expected_files`
-  - `expected_globs`
-  - `updated_docs`
-  - `conflict_risks`
+- a `Files:` section with `expected`, `expected_globs`, `touched`, `changed`, and `updated_docs`
+- a `Handoff:` section with `completed`, `remaining`, `risks`, `next_action`, `next_agent`, `block_reason`, `touched_files`, `changed_files`, `expected_files`, `expected_globs`, `updated_docs`, and `conflict_risks`
 
 If no bead is selected, the panel renders:
 
