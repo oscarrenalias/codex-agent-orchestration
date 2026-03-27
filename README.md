@@ -159,7 +159,7 @@ CLI behavior:
 - `--feature-root <bead_id>` scopes the screen to one feature tree
 - `--refresh-seconds <n>` controls the background refresh interval, defaults to `3`, and rejects values below `1`
 - invalid or non-feature-root `--feature-root` values are rejected before the TUI starts
-- the command requires `textual`; if the dependency is unavailable, it exits non-zero, prints a retry hint, and leaves bead state unchanged
+- the command requires `textual`; there is no fallback non-interactive TUI mode, so if the dependency is unavailable the command exits non-zero, prints a retry hint, and leaves bead state unchanged
 
 Install note:
 
@@ -189,6 +189,7 @@ Refresh and merge behavior:
 - `r` performs an immediate refresh, clears any pending merge confirmation, and updates the status panel
 - merge is available only when the selected bead is `done`
 - `m` starts merge confirmation for the selected `done` bead, and `Enter` is required to execute the merge
+- a pending merge confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer mergeable
 - merge failures stay inside the TUI and are reported in the status panel instead of closing the session
 
 The TUI behavior is backed by the same deterministic helpers exposed from `src/codex_orchestrator/tui.py`:
@@ -211,4 +212,4 @@ When `--feature-root` is set, the requested feature-root bead stays visible even
 
 The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The footer formatter emits a compact single-line summary such as `filter=default | rows=5 | selected=2 | open=1 | ready=1 | ...`.
 
-Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, and merge confirmation flow lives in `tests/test_orchestrator.py`.
+Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, and merge confirmation flow lives in `tests/test_orchestrator.py` and `tests/test_tui.py`.

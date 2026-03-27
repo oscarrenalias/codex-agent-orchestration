@@ -247,6 +247,7 @@ class TuiRuntimeState:
     status_message: str = "Press q to quit."
     activity_message: str = "Waiting for first refresh."
     awaiting_merge_confirmation: bool = False
+    pending_merge_bead_id: str | None = None
 
     def __post_init__(self) -> None:
         self.refresh(activity_message="Loaded bead state.")
@@ -280,6 +281,7 @@ class TuiRuntimeState:
         return row.bead if row is not None else None
 
     def refresh(self, *, activity_message: str | None = None) -> None:
+        pending_merge_bead_id = self.pending_merge_bead_id
         rows = self.rows
         previous_index = self.selected_index
         self.selected_index = resolve_selected_index(
@@ -289,6 +291,12 @@ class TuiRuntimeState:
         )
         selected = self.selected_bead()
         self.selected_bead_id = selected.bead_id if selected is not None else None
+        if pending_merge_bead_id is not None:
+            pending_bead = next((row.bead for row in rows if row.bead_id == pending_merge_bead_id), None)
+            if pending_bead is None or pending_bead.status != BEAD_DONE:
+                self.awaiting_merge_confirmation = False
+                self.pending_merge_bead_id = None
+                self.status_message = "Merge confirmation cleared because the requested bead is no longer mergeable."
         if activity_message is None:
             activity_message = f"Refreshed at {datetime.now().strftime('%H:%M:%S')}."
         self.activity_message = activity_message
@@ -300,11 +308,13 @@ class TuiRuntimeState:
             self.selected_bead_id = None
             self.status_message = "No beads available for the current filter."
             self.awaiting_merge_confirmation = False
+            self.pending_merge_bead_id = None
             return
         current = self.selected_index if self.selected_index is not None else 0
         self.selected_index = max(0, min(current + delta, len(rows) - 1))
         self.selected_bead_id = rows[self.selected_index].bead_id
         self.awaiting_merge_confirmation = False
+        self.pending_merge_bead_id = None
         self.status_message = f"Selected {self.selected_bead_id}."
 
     def cycle_filter(self, step: int = 1) -> None:
@@ -312,6 +322,7 @@ class TuiRuntimeState:
         index = filters.index(self.filter_mode)
         self.filter_mode = filters[(index + step) % len(filters)]
         self.awaiting_merge_confirmation = False
+        self.pending_merge_bead_id = None
         self.refresh(activity_message=f"Switched filter to {self.filter_mode}.")
         self.status_message = f"Filter set to {self.filter_mode}."
 
@@ -335,12 +346,15 @@ class TuiRuntimeState:
         if bead is None:
             self.status_message = "No bead selected."
             self.awaiting_merge_confirmation = False
+            self.pending_merge_bead_id = None
             return
         if bead.status != BEAD_DONE:
             self.status_message = f"{bead.bead_id} is {bead.status}; only done beads can be merged."
             self.awaiting_merge_confirmation = False
+            self.pending_merge_bead_id = None
             return
         self.awaiting_merge_confirmation = True
+        self.pending_merge_bead_id = bead.bead_id
         self.status_message = f"Confirm merge for {bead.bead_id} with Enter."
 
     def confirm_merge(
@@ -350,10 +364,16 @@ class TuiRuntimeState:
         if not self.awaiting_merge_confirmation:
             self.status_message = "No merge pending confirmation."
             return False
-        bead = self.selected_bead()
-        if bead is None:
-            self.status_message = "No bead selected."
+        bead_id = self.pending_merge_bead_id
+        if bead_id is None:
+            self.status_message = "No merge pending confirmation."
             self.awaiting_merge_confirmation = False
+            return False
+        bead = next((row.bead for row in self.rows if row.bead_id == bead_id), None)
+        if bead is None or bead.status != BEAD_DONE:
+            self.status_message = f"Merge cancelled for {bead_id}; press m again."
+            self.awaiting_merge_confirmation = False
+            self.pending_merge_bead_id = None
             return False
         if merge_callable is None:
             from .cli import command_merge
@@ -367,13 +387,16 @@ class TuiRuntimeState:
             detail = str(exc.code).strip() if exc.code not in (None, 0) else ""
             self.activity_message = detail or console_stream.getvalue().strip() or "Merge command exited early."
             self.awaiting_merge_confirmation = False
+            self.pending_merge_bead_id = None
             return False
         except Exception as exc:
             self.status_message = f"Merge failed for {bead.bead_id}: {exc}"
             self.activity_message = console_stream.getvalue().strip() or "Merge command raised an exception."
             self.awaiting_merge_confirmation = False
+            self.pending_merge_bead_id = None
             return False
         self.awaiting_merge_confirmation = False
+        self.pending_merge_bead_id = None
         if exit_code != 0:
             self.status_message = f"Merge failed for {bead.bead_id}."
             self.activity_message = console_stream.getvalue().strip() or f"Merge command exited with {exit_code}."
@@ -502,6 +525,7 @@ def run_tui(
 
         def action_manual_refresh(self) -> None:
             self.runtime_state.awaiting_merge_confirmation = False
+            self.runtime_state.pending_merge_bead_id = None
             self.runtime_state.refresh(activity_message="Manual refresh completed.")
             self.runtime_state.status_message = "Refreshed bead state."
             self._render_panels()

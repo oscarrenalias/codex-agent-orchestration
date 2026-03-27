@@ -237,6 +237,61 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(f"Merge failed for {bead.bead_id}.", state.status_message)
         self.assertIn("merge returned 3", state.activity_message)
 
+    def test_runtime_refresh_clears_pending_merge_when_target_leaves_done_view(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Other done", agent_type="developer", description="other", status=BEAD_DONE)
+        target = self.storage.create_bead(
+            bead_id="B0002",
+            title="Target done",
+            agent_type="developer",
+            description="target",
+            status=BEAD_DONE,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+        state.selected_bead_id = target.bead_id
+        state.selected_index = 1
+        state.request_merge()
+
+        target.status = BEAD_BLOCKED
+        self.storage.save_bead(target)
+        state.refresh()
+
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertEqual(
+            "Merge confirmation cleared because the requested bead is no longer mergeable.",
+            state.status_message,
+        )
+
+    def test_runtime_confirm_merge_keeps_original_target_across_refresh(self) -> None:
+        self.storage.create_bead(bead_id="B0002", title="Later", agent_type="developer", description="later", status=BEAD_DONE)
+        target = self.storage.create_bead(
+            bead_id="B0004",
+            title="Target",
+            agent_type="developer",
+            description="target",
+            status=BEAD_DONE,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+        state.selected_bead_id = target.bead_id
+        state.selected_index = 1
+        state.request_merge()
+
+        self.storage.create_bead(bead_id="B0001", title="Earlier", agent_type="developer", description="earlier", status=BEAD_DONE)
+        state.refresh()
+
+        merged_ids: list[str] = []
+
+        def fake_merge(args: SimpleNamespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
+            merged_ids.append(args.bead_id)
+            return 0
+
+        merged = state.confirm_merge(fake_merge)
+
+        self.assertTrue(merged)
+        self.assertEqual([target.bead_id], merged_ids)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+
     def test_build_parser_wires_tui_command_and_run_tui_reports_dependency_hint(self) -> None:
         parser = build_parser()
         args = parser.parse_args(["tui", "--feature-root", "B0002", "--refresh-seconds", "7"])

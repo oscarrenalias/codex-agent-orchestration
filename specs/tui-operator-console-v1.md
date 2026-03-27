@@ -52,6 +52,7 @@ If `textual` is unavailable:
 - the command returns exit code `1`
 - the console stream receives the error plus `Hint: install project dependencies so textual is available.`
 - repository bead state remains unchanged
+- there is no degraded fallback mode for `orchestrator tui`; operators must install dependencies and retry
 
 `pyproject.toml` currently declares `textual>=0.85,<1` as a project dependency, so a standard dependency install should satisfy the runtime requirement.
 
@@ -76,7 +77,7 @@ Supported key bindings:
 - `m`: request merge for the selected bead
 - `Enter`: confirm a pending merge
 
-Manual refresh clears any pending merge confirmation, refreshes bead state from storage, and updates the status text to `Refreshed bead state.`. Timed refreshes keep the current selection when possible and update the activity message with the current time.
+Manual refresh clears any pending merge confirmation, refreshes bead state from storage, and updates the status text to `Refreshed bead state.`. Timed refreshes keep the current selection when possible, keep a pending merge confirmation bound to the originally requested bead, clear that confirmation if the bead is no longer mergeable, and update the activity message with the current time.
 Merge failures, including early exits from the existing CLI merge path, are reported in the status/activity panels and do not terminate the TUI runtime.
 
 ## Data Model
@@ -169,6 +170,7 @@ The behavior described here is aligned to:
 - `src/codex_orchestrator/cli.py`
 - `src/codex_orchestrator/tui.py`
 - `tests/test_orchestrator.py`
+- `tests/test_tui.py`
 - `README.md`
 
 ## Deliverables
