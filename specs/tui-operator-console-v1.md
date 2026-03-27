@@ -2,14 +2,20 @@
 
 ## Objective
 
-Document the currently implemented TUI helper layer so the operator-console spec matches shipped behavior in `src/codex_orchestrator/tui.py`.
+Document the shipped `orchestrator tui` entrypoint and interactive runtime so the operator-console spec matches the behavior implemented in `src/codex_orchestrator/cli.py` and `src/codex_orchestrator/tui.py`.
 
-This spec describes the shared data model and formatting helpers that exist today. It does not imply that the interactive `orchestrator tui` command is already wired into the CLI.
+This spec describes the currently implemented CLI wiring, runtime state, panel formatting, and operator interactions. It is limited to the behavior that exists today and should not be read as a roadmap for additional TUI features.
 
 ## Current Status
 
 Implemented now:
 
+- CLI parser support for `orchestrator tui`
+- runtime dispatch from `command_tui(...)` to `run_tui(...)`
+- `textual` dependency loading with a non-zero exit and retry hint when unavailable
+- refresh-loop wiring and three-panel screen rendering
+- keyboard handling for selection, filter changes, refresh, quit, and merge confirmation
+- merge initiation for selected `done` beads via the existing CLI merge path
 - deterministic bead loading and tree-row construction helpers
 - stable selection recovery by bead id or previous cursor position
 - shared filter constants and filter-to-status mappings
@@ -18,11 +24,58 @@ Implemented now:
 
 Still pending:
 
-- the interactive `orchestrator tui` command
-- refresh-loop wiring
-- keyboard handling
-- merge-flow actions
-- dependency checks and optional rendering-library integration
+- richer merge UX beyond the current confirm-with-Enter flow
+- documentation for any future non-keyboard controls or alternate layouts
+
+## CLI Entry Point
+
+The CLI defines a `tui` subcommand with:
+
+- `--feature-root <bead_id>` to scope the screen to one feature tree
+- `--refresh-seconds <n>` to control the background refresh interval
+
+`--refresh-seconds` defaults to `3` and rejects values below `1`.
+
+The published console entrypoint is:
+
+- `orchestrator = "codex_orchestrator.cli:main"`
+
+At runtime, `command_tui(...)` delegates to `run_tui(...)`, passing the repository storage handle, optional feature-root scope, refresh interval, and console stream.
+
+## Dependency Handling
+
+The runtime attempts to import `textual` before launching the app.
+
+If `textual` is unavailable:
+
+- the command returns exit code `1`
+- the console stream receives the error plus `Hint: install project dependencies so textual is available.`
+- repository bead state remains unchanged
+
+`pyproject.toml` currently declares `textual>=0.85,<1` as a project dependency, so a standard dependency install should satisfy the runtime requirement.
+
+## Screen Layout And Controls
+
+The app renders:
+
+- a left-side bead tree panel
+- a right-side bead detail panel
+- a bottom status panel
+
+The title is `Orchestrator TUI`. The subtitle is the selected feature root id when scoped, otherwise `all features`.
+
+Supported key bindings:
+
+- `q`: quit
+- `j` / `Down`: move selection down
+- `k` / `Up`: move selection up
+- `f`: next filter
+- `Shift+f`: previous filter
+- `r`: manual refresh
+- `m`: request merge for the selected bead
+- `Enter`: confirm a pending merge
+
+Manual refresh clears any pending merge confirmation, refreshes bead state from storage, and updates the status text to `Refreshed bead state.`. Timed refreshes keep the current selection when possible and update the activity message with the current time.
 
 ## Data Model
 
@@ -37,7 +90,7 @@ Rows are labeled as `<bead_id> · <title>` with two-space indentation per tree d
 
 ## Filter Modes
 
-Supported filter modes come from the shared filter constants in `src/codex_orchestrator/tui.py`.
+Supported filter modes come from the shared filter constants in `src/codex_orchestrator/tui.py`. Cycling follows the declaration order returned by `supported_filter_modes()`.
 
 Named filters:
 
@@ -64,6 +117,8 @@ Status display order is:
 - `blocked`
 - `handed_off`
 - `done`
+
+When `feature_root_id` is set, the requested feature-root bead remains in the visible set even if its status is excluded by the active filter. This keeps the tree anchored at the selected feature root while descendants are filtered normally.
 
 ## Detail Panel Formatting
 
@@ -100,18 +155,25 @@ Example footer output:
 filter=default | rows=1 | selected=1 | open=0 | ready=0 | in_progress=0 | blocked=1 | handed_off=0 | done=0
 ```
 
+The status panel prepends:
+
+- `Status: <current status message>`
+- `Activity: <latest activity message>`
+
 ## Validation Source
 
 The behavior described here is aligned to:
 
+- `src/codex_orchestrator/cli.py`
 - `src/codex_orchestrator/tui.py`
 - `tests/test_orchestrator.py`
-- the README TUI helper documentation already present in this worktree
+- `README.md`
 
 ## Deliverables
 
 This corrective documentation update is complete when:
 
-1. README and spec language both describe the implemented helper layer rather than an already-shipped interactive TUI command.
+1. README and spec language both describe the shipped `orchestrator tui` CLI entrypoint and runtime behavior.
 2. Filter semantics match the shared constants in `src/codex_orchestrator/tui.py`.
-3. Detail-panel and footer documentation match the formatting covered by regression tests.
+3. Detail-panel, status-panel, and footer documentation match the formatting covered by regression tests.
+4. Missing-dependency and merge-confirmation behavior are documented without inventing additional runtime features.

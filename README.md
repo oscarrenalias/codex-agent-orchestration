@@ -142,11 +142,42 @@ If an agent blocks because the work belongs to another specialization, the resul
 - Workers can update scope during execution and Git worktrees are inspected for actual touched files
 - `orchestrator bead claims` shows the active in-progress file claims used by the scheduler
 
-## TUI helper layer
+## Interactive TUI
 
-The interactive `orchestrator tui` command is still pending, but the shared data-model and formatting helpers for that screen now live in `src/codex_orchestrator/tui.py`.
+The project now ships an interactive terminal UI behind `orchestrator tui`. The console script is registered in `pyproject.toml` and dispatches through `src/codex_orchestrator/cli.py` into `src/codex_orchestrator/tui.py`.
 
-The current helper layer covers:
+Example:
+
+```bash
+orchestrator tui
+orchestrator tui --feature-root B0030
+orchestrator tui --refresh-seconds 5
+```
+
+CLI behavior:
+
+- `--feature-root <bead_id>` scopes the screen to one feature tree
+- `--refresh-seconds <n>` controls the background refresh interval, defaults to `3`, and rejects values below `1`
+- the command requires `textual`; if the dependency is unavailable, it exits non-zero and prints a retry hint without mutating bead state
+
+The runtime renders three panels:
+
+- a tree view of visible beads
+- a detail panel for the selected bead
+- a status panel with the latest activity message and footer counts
+
+Key bindings:
+
+- `q`: quit
+- `j` or `Down`: move selection down
+- `k` or `Up`: move selection up
+- `f`: next filter
+- `Shift+f`: previous filter
+- `r`: manual refresh
+- `m`: request merge for the selected bead
+- `Enter`: confirm a pending merge
+
+The TUI behavior is backed by the same deterministic helpers exposed from `src/codex_orchestrator/tui.py`:
 
 - deterministic bead loading and tree row construction
 - stable selection recovery by bead id or previous cursor position
@@ -154,7 +185,7 @@ The current helper layer covers:
 - detail-panel formatting for bead scope and handoff metadata
 - footer formatting for the active filter, row count, selected row, and per-status totals
 
-The shipped filter semantics are intentionally aligned to the scheduler's status model:
+Filter semantics are aligned to the scheduler status model:
 
 - `default`: `open`, `ready`, `in_progress`, `blocked`, and `handed_off`
 - `actionable`: `open` and `ready`
@@ -162,6 +193,8 @@ The shipped filter semantics are intentionally aligned to the scheduler's status
 - `done`: `done`
 - `all`: every known status in display order
 
-The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The footer formatter currently emits a compact single-line summary such as `filter=default | rows=5 | selected=2 | open=1 | ready=1 | ...`.
+When `--feature-root` is set, the requested feature-root bead stays visible even if the active status filter would otherwise hide it. Merge flow is explicit: only `done` beads can be merged, `m` enters confirmation mode, and `Enter` runs the existing merge command path.
 
-Regression coverage for these helpers lives in `tests/test_orchestrator.py`. The remaining runtime work is to wire these helpers into the actual TUI refresh loop, keyboard handling, merge flow, and dependency checks for the optional rendering library.
+The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The footer formatter emits a compact single-line summary such as `filter=default | rows=5 | selected=2 | open=1 | ready=1 | ...`.
+
+Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, and merge confirmation flow lives in `tests/test_orchestrator.py`.
