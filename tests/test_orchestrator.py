@@ -23,6 +23,7 @@ from codex_orchestrator.cli import (
     command_merge,
     command_plan,
     command_summary,
+    command_tui,
 )
 from codex_orchestrator.console import ConsoleReporter
 from codex_orchestrator.gitutils import GitError, WorktreeManager
@@ -52,6 +53,23 @@ from codex_orchestrator.prompts import (
 from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA
 from codex_orchestrator.scheduler import Scheduler
 from codex_orchestrator.storage import RepositoryStorage
+from codex_orchestrator.tui import (
+    FILTER_ACTIONABLE,
+    FILTER_ALL,
+    FILTER_DEFAULT,
+    FILTER_DEFERRED,
+    FILTER_DONE,
+    TuiRuntimeState,
+    build_tree_rows,
+    collect_tree_rows,
+    format_detail_panel,
+    format_footer,
+    render_tree_panel,
+    run_tui,
+    resolve_selected_bead,
+    resolve_selected_index,
+    supported_filter_modes,
+)
 
 
 class FakeRunner:
@@ -326,6 +344,42 @@ class OrchestratorTests(unittest.TestCase):
                     outcome="completed",
                     summary="Review finished",
                     remaining="None for this bead.",
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertEqual([bead.bead_id], result.completed)
+        self.assertEqual([], result.blocked)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_DONE, bead.status)
+
+    def test_review_with_no_gaps_identified_remaining_stays_completed(self) -> None:
+        bead = self.storage.create_bead(title="Review work", agent_type="review", description="inspect")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="Review finished",
+                    remaining="No correctness, coverage, or documentation gaps were identified in the reviewed scope.",
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertEqual([bead.bead_id], result.completed)
+        self.assertEqual([], result.blocked)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_DONE, bead.status)
+
+    def test_review_with_no_findings_discovered_remaining_stays_completed(self) -> None:
+        bead = self.storage.create_bead(title="Review work", agent_type="review", description="inspect")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="Review finished",
+                    remaining="No findings discovered in this review pass.",
                 )
             }
         )
@@ -1164,6 +1218,21 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual("claims", args.bead_command)
         self.assertTrue(args.plain)
 
+    def test_build_parser_accepts_tui_options_and_defaults(self) -> None:
+        parser = build_parser()
+
+        args = parser.parse_args(["tui", "--feature-root", "B0030"])
+
+        self.assertEqual("tui", args.command)
+        self.assertEqual("B0030", args.feature_root)
+        self.assertEqual(3, args.refresh_seconds)
+
+    def test_build_parser_rejects_tui_refresh_seconds_below_one(self) -> None:
+        parser = build_parser()
+
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["tui", "--refresh-seconds", "0"])
+
     def test_cli_bead_list_defaults_to_json(self) -> None:
         bead = self.storage.create_bead(
             title="List bead",
@@ -1446,6 +1515,91 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual([], missing_payload["next_up"])
         self.assertEqual([], missing_payload["attention"])
 
+    def test_command_summary_ignores_non_feature_root_scope(self) -> None:
+        epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
+        root = self.storage.create_bead(title="Feature A", agent_type="developer", description="A", parent_id=epic.bead_id, status=BEAD_DONE)
+        child = self.storage.create_bead(
+            title="Feature A task",
+            agent_type="developer",
+            description="A1",
+            parent_id=root.bead_id,
+            dependencies=[root.bead_id],
+            status=BEAD_READY,
+        )
+
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_summary(Namespace(feature_root=child.bead_id), self.storage, console)
+
+        self.assertEqual(0, exit_code)
+        payload = json.loads(stream.getvalue())
+        self.assertEqual(0, payload["counts"][BEAD_DONE])
+        self.assertEqual(0, payload["counts"][BEAD_READY])
+        self.assertEqual([], payload["next_up"])
+        self.assertEqual([], payload["attention"])
+
+    def test_command_tui_reports_missing_render_dependency_without_mutating_state(self) -> None:
+        bead = self.storage.create_bead(title="Ready", agent_type="developer", description="work", status=BEAD_READY)
+        original = self.storage.load_bead(bead.bead_id).to_dict()
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+
+        with patch("codex_orchestrator.tui.load_textual_runtime", side_effect=RuntimeError("missing textual")):
+            exit_code = command_tui(Namespace(feature_root=None, refresh_seconds=3), self.storage, console)
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("missing textual", stream.getvalue())
+        self.assertEqual(original, self.storage.load_bead(bead.bead_id).to_dict())
+
+    def test_command_tui_forwards_feature_root_refresh_and_console_stream(self) -> None:
+        epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
+        root = self.storage.create_bead(title="Feature A", agent_type="developer", description="A", parent_id=epic.bead_id, status=BEAD_DONE)
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+
+        with patch("codex_orchestrator.tui.run_tui", return_value=0) as run_tui:
+            exit_code = command_tui(Namespace(feature_root=root.bead_id, refresh_seconds=9), self.storage, console)
+
+        self.assertEqual(0, exit_code)
+        run_tui.assert_called_once_with(
+            self.storage,
+            feature_root_id=root.bead_id,
+            refresh_seconds=9,
+            stream=stream,
+        )
+
+    def test_command_tui_rejects_unknown_feature_root(self) -> None:
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+
+        with patch("codex_orchestrator.tui.run_tui") as run_tui:
+            exit_code = command_tui(Namespace(feature_root="B9999", refresh_seconds=3), self.storage, console)
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("B9999 is not a valid feature root", stream.getvalue())
+        run_tui.assert_not_called()
+
+    def test_command_tui_rejects_non_feature_root_scope(self) -> None:
+        epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
+        root = self.storage.create_bead(title="Feature A", agent_type="developer", description="A", parent_id=epic.bead_id, status=BEAD_DONE)
+        child = self.storage.create_bead(
+            title="Feature A task",
+            agent_type="developer",
+            description="A1",
+            parent_id=root.bead_id,
+            dependencies=[root.bead_id],
+            status=BEAD_READY,
+        )
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+
+        with patch("codex_orchestrator.tui.run_tui") as run_tui:
+            exit_code = command_tui(Namespace(feature_root=child.bead_id, refresh_seconds=3), self.storage, console)
+
+        self.assertEqual(1, exit_code)
+        self.assertIn(f"{child.bead_id} is not a valid feature root", stream.getvalue())
+        run_tui.assert_not_called()
+
     def test_descendants_inherit_feature_root_and_shared_worktree(self) -> None:
         epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
         root = self.storage.create_bead(
@@ -1671,6 +1825,290 @@ class OrchestratorTests(unittest.TestCase):
             ["title", "agent_type", "description", "acceptance_criteria", "dependencies", "linked_docs", "expected_files", "expected_globs"],
             required,
         )
+
+    def test_tui_supports_default_grouped_and_terminal_filters(self) -> None:
+        statuses = [
+            BEAD_OPEN,
+            BEAD_READY,
+            BEAD_IN_PROGRESS,
+            BEAD_BLOCKED,
+            BEAD_HANDED_OFF,
+            BEAD_DONE,
+        ]
+        for index, status in enumerate(statuses, start=1):
+            self.storage.create_bead(
+                bead_id=f"B{index:04d}",
+                title=status,
+                agent_type="developer",
+                description=status,
+                status=status,
+            )
+
+        default_rows = collect_tree_rows(self.storage, filter_mode=FILTER_DEFAULT)
+        self.assertEqual(
+            [BEAD_OPEN, BEAD_READY, BEAD_IN_PROGRESS, BEAD_BLOCKED, BEAD_HANDED_OFF],
+            [row.bead.status for row in default_rows],
+        )
+        self.assertEqual([BEAD_OPEN, BEAD_READY], [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_ACTIONABLE)])
+        self.assertEqual([BEAD_HANDED_OFF], [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_DEFERRED)])
+        self.assertEqual([BEAD_DONE], [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_DONE)])
+        self.assertEqual(statuses, [row.bead.status for row in collect_tree_rows(self.storage, filter_mode=FILTER_ALL)])
+        self.assertIn(BEAD_DONE, supported_filter_modes())
+
+    def test_tui_feature_root_filter_keeps_root_when_status_filter_hides_it(self) -> None:
+        root = self.storage.create_bead(
+            bead_id="B0001",
+            title="Feature Root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
+        self.storage.create_bead(
+            bead_id="B0001-test",
+            title="Child",
+            agent_type="developer",
+            description="child",
+            parent_id=root.bead_id,
+            status=BEAD_READY,
+        )
+
+        rows = collect_tree_rows(self.storage, filter_mode=FILTER_DEFAULT, feature_root_id=root.bead_id)
+
+        self.assertEqual(["B0001", "B0001-test"], [row.bead_id for row in rows])
+        self.assertEqual([0, 1], [row.depth for row in rows])
+        self.assertEqual([BEAD_DONE, BEAD_READY], [row.bead.status for row in rows])
+
+    def test_tui_tree_rows_are_deterministic_and_indent_descendants(self) -> None:
+        root_b = Bead(bead_id="B0002", title="Root B", agent_type="developer", description="b")
+        child_b2 = Bead(
+            bead_id="B0002-2",
+            title="Child B2",
+            agent_type="developer",
+            description="b2",
+            parent_id="B0002",
+        )
+        root_a = Bead(bead_id="B0001", title="Root A", agent_type="developer", description="a")
+        child_a2 = Bead(
+            bead_id="B0001-2",
+            title="Child A2",
+            agent_type="developer",
+            description="a2",
+            parent_id="B0001",
+        )
+        child_a1 = Bead(
+            bead_id="B0001-1",
+            title="Child A1",
+            agent_type="developer",
+            description="a1",
+            parent_id="B0001",
+        )
+        grandchild = Bead(
+            bead_id="B0001-1-1",
+            title="Grandchild",
+            agent_type="developer",
+            description="a11",
+            parent_id="B0001-1",
+        )
+
+        rows = build_tree_rows([child_b2, child_a2, root_b, grandchild, root_a, child_a1])
+
+        self.assertEqual(
+            ["B0001", "B0001-1", "B0001-1-1", "B0001-2", "B0002", "B0002-2"],
+            [row.bead_id for row in rows],
+        )
+        self.assertEqual([0, 1, 2, 1, 0, 1], [row.depth for row in rows])
+        self.assertEqual("  B0001-1 · Child A1", rows[1].label)
+        self.assertEqual("    B0001-1-1 · Grandchild", rows[2].label)
+
+    def test_tui_selection_preserves_selected_bead_when_visible(self) -> None:
+        first = Bead(bead_id="B0001", title="First", agent_type="developer", description="one")
+        second = Bead(bead_id="B0002", title="Second", agent_type="developer", description="two")
+        rows = build_tree_rows([first, second])
+
+        self.assertEqual(1, resolve_selected_index(rows, selected_bead_id="B0002", previous_index=0))
+        self.assertEqual("B0002", resolve_selected_bead(rows, selected_bead_id="B0002", previous_index=0).bead_id)
+        self.assertEqual(1, resolve_selected_index(rows, selected_bead_id="B9999", previous_index=3))
+        self.assertEqual("B0001", resolve_selected_bead(rows, previous_index=None).bead_id)
+
+    def test_tui_detail_panel_and_footer_include_handoff_scope_and_counts(self) -> None:
+        bead = Bead(
+            bead_id="B0099",
+            title="Implement TUI",
+            agent_type="developer",
+            description="build helpers",
+            status=BEAD_BLOCKED,
+            parent_id="B0090",
+            feature_root_id="B0030",
+            dependencies=["B0098"],
+            acceptance_criteria=["Build rows", "Format detail panel"],
+            expected_files=["src/codex_orchestrator/tui.py"],
+            expected_globs=["tests/test_tui*.py"],
+            touched_files=["src/codex_orchestrator/tui.py"],
+            changed_files=["src/codex_orchestrator/tui.py", "tests/test_orchestrator.py"],
+            updated_docs=["docs/tui.md"],
+            block_reason="Waiting on review",
+            conflict_risks="Coordinate with review bead on footer text.",
+            handoff_summary=HandoffSummary(
+                completed="Implemented the TUI helpers.",
+                remaining="Need review signoff.",
+                risks="Footer wording may change with runtime integration.",
+                changed_files=["src/codex_orchestrator/tui.py", "tests/test_orchestrator.py"],
+                updated_docs=["docs/tui.md"],
+                next_action="Run the review bead.",
+                next_agent="review",
+                block_reason="Waiting on review",
+                expected_files=["src/codex_orchestrator/tui.py"],
+                expected_globs=["tests/test_tui*.py"],
+                touched_files=["src/codex_orchestrator/tui.py"],
+                conflict_risks="Coordinate with review bead on footer text.",
+            ),
+        )
+
+        detail = format_detail_panel(bead)
+        footer = format_footer([bead], filter_mode=FILTER_DEFAULT, selected_index=0, total_rows=1)
+
+        self.assertIn("Bead: B0099", detail)
+        self.assertIn("Status: blocked", detail)
+        self.assertIn("Parent: B0090", detail)
+        self.assertIn("Feature Root: B0030", detail)
+        self.assertIn("Dependencies: B0098", detail)
+        self.assertIn("  - Build rows", detail)
+        self.assertIn("  changed: src/codex_orchestrator/tui.py, tests/test_orchestrator.py", detail)
+        self.assertIn("  next_agent: review", detail)
+        self.assertIn("  conflict_risks: Coordinate with review bead on footer text.", detail)
+        self.assertEqual(
+            "filter=default | rows=1 | selected=1 | open=0 | ready=0 | in_progress=0 | blocked=1 | handed_off=0 | done=0",
+            footer,
+        )
+
+    def test_tui_detail_panel_handles_empty_selection_and_empty_scope_lists(self) -> None:
+        self.assertEqual("No bead selected.", format_detail_panel(None))
+
+        bead = Bead(
+            bead_id="B0100",
+            title="Empty detail state",
+            agent_type="tester",
+            description="verify formatter fallbacks",
+        )
+
+        detail = format_detail_panel(bead)
+
+        self.assertIn("Dependencies: -", detail)
+        self.assertIn("Acceptance Criteria:\n  -", detail)
+        self.assertIn("Block Reason: -", detail)
+        self.assertIn("  expected: -", detail)
+        self.assertIn("  conflict_risks: -", detail)
+
+    def test_tui_runtime_refresh_preserves_selection_and_shows_new_rows(self) -> None:
+        first = self.storage.create_bead(bead_id="B0001", title="First", agent_type="developer", description="one", status=BEAD_READY)
+        second = self.storage.create_bead(bead_id="B0002", title="Second", agent_type="developer", description="two", status=BEAD_BLOCKED)
+        state = TuiRuntimeState(self.storage)
+        state.selected_bead_id = second.bead_id
+        state.selected_index = 1
+
+        self.storage.create_bead(bead_id="B0003", title="Third", agent_type="developer", description="three", status=BEAD_READY)
+        state.refresh()
+
+        self.assertEqual(second.bead_id, state.selected_bead_id)
+        self.assertEqual(second.bead_id, state.selected_bead().bead_id)
+        self.assertEqual(["B0001", "B0002", "B0003"], [row.bead_id for row in state.rows])
+
+    def test_tui_runtime_cycles_filters_and_updates_status_panel(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Open", agent_type="developer", description="one", status=BEAD_OPEN)
+        self.storage.create_bead(bead_id="B0002", title="Done", agent_type="developer", description="two", status=BEAD_DONE)
+        state = TuiRuntimeState(self.storage)
+
+        state.cycle_filter(1)
+
+        self.assertEqual(FILTER_ALL, state.filter_mode)
+        self.assertIn("Filter set to all.", state.status_panel_text())
+        self.assertIn("done=1", state.status_panel_text())
+
+    def test_tui_runtime_merge_rejects_non_done_beads(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="one", status=BEAD_READY)
+        state = TuiRuntimeState(self.storage)
+
+        state.request_merge()
+
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIn("only done beads can be merged", state.status_message)
+
+    def test_tui_runtime_merge_uses_existing_merge_path_and_survives_failure(self) -> None:
+        bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        state.request_merge()
+        self.assertTrue(state.awaiting_merge_confirmation)
+
+        merge_calls: list[str] = []
+
+        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
+            merge_calls.append(args.bead_id)
+            raise RuntimeError("merge conflict")
+
+        merged = state.confirm_merge(fake_merge)
+
+        self.assertFalse(merged)
+        self.assertEqual([bead.bead_id], merge_calls)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIn("Merge failed for B0001", state.status_message)
+
+    def test_tui_runtime_merge_handles_system_exit_without_terminating_runtime(self) -> None:
+        bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        state.request_merge()
+        self.assertTrue(state.awaiting_merge_confirmation)
+
+        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
+            raise SystemExit(f"{args.bead_id} has no feature branch to merge")
+
+        merged = state.confirm_merge(fake_merge)
+
+        self.assertFalse(merged)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertEqual(f"Merge failed for {bead.bead_id}.", state.status_message)
+        self.assertIn("has no feature branch to merge", state.activity_message)
+
+    def test_tui_runtime_merge_confirms_success_and_refreshes_messages(self) -> None:
+        bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        state.request_merge()
+        self.assertTrue(state.awaiting_merge_confirmation)
+
+        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
+            self.assertEqual(bead.bead_id, args.bead_id)
+            console.info("merge ok")
+            return 0
+
+        merged = state.confirm_merge(fake_merge)
+
+        self.assertTrue(merged)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertEqual(f"Merged {bead.bead_id}.", state.status_message)
+        self.assertIn("merge ok", state.activity_message)
+        self.assertEqual(bead.bead_id, state.selected_bead_id)
+
+    def test_tui_render_tree_panel_marks_selected_row(self) -> None:
+        rows = build_tree_rows([
+            Bead(bead_id="B0001", title="One", agent_type="developer", description="one", status=BEAD_READY),
+            Bead(bead_id="B0002", title="Two", agent_type="developer", description="two", status=BEAD_BLOCKED),
+        ])
+
+        panel = render_tree_panel(rows, 1)
+
+        self.assertIn("> B0002 · Two [blocked]", panel)
+        self.assertIn("  B0001 · One [ready]", panel)
+
+    def test_run_tui_returns_nonzero_and_hint_when_textual_missing(self) -> None:
+        stream = io.StringIO()
+
+        with patch("codex_orchestrator.tui.load_textual_runtime", side_effect=RuntimeError("missing textual")):
+            exit_code = run_tui(self.storage, stream=stream)
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("Hint: install project dependencies", stream.getvalue())
 
 
 if __name__ == "__main__":

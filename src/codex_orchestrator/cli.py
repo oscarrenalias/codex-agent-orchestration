@@ -150,7 +150,19 @@ def build_parser() -> argparse.ArgumentParser:
     summary_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
     summary_parser.add_argument("--feature-root")
 
+    tui_parser = subparsers.add_parser("tui")
+    tui_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
+    tui_parser.add_argument("--feature-root")
+    tui_parser.add_argument("--refresh-seconds", type=_refresh_seconds, default=3)
+
     return parser
+
+
+def _refresh_seconds(value: str) -> int:
+    seconds = int(value)
+    if seconds < 1:
+        raise argparse.ArgumentTypeError("--refresh-seconds must be at least 1")
+    return seconds
 
 
 def make_services(root: Path) -> tuple[RepositoryStorage, Scheduler, PlanningService]:
@@ -340,9 +352,37 @@ def command_merge(args: argparse.Namespace, storage: RepositoryStorage, console:
     return 0
 
 
+def _validated_feature_root_id(storage: RepositoryStorage, feature_root_id: str | None) -> str | None:
+    if not feature_root_id:
+        return None
+    target_path = storage.bead_path(feature_root_id)
+    if not target_path.exists():
+        return None
+    target = storage.load_bead(feature_root_id)
+    if storage.feature_root_id_for(target) != feature_root_id:
+        return None
+    return feature_root_id
+
+
 def command_summary(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
     console.dump_json(storage.summary(feature_root_id=args.feature_root))
     return 0
+
+
+def command_tui(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
+    from .tui import run_tui
+
+    feature_root_id = _validated_feature_root_id(storage, args.feature_root)
+    if args.feature_root and feature_root_id is None:
+        console.error(f"{args.feature_root} is not a valid feature root")
+        return 1
+
+    return run_tui(
+        storage,
+        feature_root_id=feature_root_id,
+        refresh_seconds=args.refresh_seconds,
+        stream=console.stream,
+    )
 
 
 def command_run(args: argparse.Namespace, scheduler: Scheduler, console: ConsoleReporter) -> int:
@@ -394,6 +434,8 @@ def main() -> int:
         return command_merge(args, storage, console)
     if args.command == "summary":
         return command_summary(args, storage, console)
+    if args.command == "tui":
+        return command_tui(args, storage, console)
     return 1
 
 

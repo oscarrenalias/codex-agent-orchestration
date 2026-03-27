@@ -141,3 +141,75 @@ If an agent blocks because the work belongs to another specialization, the resul
 - Planner output can seed expected scope for child beads
 - Workers can update scope during execution and Git worktrees are inspected for actual touched files
 - `orchestrator bead claims` shows the active in-progress file claims used by the scheduler
+
+## Interactive TUI
+
+The project now ships an interactive terminal UI behind `orchestrator tui`. The console script is registered in `pyproject.toml` and dispatches through `src/codex_orchestrator/cli.py` into `src/codex_orchestrator/tui.py`.
+
+Example:
+
+```bash
+orchestrator tui
+orchestrator tui --feature-root B0030
+orchestrator tui --refresh-seconds 5
+```
+
+CLI behavior:
+
+- `--feature-root <bead_id>` scopes the screen to one feature tree
+- `--refresh-seconds <n>` controls the background refresh interval, defaults to `3`, and rejects values below `1`
+- invalid or non-feature-root `--feature-root` values are rejected before the TUI starts
+- the command requires `textual`; there is no fallback non-interactive TUI mode, so if the dependency is unavailable the command exits non-zero, prints a retry hint, and leaves bead state unchanged
+
+Install note:
+
+- `uv sync` installs the declared `textual` dependency for the normal path
+- if `textual` is missing, `orchestrator tui` prints `Hint: install project dependencies so textual is available.`
+
+The runtime renders three panels:
+
+- a left-side tree of visible beads in feature-root order
+- a right-side detail panel for the selected bead, including scope and handoff fields
+- a bottom status panel with the current status message, latest activity, and footer counts
+
+Key bindings:
+
+- `q`: quit
+- `j` or `Down`: move selection down
+- `k` or `Up`: move selection up
+- `f`: next filter
+- `Shift+f`: previous filter
+- `r`: manual refresh
+- `m`: request merge for the selected bead
+- `Enter`: confirm a pending merge
+
+Refresh and merge behavior:
+
+- timed refreshes run every `--refresh-seconds` seconds, keep the current selection when possible, and update the activity line
+- `r` performs an immediate refresh, clears any pending merge confirmation, and updates the status panel
+- merge is available only when the selected bead is `done`
+- `m` starts merge confirmation for the selected `done` bead, and `Enter` is required to execute the merge
+- a pending merge confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer mergeable
+- merge failures stay inside the TUI and are reported in the status panel instead of closing the session
+
+The TUI behavior is backed by the same deterministic helpers exposed from `src/codex_orchestrator/tui.py`:
+
+- deterministic bead loading and tree row construction
+- stable selection recovery by bead id or previous cursor position
+- shared filter constants for `default`, `all`, `actionable`, `deferred`, `done`, and per-status views
+- detail-panel formatting for bead scope and handoff metadata
+- footer formatting for the active filter, row count, selected row, and per-status totals
+
+Filter semantics are aligned to the scheduler status model:
+
+- `default`: `open`, `ready`, `in_progress`, `blocked`, and `handed_off`
+- `actionable`: `open` and `ready`
+- `deferred`: `handed_off`
+- `done`: `done`
+- `all`: every known status in display order
+
+When `--feature-root` is set, the requested feature-root bead stays visible even if the active status filter would otherwise hide it.
+
+The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The footer formatter emits a compact single-line summary such as `filter=default | rows=5 | selected=2 | open=1 | ready=1 | ...`.
+
+Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, and merge confirmation flow lives in `tests/test_orchestrator.py` and `tests/test_tui.py`.
