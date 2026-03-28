@@ -714,8 +714,8 @@ class TuiRegressionTests(unittest.TestCase):
     def test_runtime_status_update_flow_updates_bead_after_confirmation(self) -> None:
         bead = self.storage.create_bead(
             bead_id="B0001",
-            title="Ready",
-            agent_type="developer",
+            title="Ready docs bead",
+            agent_type="documentation",
             description="ready",
             status=BEAD_READY,
         )
@@ -732,6 +732,28 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(f"status update {bead.bead_id}", state.last_action)
         self.assertEqual(f"success -> {BEAD_DONE}", state.last_result)
         self.assertIn(f"Updated {bead.bead_id} to {BEAD_DONE}.", state.status_message)
+
+    def test_runtime_status_update_rejects_marking_developer_bead_done(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready dev bead",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
+
+        state.open_status_update_flow()
+        state.choose_status_target(BEAD_DONE)
+        updated = state.confirm_status_update()
+
+        bead_after = self.storage.load_bead(bead.bead_id)
+        self.assertFalse(updated)
+        self.assertEqual(BEAD_READY, bead_after.status)
+        self.assertFalse(state.status_flow_active)
+        self.assertEqual(f"status update {bead.bead_id}", state.last_action)
+        self.assertEqual("invalid", state.last_result)
+        self.assertIn("developer bead; mark it done through scheduler execution", state.status_message)
 
     def test_runtime_status_update_rejects_disallowed_transition_without_mutation(self) -> None:
         bead = self.storage.create_bead(
@@ -753,7 +775,7 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertFalse(state.status_flow_active)
         self.assertEqual(f"status update {bead.bead_id}", state.last_action)
         self.assertEqual("invalid", state.last_result)
-        self.assertIn(f"{bead.bead_id} is {BEAD_BLOCKED}; cannot mark it {BEAD_DONE}.", state.status_message)
+        self.assertIn("developer bead; mark it done through scheduler execution", state.status_message)
 
     def test_operator_status_update_clears_stale_handoff_block_reason_when_unblocked(self) -> None:
         bead = self.storage.create_bead(
@@ -879,7 +901,7 @@ class TuiRegressionTests(unittest.TestCase):
         bead = self.storage.create_bead(
             bead_id="B0001",
             title="Ready",
-            agent_type="developer",
+            agent_type="documentation",
             description="ready",
             status=BEAD_READY,
         )

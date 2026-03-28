@@ -90,6 +90,11 @@ def validate_operator_status_update(bead: Bead, target_status: str) -> str | Non
     allowed_sources = OPERATOR_STATUS_TRANSITIONS.get(target_status)
     if allowed_sources is None:
         return f"Unsupported operator status update: {target_status}."
+    if target_status == "done" and bead.agent_type == "developer":
+        return (
+            f"{bead.bead_id} is a developer bead; mark it done through scheduler execution "
+            "so follow-up beads are created."
+        )
     if bead.status == target_status:
         return f"{bead.bead_id} is already {target_status}."
     if bead.status not in allowed_sources:

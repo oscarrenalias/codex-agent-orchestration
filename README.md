@@ -212,6 +212,7 @@ Refresh, help, and operator-action behavior:
 - retry is available only when the selected bead is `blocked`; `t` starts confirmation, `y` executes the retry, `n` cancels it, and invalid retry requests leave bead state unchanged and report the denial in the status panel
 - `u` starts a short status flow for the selected bead, then `r`, `b`, or `d` chooses `ready`, `blocked`, or `done`, and `y` is required to execute the change
 - status updates always require confirmation after a target is chosen; disallowed status transitions are rejected in-place, leave bead state unchanged, and report the reason in the status panel
+- developer beads cannot be manually marked `done` via operator status update; complete them through scheduler execution so downstream tester/docs/review follow-up beads are created
 - merge is available only when the selected bead is `done`
 - `m` starts merge confirmation for the selected `done` bead, and `Enter` is required to execute the merge
 - actions without the required preconditions, including retry on a non-`blocked` bead, status updates without a valid target, or merge on a non-`done` bead, do not mutate bead state
