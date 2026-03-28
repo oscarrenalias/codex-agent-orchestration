@@ -325,6 +325,32 @@ class OrchestratorTests(unittest.TestCase):
         self.assertFalse(bead.handoff_summary.requires_followup)
         self.assertNotIn("compat_fallback_warning", [record.event for record in bead.execution_history])
 
+    def test_review_with_approved_verdict_and_no_findings_phrase_stays_completed(self) -> None:
+        bead = self.storage.create_bead(title="Review work", agent_type="review", description="inspect")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="Review complete",
+                    completed="Reviewed the implementation against the requested scope.",
+                    remaining="No findings discovered in this review pass.",
+                    verdict="approved",
+                    findings_count=0,
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertEqual([bead.bead_id], result.completed)
+        self.assertEqual([], result.blocked)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_DONE, bead.status)
+        self.assertEqual("approved", bead.handoff_summary.verdict)
+        self.assertEqual(0, bead.handoff_summary.findings_count)
+        self.assertFalse(bead.handoff_summary.requires_followup)
+        self.assertEqual("completed", bead.metadata["last_agent_result"]["outcome"])
+        self.assertNotIn("compat_fallback_warning", [record.event for record in bead.execution_history])
+
     def test_review_with_needs_changes_verdict_blocks_and_requires_followup(self) -> None:
         bead = self.storage.create_bead(title="Review work", agent_type="review", description="inspect")
         runner = FakeRunner(
