@@ -1965,7 +1965,13 @@ class OrchestratorTests(unittest.TestCase):
         )
 
         detail = format_detail_panel(bead)
-        footer = format_footer([bead], filter_mode=FILTER_DEFAULT, selected_index=0, total_rows=1)
+        footer = format_footer(
+            [bead],
+            filter_mode=FILTER_DEFAULT,
+            selected_index=0,
+            total_rows=1,
+            continuous_run_enabled=False,
+        )
 
         self.assertIn("Bead: B0099", detail)
         self.assertIn("Status: blocked", detail)
@@ -1977,7 +1983,7 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("  next_agent: review", detail)
         self.assertIn("  conflict_risks: Coordinate with review bead on footer text.", detail)
         self.assertEqual(
-            "filter=default | rows=1 | selected=1 | open=0 | ready=0 | in_progress=0 | blocked=1 | handed_off=0 | done=0",
+            "filter=default | run=manual | rows=1 | selected=1 | open=0 | ready=0 | in_progress=0 | blocked=1 | handed_off=0 | done=0",
             footer.removesuffix(" | ? help"),
         )
         self.assertTrue(footer.endswith(" | ? help"))

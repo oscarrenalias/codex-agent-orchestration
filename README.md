@@ -181,18 +181,43 @@ Key bindings:
 - `Shift+f`: previous filter
 - `?`: toggle the help overlay (`? help` stays visible in the footer)
 - `Esc`: close the help overlay
-- `r`: manual refresh
+- `r`: manual refresh, or choose `ready` while the status update flow is active
+- `s`: run one scheduler cycle with the current scope
+- `S`: toggle continuous scheduler runs on timed refreshes
+- `t`: request retry for the selected blocked bead
+- `u`: start the status update flow for the selected bead
+- `b`: choose `blocked` while the status update flow is active
+- `d`: choose `done` while the status update flow is active
+- `y`: confirm the pending retry or status update
+- `n`: cancel a pending merge, retry, or status update
 - `m`: request merge for the selected bead
 - `Enter`: confirm a pending merge
 
-Refresh, help, and merge behavior:
+Operator shortcuts:
+
+- `s` is the operator shortcut for a single scheduler pass from inside the TUI
+- `S` turns timed refreshes into timed scheduler passes by toggling continuous run mode on or off
+- `t` starts a retry confirmation flow for the selected blocked bead, and `y` is required to execute the retry
+- `u` opens the operator status-update flow for the selected bead, then `r`, `b`, or `d` choose the target status before `y` confirms it
+- `m` starts the operator merge flow for the selected done bead and waits for `Enter` before executing it
+
+Refresh, help, and operator-action behavior:
 
 - timed refreshes run every `--refresh-seconds` seconds, keep the current selection when possible, and update the activity line
+- when continuous mode is enabled with `S`, each timed refresh runs one scheduler cycle instead of a read-only refresh, using the same scoped/global rules as `s`
+- `s` runs the same one-shot scheduler path as `orchestrator run --once`; if the TUI was launched with `--feature-root <bead_id>` the run stays inside that feature tree, otherwise it operates across the full execution root
 - `?` opens a modal shortcut reference without changing the current bead selection or filter state
 - while the help overlay is open, `?` and `Esc` close it and other keys are ignored by the overlay
-- `r` performs an immediate refresh, clears any pending merge confirmation, and updates the status panel
+- `r` performs an immediate refresh, clears any pending action, and updates the status panel unless the status update flow is active, where it selects `ready`
+- retry is available only when the selected bead is `blocked`; `t` starts confirmation, `y` executes the retry, `n` cancels it, and invalid retry requests leave bead state unchanged and report the denial in the status panel
+- `u` starts a short status flow for the selected bead, then `r`, `b`, or `d` chooses `ready`, `blocked`, or `done`, and `y` is required to execute the change
+- status updates always require confirmation after a target is chosen; disallowed status transitions are rejected in-place, leave bead state unchanged, and report the reason in the status panel
+- developer beads cannot be manually marked `done` via operator status update; complete them through scheduler execution so downstream tester/docs/review follow-up beads are created
 - merge is available only when the selected bead is `done`
 - `m` starts merge confirmation for the selected `done` bead, and `Enter` is required to execute the merge
+- actions without the required preconditions, including retry on a non-`blocked` bead, status updates without a valid target, or merge on a non-`done` bead, do not mutate bead state
+- `n` cancels a pending merge confirmation, retry confirmation, or status update flow
+- a pending retry confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer blocked
 - a pending merge confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer mergeable
 - merge failures stay inside the TUI and are reported in the status panel instead of closing the session
 
@@ -202,7 +227,7 @@ The TUI behavior is backed by the same deterministic helpers exposed from `src/c
 - stable selection recovery by bead id or previous cursor position
 - shared filter constants for `default`, `all`, `actionable`, `deferred`, `done`, and per-status views
 - detail-panel formatting for bead scope and handoff metadata
-- footer formatting for the active filter, row count, selected row, and per-status totals
+- status-panel formatting for action/result feedback and footer formatting for the active filter, run mode, row count, selected row, and per-status totals
 
 Filter semantics are aligned to the scheduler status model:
 
@@ -214,6 +239,6 @@ Filter semantics are aligned to the scheduler status model:
 
 When `--feature-root` is set, the requested feature-root bead stays visible even if the active status filter would otherwise hide it.
 
-The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The footer formatter emits a compact single-line summary such as `filter=default | rows=5 | selected=2 | open=1 | ready=1 | ... | ? help`.
+The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The bottom status panel records the current status line, latest activity, `Last Action`, and `Last Result @ HH:MM:SS`, so the operator can see which action ran most recently, whether it succeeded, failed, or was rejected, and when that result was recorded. The footer formatter emits a compact single-line summary such as `filter=default | run=manual | rows=5 | selected=2 | open=1 | ready=1 | ... | ? help`, and flips to `run=continuous` when auto-run mode is enabled.
 
-Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, and merge confirmation flow lives in `tests/test_orchestrator.py` and `tests/test_tui.py`.
+Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, scheduler action handlers, status update flow, and merge confirmation flow lives in `tests/test_orchestrator.py` and `tests/test_tui.py`.

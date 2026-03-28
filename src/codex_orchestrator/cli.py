@@ -24,6 +24,12 @@ LIST_PLAIN_COLUMNS: tuple[tuple[str, str], ...] = (
     ("PARENT", "parent_id"),
 )
 
+OPERATOR_STATUS_TRANSITIONS: dict[str, frozenset[str]] = {
+    "ready": frozenset({"open", "blocked", "handed_off"}),
+    "blocked": frozenset({"open", "ready", "in_progress", "handed_off"}),
+    "done": frozenset({"ready", "in_progress", "handed_off"}),
+}
+
 
 def _plain_value(value: object) -> str:
     if value is None:
@@ -78,6 +84,41 @@ def format_claims_plain(claims: list[dict[str, object]]) -> str:
             f"lease={lease_owner}"
         )
     return "\n".join(lines)
+
+
+def validate_operator_status_update(bead: Bead, target_status: str) -> str | None:
+    allowed_sources = OPERATOR_STATUS_TRANSITIONS.get(target_status)
+    if allowed_sources is None:
+        return f"Unsupported operator status update: {target_status}."
+    if target_status == "done" and bead.agent_type == "developer":
+        return (
+            f"{bead.bead_id} is a developer bead; mark it done through scheduler execution "
+            "so follow-up beads are created."
+        )
+    if bead.status == target_status:
+        return f"{bead.bead_id} is already {target_status}."
+    if bead.status not in allowed_sources:
+        return f"{bead.bead_id} is {bead.status}; cannot mark it {target_status}."
+    return None
+
+
+def apply_operator_status_update(storage: RepositoryStorage, bead_id: str, target_status: str) -> Bead:
+    bead = storage.load_bead(bead_id)
+    validation_error = validate_operator_status_update(bead, target_status)
+    if validation_error is not None:
+        raise ValueError(validation_error)
+    bead.status = target_status
+    if target_status != "blocked":
+        bead.block_reason = ""
+        bead.handoff_summary.block_reason = ""
+    if target_status in {"ready", "done"}:
+        bead.lease = None
+    storage.update_bead(
+        bead,
+        event="updated",
+        summary=f"Bead marked {target_status} via operator action",
+    )
+    return bead
 
 
 def build_parser() -> argparse.ArgumentParser:
