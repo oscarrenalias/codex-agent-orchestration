@@ -13,5 +13,8 @@ Disallowed actions:
 - Perform review signoff or broad documentation rewrites.
 
 Expected outputs:
+- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.
+- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when testing is complete with no unresolved tester-scope findings.
+- Use `verdict=needs_changes`, set `findings_count` to the unresolved defect or coverage gap count, and include `block_reason` when follow-up work is required.
 - Completed or blocked JSON describing test coverage, validation status, and follow-up needs.
 - Precise defect or coverage notes when the bead cannot be completed within tester scope.

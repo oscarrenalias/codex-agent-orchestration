@@ -48,6 +48,7 @@ from codex_orchestrator.prompts import (
     build_worker_prompt,
     guardrail_template_path,
     load_guardrail_template,
+    render_agent_output_requirements,
     render_context_snippets,
 )
 from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA
@@ -1809,6 +1810,20 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn(str(guardrail_template_path("review", root=self.root)), prompt)
         self.assertIn("Primary responsibility: Inspect code, tests, docs, and acceptance criteria", prompt)
         self.assertIn("return a blocked result with block_reason and next_agent", prompt)
+        self.assertIn("always set `verdict` to `approved` or `needs_changes`", prompt)
+        self.assertIn("Always set `findings_count`", prompt)
+        self.assertIn("Set `requires_followup` explicitly", prompt)
+
+    def test_worker_prompt_requires_structured_verdict_output_for_tester(self) -> None:
+        bead = self.storage.create_bead(title="Tester", agent_type="tester", description="run checks")
+        prompt = build_worker_prompt(bead, [], self.root)
+        self.assertIn("always set `verdict` to `approved` or `needs_changes`", prompt)
+        self.assertIn("Always set `findings_count`", prompt)
+        self.assertIn("Set `requires_followup` explicitly", prompt)
+        self.assertIn("include a concrete `block_reason`", prompt)
+
+    def test_non_review_test_agents_do_not_get_structured_verdict_requirements(self) -> None:
+        self.assertEqual("", render_agent_output_requirements("developer"))
 
     def test_load_guardrail_template_returns_path_and_trimmed_contents_for_each_builtin_agent(self) -> None:
         for agent_type in BUILT_IN_AGENT_TYPES:
@@ -1817,6 +1832,12 @@ class OrchestratorTests(unittest.TestCase):
                 self.assertEqual(guardrail_template_path(agent_type, root=self.root), path)
                 self.assertTrue(template_text.startswith(f"# {agent_type.capitalize()} Guardrails"))
                 self.assertFalse(template_text.endswith("\n"))
+
+    def test_review_and_tester_templates_require_structured_verdict_fields(self) -> None:
+        for agent_type in ("review", "tester"):
+            with self.subTest(agent_type=agent_type):
+                _, template_text = load_guardrail_template(agent_type, root=self.root)
+                self.assertIn("`verdict`, `findings_count`, and `requires_followup`", template_text)
 
     def test_worker_prompt_references_every_builtin_template_file(self) -> None:
         for agent_type in BUILT_IN_AGENT_TYPES:

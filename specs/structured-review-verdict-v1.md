@@ -35,6 +35,8 @@ Implemented behavior in the current code:
 - `src/codex_orchestrator/models.py` adds `verdict`, `findings_count`, and `requires_followup` to both `AgentRunResult` and `HandoffSummary`
 - `src/codex_orchestrator/runner.py` accepts those fields in the worker JSON schema so review/test agents can return them directly
 - `src/codex_orchestrator/scheduler.py` applies verdict-first control flow for `review` and `tester` beads through `_apply_review_test_verdict(...)`
+- `src/codex_orchestrator/prompts.py` injects explicit structured verdict requirements into `review` and `tester` worker prompts
+- `templates/agents/review.md` and `templates/agents/tester.md` require agents to emit `verdict`, `findings_count`, and `requires_followup`
 - `approved` forces a non-failed review/test result onto the completion path and defaults `requires_followup` to `False` when the agent omits it
 - `needs_changes` forces the bead onto the blocked path, fills in a default `block_reason` when needed, and defaults `requires_followup` to `True`
 - `remaining` is still persisted into `handoff_summary`, but it is informational only for structured review/test results
@@ -46,7 +48,7 @@ Implemented behavior in the current code:
 Still intentionally left in compatibility mode:
 
 - the scheduler constant `REVIEW_TEST_VERDICT_COMPAT_MODE` remains enabled, so legacy review/test agents can still complete while prompts and downstream workflows finish migrating
-- strict prompt-template enforcement for verdict output is not documented as fully complete in this bead because the runtime compatibility path still exists
+- compat mode is now a temporary fallback path only; review/test prompts and templates require structured verdict output
 
 ## Functional Requirements
 
