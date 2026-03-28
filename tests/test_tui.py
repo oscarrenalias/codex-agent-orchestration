@@ -406,6 +406,43 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(f"Merge failed for {bead.bead_id}.", state.status_message)
         self.assertIn("merge returned 3", state.activity_message)
 
+    def test_runtime_request_merge_on_non_done_bead_is_denied_without_state_mutation(self) -> None:
+        blocked = self.storage.create_bead(
+            bead_id="B0001",
+            title="Blocked",
+            agent_type="developer",
+            description="blocked",
+            status=BEAD_BLOCKED,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        state.request_merge()
+
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertEqual(
+            f"{blocked.bead_id} is {blocked.status}; only done beads can be merged.",
+            state.status_message,
+        )
+
+    def test_runtime_confirm_merge_without_pending_confirmation_is_denied_without_state_mutation(self) -> None:
+        done = self.storage.create_bead(
+            bead_id="B0001",
+            title="Done",
+            agent_type="developer",
+            description="done",
+            status=BEAD_DONE,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        merged = state.confirm_merge()
+
+        self.assertFalse(merged)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertEqual("No merge pending confirmation.", state.status_message)
+        self.assertEqual(done.bead_id, state.selected_bead_id)
+
     def test_runtime_refresh_clears_pending_merge_when_target_leaves_done_view(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Other done", agent_type="developer", description="other", status=BEAD_DONE)
         target = self.storage.create_bead(
