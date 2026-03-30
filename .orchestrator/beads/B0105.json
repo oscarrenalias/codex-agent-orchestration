@@ -1,0 +1,64 @@
+{
+  "bead_id": "B0105",
+  "title": "Phase 2: Runner and CLI tests",
+  "agent_type": "tester",
+  "description": "Write or update tests for runner.py and cli.py config integration. Verify command construction uses config values, per-agent-type tool resolution, backend resolution order, and backward compatibility when config is not passed.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0104",
+  "dependencies": [
+    "B0104"
+  ],
+  "acceptance_criteria": [
+    "Tests verify CodexAgentRunner builds cmd from config backend binary and flags",
+    "Tests verify ClaudeCodeAgentRunner resolves per-agent-type allowed tools",
+    "Tests verify backward compatibility when config not passed to constructor",
+    "Tests verify backend resolution order (flag > env > config default)",
+    "All tests pass with uv run python -m unittest discover -s tests -v"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B0099",
+  "execution_branch_name": "feature/b0099",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0099",
+  "expected_files": [],
+  "expected_globs": [
+    "tests/test_runner*.py",
+    "tests/test_cli*.py"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T13:12:13.965843+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

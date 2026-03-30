@@ -1,0 +1,71 @@
+{
+  "bead_id": "B0104",
+  "title": "Phase 2: Wire config into runners and CLI",
+  "agent_type": "developer",
+  "description": "Wire OrchestratorConfig into runner.py and cli.py. Both runners accept config and backend in __init__. cli.py loads config via load_config() and resolves backend from --runner flag > env var > config.default_runner. ClaudeCodeAgentRunner resolves per-agent-type allowed tools via config.allowed_tools_for(). Remove _RUNNERS registry dict and hardcoded binary names, CLI flags, --allowedTools string, default runner.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0099",
+  "dependencies": [
+    "B0100"
+  ],
+  "acceptance_criteria": [
+    "cli.py make_services() calls load_config(root) and threads config through",
+    "Backend resolution order: --runner flag > $ORCHESTRATOR_RUNNER > config.default_runner",
+    "Both runners accept config and backend in __init__",
+    "CodexAgentRunner builds cmd from self.backend.binary + self.backend.flags",
+    "ClaudeCodeAgentRunner resolves tools via config.allowed_tools_for('claude', agent_type)",
+    "run_bead() passes agent_type=bead.agent_type to _exec_json()",
+    "propose_plan() passes agent_type='planner' to _exec_json()",
+    "Backward compatibility: default_config() used if config not passed to constructor",
+    "_RUNNERS registry dict removed from cli.py",
+    "All existing tests pass"
+  ],
+  "linked_docs": [
+    "specs/externalize-config-phase2-runners-and-cli.md"
+  ],
+  "feature_root_id": "B0099",
+  "execution_branch_name": "feature/b0099",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0099",
+  "expected_files": [
+    "src/codex_orchestrator/runner.py",
+    "src/codex_orchestrator/cli.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T13:12:13.961578+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

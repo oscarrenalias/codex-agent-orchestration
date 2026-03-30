@@ -1,0 +1,68 @@
+{
+  "bead_id": "B0100",
+  "title": "Phase 1: Config module and YAML file",
+  "agent_type": "developer",
+  "description": "Create src/codex_orchestrator/config.py with three frozen dataclasses (SchedulerConfig, BackendConfig, OrchestratorConfig), load_config() and default_config() public functions. Create .orchestrator/config.yaml with default values matching all current hardcoded constants. Add pyyaml>=6,<7 dependency to pyproject.toml.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0099",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "config.py defines SchedulerConfig, BackendConfig, and OrchestratorConfig as frozen dataclasses",
+    "OrchestratorConfig.backend(name) raises KeyError listing valid backends if not found",
+    "OrchestratorConfig.allowed_tools_for(backend, agent_type) returns deduplicated union of default + agent-specific tools",
+    "load_config(root) loads .orchestrator/config.yaml and returns OrchestratorConfig",
+    "load_config(root) falls back to default_config() when file does not exist",
+    "default_config() returns values identical to current hardcoded constants",
+    ".orchestrator/config.yaml contains all sections from spec (common, codex, claude)",
+    "pyyaml>=6,<7 added to pyproject.toml dependencies"
+  ],
+  "linked_docs": [
+    "specs/externalize-config-phase1-config-module.md"
+  ],
+  "feature_root_id": "B0099",
+  "execution_branch_name": "feature/b0099",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0099",
+  "expected_files": [
+    "src/codex_orchestrator/config.py",
+    ".orchestrator/config.yaml",
+    "pyproject.toml"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T13:12:13.941933+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

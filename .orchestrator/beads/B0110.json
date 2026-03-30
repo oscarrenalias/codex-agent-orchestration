@@ -1,0 +1,61 @@
+{
+  "bead_id": "B0110",
+  "title": "Phase 3: Scheduler, skills, and prompts docs",
+  "agent_type": "documentation",
+  "description": "Update documentation to reflect config-driven scheduler, skills, and prompts. Document which constants moved to config and which were intentionally kept (AGENT_SKILL_ALLOWLIST).",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0108",
+  "dependencies": [
+    "B0108"
+  ],
+  "acceptance_criteria": [
+    "CLAUDE.md documents config-driven scheduler parameters",
+    "CLAUDE.md notes AGENT_SKILL_ALLOWLIST is intentionally not externalized",
+    "Documentation is consistent with existing style"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B0099",
+  "execution_branch_name": "feature/b0099",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0099",
+  "expected_files": [
+    "CLAUDE.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T13:12:13.993904+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}
