@@ -9,6 +9,10 @@ BUILT_IN_AGENT_TYPES = ("planner", "developer", "tester", "documentation", "revi
 DEFAULT_TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates" / "agents"
 
 
+def supported_agent_types(config_types: list[str] | None = None) -> tuple[str, ...]:
+    return tuple(config_types) if config_types else BUILT_IN_AGENT_TYPES
+
+
 def render_context_snippets(context_paths: list[Path], root: Path) -> str:
     if not context_paths:
         return "No linked repository documents were provided."
@@ -42,18 +46,35 @@ def render_agent_output_requirements(agent_type: str) -> str:
         + "- Keep `completed`, `remaining`, and `risks` as concise narrative context only; they do not replace the structured verdict fields.\n\n"
     )
 
-def guardrail_template_path(agent_type: str, *, root: Path | None = None) -> Path:
-    if agent_type not in BUILT_IN_AGENT_TYPES:
+def guardrail_template_path(
+    agent_type: str,
+    *,
+    root: Path | None = None,
+    templates_dir: str | None = None,
+    agent_types: list[str] | None = None,
+) -> Path:
+    allowed = supported_agent_types(agent_types)
+    if agent_type not in allowed:
         raise ValueError(f"Unsupported agent type for worker prompt: {agent_type}")
     if root is None:
-        templates_dir = DEFAULT_TEMPLATES_DIR
+        resolved_dir = DEFAULT_TEMPLATES_DIR
+    elif templates_dir is not None:
+        resolved_dir = Path(root) / templates_dir
     else:
-        templates_dir = Path(root) / "templates" / "agents"
-    return templates_dir / f"{agent_type}.md"
+        resolved_dir = Path(root) / "templates" / "agents"
+    return resolved_dir / f"{agent_type}.md"
 
 
-def load_guardrail_template(agent_type: str, *, root: Path | None = None) -> tuple[Path, str]:
-    path = guardrail_template_path(agent_type, root=root)
+def load_guardrail_template(
+    agent_type: str,
+    *,
+    root: Path | None = None,
+    templates_dir: str | None = None,
+    agent_types: list[str] | None = None,
+) -> tuple[Path, str]:
+    path = guardrail_template_path(
+        agent_type, root=root, templates_dir=templates_dir, agent_types=agent_types,
+    )
     if not path.is_file():
         raise FileNotFoundError(
             f"Missing guardrail template for built-in agent '{agent_type}' at {path}. "

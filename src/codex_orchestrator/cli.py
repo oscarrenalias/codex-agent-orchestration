@@ -232,7 +232,7 @@ def make_services(root: Path, runner_backend: str | None = None) -> tuple[Reposi
     backend_cfg = config.backend(backend_name)
     runner = runner_cls(config=config, backend=backend_cfg)
     worktrees = WorktreeManager(root, storage.worktrees_dir)
-    scheduler = Scheduler(storage, runner, worktrees)
+    scheduler = Scheduler(storage, runner, worktrees, config=config)
     planner = PlanningService(storage, runner)
     return storage, scheduler, planner
 

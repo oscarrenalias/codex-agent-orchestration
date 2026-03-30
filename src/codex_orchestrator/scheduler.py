@@ -21,45 +21,38 @@ from .models import (
     SchedulerResult,
     utc_now,
 )
-from .prompts import BUILT_IN_AGENT_TYPES, load_guardrail_template
+from .config import OrchestratorConfig, default_config
+from .prompts import load_guardrail_template
 from .runner import AgentRunner
 from .skills import prepare_isolated_execution_root
 from .storage import RepositoryStorage
 
 
-FOLLOWUP_SUFFIXES = {
-    "tester": "test",
-    "documentation": "docs",
-    "review": "review",
-}
-CORRECTIVE_SUFFIX = "corrective"
-MAX_CORRECTIVE_ATTEMPTS = 2
-TRANSIENT_BLOCK_PATTERNS = (
-    "high demand",
-    "internal server error",
-    "timeout",
-    "timed out",
-    "connection reset",
-    "connection refused",
-    "temporarily unavailable",
-    "service unavailable",
-    "missing bearer",
-    "unauthorized",
-)
-RUNNABLE_REASSIGN_AGENTS = set(BUILT_IN_AGENT_TYPES)
-FOLLOWUP_AGENT_BY_SUFFIX = {
-    f"-{FOLLOWUP_SUFFIXES['tester']}": "tester",
-    f"-{FOLLOWUP_SUFFIXES['documentation']}": "documentation",
-    f"-{FOLLOWUP_SUFFIXES['review']}": "review",
-}
 REVIEW_TEST_VERDICT_COMPAT_MODE = True
 
 
 class Scheduler:
-    def __init__(self, storage: RepositoryStorage, runner: AgentRunner, worktrees: WorktreeManager) -> None:
+    def __init__(
+        self,
+        storage: RepositoryStorage,
+        runner: AgentRunner,
+        worktrees: WorktreeManager,
+        config: OrchestratorConfig | None = None,
+    ) -> None:
         self.storage = storage
         self.runner = runner
         self.worktrees = worktrees
+        self.config = config or default_config()
+
+        self.followup_suffixes = dict(self.config.scheduler.followup_suffixes)
+        self.corrective_suffix = self.config.scheduler.corrective_suffix
+        self.max_corrective_attempts = self.config.scheduler.max_corrective_attempts
+        self.transient_block_patterns = self.config.scheduler.transient_block_patterns
+        self.lease_timeout_minutes = self.config.scheduler.lease_timeout_minutes
+        self.runnable_reassign_agents = set(self.config.agent_types)
+        self.followup_agent_by_suffix = {
+            f"-{suffix}": agent for agent, suffix in self.followup_suffixes.items()
+        }
 
     def expire_stale_leases(self, *, now: datetime | None = None) -> list[str]:
         now = now or datetime.now(timezone.utc)
@@ -148,7 +141,7 @@ class Scheduler:
                 if reporter:
                     reporter.bead_deferred(bead, f"Repaired agent type to {bead.agent_type}")
             reason = bead.block_reason.lower()
-            if reason and any(pattern in reason for pattern in TRANSIENT_BLOCK_PATTERNS):
+            if reason and any(pattern in reason for pattern in self.transient_block_patterns):
                 bead.status = BEAD_READY
                 bead.block_reason = ""
                 self.storage.update_bead(
@@ -184,7 +177,7 @@ class Scheduler:
                             f"Requeued after corrective bead {latest_done.bead_id} completed",
                         )
                     continue
-                if len(corrective_children) < MAX_CORRECTIVE_ATTEMPTS and self._can_plan_corrective(bead):
+                if len(corrective_children) < self.max_corrective_attempts and self._can_plan_corrective(bead):
                     self._create_corrective_bead(bead, reporter=reporter)
                 else:
                     self._escalate_blocked_bead(bead, reporter=reporter)
@@ -192,7 +185,7 @@ class Scheduler:
             if not corrective_children and self._can_plan_corrective(bead):
                 self._create_corrective_bead(bead, reporter=reporter)
                 continue
-            if len(corrective_children) >= MAX_CORRECTIVE_ATTEMPTS:
+            if len(corrective_children) >= self.max_corrective_attempts:
                 self._escalate_blocked_bead(bead, reporter=reporter)
 
     def _already_retried_after_corrective(self, bead: Bead, corrective: Bead) -> bool:
@@ -231,26 +224,26 @@ class Scheduler:
         return True
 
     def _repair_invalid_worker_agent_type(self, bead: Bead) -> bool:
-        if bead.agent_type in RUNNABLE_REASSIGN_AGENTS:
+        if bead.agent_type in self.runnable_reassign_agents:
             return False
         candidates: list[str] = []
         next_agent = bead.handoff_summary.next_agent.strip()
-        if next_agent in RUNNABLE_REASSIGN_AGENTS:
+        if next_agent in self.runnable_reassign_agents:
             candidates.append(next_agent)
         previous = str(bead.metadata.get("reassigned_from_agent_type", "")).strip()
-        if previous in RUNNABLE_REASSIGN_AGENTS:
+        if previous in self.runnable_reassign_agents:
             candidates.append(previous)
-        for suffix, agent in FOLLOWUP_AGENT_BY_SUFFIX.items():
+        for suffix, agent in self.followup_agent_by_suffix.items():
             if bead.bead_id.endswith(suffix):
                 candidates.append(agent)
                 break
         if bead.parent_id:
             parent = self.storage.load_bead(bead.parent_id)
-            if parent.agent_type in RUNNABLE_REASSIGN_AGENTS:
+            if parent.agent_type in self.runnable_reassign_agents:
                 candidates.append(parent.agent_type)
         candidates.append("developer")
         for candidate in candidates:
-            if candidate in RUNNABLE_REASSIGN_AGENTS:
+            if candidate in self.runnable_reassign_agents:
                 bead.agent_type = candidate
                 return True
         return False
@@ -261,7 +254,7 @@ class Scheduler:
             path = self.storage.bead_path(recorded)
             if path.exists():
                 return self.storage.load_bead(recorded)
-        expected = f"{bead.bead_id}-{CORRECTIVE_SUFFIX}"
+        expected = f"{bead.bead_id}-{self.corrective_suffix}"
         path = self.storage.bead_path(expected)
         if path.exists():
             return self.storage.load_bead(expected)
@@ -282,7 +275,7 @@ class Scheduler:
             description_parts.append(f"Remaining work: {bead.handoff_summary.remaining}")
         if not description_parts:
             description_parts.append("Investigate blocked bead and implement corrective fix to unblock parent bead.")
-        corrective_id = self.storage.allocate_child_bead_id(bead.bead_id, CORRECTIVE_SUFFIX)
+        corrective_id = self.storage.allocate_child_bead_id(bead.bead_id, self.corrective_suffix)
         corrective = self.storage.create_bead(
             bead_id=corrective_id,
             title=f"Corrective fix for {bead.bead_id}: {bead.title}",
@@ -323,7 +316,7 @@ class Scheduler:
             return
         bead.metadata["needs_human_intervention"] = True
         bead.metadata["escalation_reason"] = (
-            f"Exceeded corrective attempt budget ({MAX_CORRECTIVE_ATTEMPTS}) for blocked bead."
+            f"Exceeded corrective attempt budget ({self.max_corrective_attempts}) for blocked bead."
         )
         self.storage.update_bead(
             bead,
@@ -339,7 +332,7 @@ class Scheduler:
         execution_env: dict[str, str] | None = None
         feature_root_id = self.storage.feature_root_id_for(bead)
         bead.status = BEAD_IN_PROGRESS
-        bead.lease = Lease(owner=f"{bead.agent_type}:{bead.bead_id}", expires_at=(datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat())
+        bead.lease = Lease(owner=f"{bead.agent_type}:{bead.bead_id}", expires_at=(datetime.now(timezone.utc) + timedelta(minutes=self.lease_timeout_minutes)).isoformat())
         if feature_root_id:
             bead.feature_root_id = feature_root_id
             bead.execution_branch_name = bead.execution_branch_name or self.storage.default_execution_branch_name(feature_root_id)
@@ -388,6 +381,7 @@ class Scheduler:
                 catalog_repo_root=self.storage.root,
                 workspace_repo_root=runner_workdir,
                 bead=bead,
+                config=self.config,
                 runner_backend=self.runner.backend_name,
             )
             bead.metadata.update(skill_metadata)
@@ -415,7 +409,12 @@ class Scheduler:
         self.storage.update_bead(bead, event="started", summary="Worker started")
         context_paths = self.storage.linked_context_paths(bead)
         try:
-            guardrail_path, guardrail_text = load_guardrail_template(bead.agent_type, root=runner_workdir)
+            guardrail_path, guardrail_text = load_guardrail_template(
+                bead.agent_type,
+                root=runner_workdir,
+                templates_dir=self.config.templates_dir,
+                agent_types=self.config.agent_types,
+            )
             self.storage.record_guardrail_context(
                 bead,
                 template_path=guardrail_path,
@@ -658,9 +657,9 @@ class Scheduler:
                 metadata={"discovered_by": bead.bead_id},
             ))
 
-        test_id = self._existing_or_new_child_id(bead.bead_id, FOLLOWUP_SUFFIXES["tester"])
-        doc_id = self._existing_or_new_child_id(bead.bead_id, FOLLOWUP_SUFFIXES["documentation"])
-        review_id = self._existing_or_new_child_id(bead.bead_id, FOLLOWUP_SUFFIXES["review"])
+        test_id = self._existing_or_new_child_id(bead.bead_id, self.followup_suffixes["tester"])
+        doc_id = self._existing_or_new_child_id(bead.bead_id, self.followup_suffixes["documentation"])
+        review_id = self._existing_or_new_child_id(bead.bead_id, self.followup_suffixes["review"])
 
         if not self.storage.bead_path(test_id).exists():
             created.append(self.storage.create_bead(
