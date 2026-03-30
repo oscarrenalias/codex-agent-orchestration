@@ -259,7 +259,7 @@ Keybindings: `s` triggers a single scheduler cycle, `S` toggles continuous mode.
 
 Bead telemetry (from `bead.metadata["telemetry"]`) surfaces in two places:
 
-1. **Bead list / tree panel**: Each bead label appends a compact badge like `[$0.32, 2:55]` showing cost and duration. The badge is empty when no telemetry is available. Duration uses `duration_ms` (falling back to `duration_api_ms`) formatted as `m:ss`.
+1. **Bead list / tree panel**: Each bead label follows the format `{id} · {title} [{status}]{badge}`. Titles are truncated to fit the available panel width (default 120 chars) with `...` appended when trimmed. The telemetry badge (e.g. `[$0.32, 2:55]`) shows cost and duration; it is empty when no telemetry is available. Duration uses `duration_ms` (falling back to `duration_api_ms`) formatted as `m:ss`.
 
 2. **Detail panel — Telemetry section**: A collapsible section (constant `DETAIL_SECTION_TELEMETRY`, added to `DETAIL_SECTION_ORDER`) displays: `cost_usd`, `duration`, `num_turns`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `prompt_chars`, and `session_id`. When `telemetry_history` contains multiple attempts, an additional line shows the attempt count and cumulative cost.
 
