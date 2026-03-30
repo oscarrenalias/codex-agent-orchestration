@@ -58,7 +58,11 @@ Isolated execution root layout per backend:
 | Agent steering | Embedded in prompt | `exec_root/CLAUDE.md` (auto-loaded) |
 | CLI invocation | `codex exec --full-auto` | `claude -p --dangerously-skip-permissions` |
 
-Both runners accept `config: OrchestratorConfig` and `backend: BackendConfig` at construction. Binary paths, CLI flags, and allowed tools are read from config -- not hardcoded. If constructed without arguments (e.g. in tests), runners fall back to `default_config()`.
+Both runners accept `config: OrchestratorConfig` and `backend: BackendConfig` at construction. Binary paths, CLI flags, allowed tools, and subprocess timeouts are read from config -- not hardcoded. If constructed without arguments (e.g. in tests), runners fall back to `default_config()`.
+
+### Subprocess timeouts
+
+All agent subprocess calls enforce a configurable timeout via `BackendConfig.timeout_seconds` (default 600s / 10 minutes). Claude Code's structured-output retry call uses `BackendConfig.retry_timeout_seconds` (default 300s / 5 minutes). When a subprocess exceeds its timeout, a `RuntimeError` is raised with a descriptive message. Both values are overridable per-backend in `.orchestrator/config.yaml` under `timeout_seconds` and `retry_timeout_seconds`.
 
 CLI commands are split into **structural flags** (per-invocation values like `--output-schema`, `--json-schema`, `-C`, `-p`) that stay in code, and **backend flags** (like `--full-auto`, `--dangerously-skip-permissions`) that come from `config.backend(name).flags`.
 
@@ -148,7 +152,7 @@ Orchestrator settings live in `.orchestrator/config.yaml`. The config module (`s
 
 - **`OrchestratorConfig`** -- top-level: `default_runner`, `templates_dir`, `agent_types`, `scheduler`, `backends`.
 - **`SchedulerConfig`** -- lease timeouts, corrective/followup suffixes, transient failure patterns.
-- **`BackendConfig`** -- per-backend binary path, skills dir, CLI flags, and tool allowlists.
+- **`BackendConfig`** -- per-backend binary path, skills dir, CLI flags, tool allowlists, and subprocess timeouts.
 
 Key functions:
 

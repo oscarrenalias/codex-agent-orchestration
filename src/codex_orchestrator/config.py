@@ -37,6 +37,8 @@ class BackendConfig:
     flags: list[str] = field(default_factory=list)
     allowed_tools_default: list[str] = field(default_factory=list)
     allowed_tools_by_agent: dict[str, list[str]] = field(default_factory=dict)
+    timeout_seconds: int = 600
+    retry_timeout_seconds: int = 300
 
 
 @dataclass(frozen=True)
@@ -152,6 +154,7 @@ def _build_scheduler(raw: dict) -> SchedulerConfig:
 
 
 def _build_backend(raw: dict) -> BackendConfig:
+    defaults = BackendConfig()
     return BackendConfig(
         binary=raw.get("binary", ""),
         skills_dir=raw.get("skills_dir", ""),
@@ -160,6 +163,8 @@ def _build_backend(raw: dict) -> BackendConfig:
         allowed_tools_by_agent={
             k: list(v) for k, v in raw.get("allowed_tools_by_agent", {}).items()
         },
+        timeout_seconds=raw.get("timeout_seconds", defaults.timeout_seconds),
+        retry_timeout_seconds=raw.get("retry_timeout_seconds", defaults.retry_timeout_seconds),
     )
 
 
