@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
@@ -484,6 +485,8 @@ class Scheduler:
             "block_reason": agent_result.block_reason,
         }
 
+        self._store_telemetry(bead, agent_result)
+
         if agent_result.outcome == "blocked":
             bead.status = BEAD_BLOCKED
             self.storage.update_bead(bead, event="blocked", summary=agent_result.summary)
@@ -533,6 +536,81 @@ class Scheduler:
         if reporter:
             reporter.bead_completed(bead, agent_result.summary, created)
         result.completed.append(bead.bead_id)
+
+    @staticmethod
+    def _telemetry_max_attempts() -> int:
+        default = 10
+        raw = os.environ.get("ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS", "")
+        if not raw:
+            return default
+        try:
+            value = int(raw)
+        except (ValueError, TypeError):
+            return default
+        if value <= 0:
+            return default
+        return value
+
+    def _store_telemetry(self, bead: Bead, agent_result: AgentRunResult) -> None:
+        if agent_result.telemetry is None:
+            return
+        try:
+            metrics = dict(agent_result.telemetry)
+            # Remove heavy text fields from lightweight bead metadata copy
+            lightweight = {k: v for k, v in metrics.items() if k not in ("prompt_text", "response_text")}
+
+            # Tier 1: bead metadata
+            bead.metadata["telemetry"] = lightweight
+
+            history: list[dict] = list(bead.metadata.get("telemetry_history", []))
+            attempt = len(history) + 1
+            lightweight["attempt"] = attempt
+            history.append(lightweight)
+
+            cap = self._telemetry_max_attempts()
+            if len(history) > cap:
+                history = history[-cap:]
+            bead.metadata["telemetry_history"] = history
+
+            # Tier 2: full artifact file
+            started_at = ""
+            finished_at = utc_now()
+            for record in reversed(bead.execution_history):
+                if record.event == "started":
+                    started_at = record.timestamp
+                    break
+
+            error = None
+            if agent_result.outcome == "failed":
+                error = {
+                    "stage": "agent_execution",
+                    "message": agent_result.summary or agent_result.block_reason or "Unknown failure",
+                }
+
+            parsed_result = bead.metadata.get("last_agent_result")
+
+            self.storage.write_telemetry_artifact(
+                bead_id=bead.bead_id,
+                agent_type=bead.agent_type,
+                attempt=attempt,
+                started_at=started_at,
+                finished_at=finished_at,
+                outcome=agent_result.outcome,
+                prompt_text=metrics.get("prompt_text"),
+                response_text=metrics.get("response_text"),
+                parsed_result=parsed_result,
+                metrics=lightweight,
+                error=error,
+            )
+        except Exception as exc:
+            bead.execution_history.append(
+                ExecutionRecord(
+                    timestamp=utc_now(),
+                    event="telemetry_write_warning",
+                    agent_type="scheduler",
+                    summary=f"Telemetry write failed (bead outcome preserved): {exc}",
+                )
+            )
 
     def _apply_review_test_verdict(self, bead: Bead, agent_result: AgentRunResult) -> None:
         if bead.agent_type not in {"review", "tester"}:
