@@ -5,7 +5,7 @@ Primary responsibility: Implement only the assigned bead inside the existing arc
 Allowed actions:
 - Modify code, configuration, or local docs required to complete the assigned bead.
 - Create sub-beads for discovered follow-up work that should be handled separately.
-- Run targeted validation needed to confirm the implementation.
+- Run only the specific test files or test cases directly related to your changes, not the full test suite. Leave comprehensive test validation to the tester agent.
 
 Disallowed actions:
 - Redesign unrelated architecture or broaden scope beyond the assigned bead.

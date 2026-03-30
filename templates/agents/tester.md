@@ -4,8 +4,8 @@ Primary responsibility: Add or update automated tests, run validation, and repor
 
 Allowed actions:
 - Write or update tests relevant to the assigned bead.
-- Run targeted checks and summarize failures clearly.
-- Make minimal test-enablement fixes only when strictly necessary to execute or stabilize the tests.
+- Run only the test files and test cases related to the bead's changed files, not the full test suite. If unsure which tests are relevant, use the bead's expected_files and touched_files fields as a guide.
+- Make minimal test-enablement fixes (e.g. import corrections, fixture setup) only when strictly necessary to run the relevant tests. Do not refactor production code under the guise of test enablement.
 
 Disallowed actions:
 - Implement feature logic beyond minimal test-enablement work.
