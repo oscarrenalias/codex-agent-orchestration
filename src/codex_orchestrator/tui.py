@@ -934,7 +934,7 @@ class TuiRuntimeState:
             return False
         self.awaiting_retry_confirmation = True
         self.pending_retry_bead_id = bead.bead_id
-        self.status_message = f"Confirm retry for {bead.bead_id} with y; n cancels."
+        self.status_message = f"Confirm retry for {bead.bead_id} with y; c cancels."
         return True
 
     def confirm_retry_selected_blocked_bead(self) -> bool:
@@ -1020,7 +1020,7 @@ class TuiRuntimeState:
             self.status_message = f"Unsupported status target: {target_status}."
             return
         self.pending_status_target = target_status
-        self.status_message = f"Confirm update for {bead_id} -> {target_status} with y; n cancels."
+        self.status_message = f"Confirm update for {bead_id} -> {target_status} with y; c cancels."
 
     def cancel_pending_action(self) -> bool:
         if self.awaiting_merge_confirmation:

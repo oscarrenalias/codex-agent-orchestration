@@ -2216,6 +2216,209 @@ class TuiRegressionTests(unittest.TestCase):
         has_action = asyncio.run(exercise_app())
         self.assertTrue(has_action)
 
+    # ── B0139 keyboard shortcut remap tests ────────────────────
+
+    def test_g_key_jumps_to_first_bead_in_list_panel(self) -> None:
+        """Pressing 'g' in the list panel should jump selection to the first bead."""
+        self.storage.create_bead(bead_id="B0001", title="First", agent_type="developer", description="a", status=BEAD_READY)
+        self.storage.create_bead(bead_id="B0002", title="Second", agent_type="developer", description="b", status=BEAD_READY)
+        self.storage.create_bead(bead_id="B0003", title="Third", agent_type="developer", description="c", status=BEAD_READY)
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[str, str]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 24)
+                await pilot.pause()
+                # Navigate down to last bead
+                await pilot.press("j")
+                await pilot.pause()
+                await pilot.press("j")
+                await pilot.pause()
+                after_down = app.runtime_state.selected_bead_id or "-"
+                # Press 'g' to jump to first
+                await pilot.press("g")
+                await pilot.pause()
+                return after_down, app.runtime_state.selected_bead_id or "-"
+
+        after_down, after_g = asyncio.run(exercise_app())
+        self.assertEqual("B0003", after_down)
+        self.assertEqual("B0001", after_g)
+
+    def test_G_key_jumps_to_last_bead_in_list_panel(self) -> None:
+        """Pressing 'G' in the list panel should jump selection to the last bead."""
+        self.storage.create_bead(bead_id="B0001", title="First", agent_type="developer", description="a", status=BEAD_READY)
+        self.storage.create_bead(bead_id="B0002", title="Second", agent_type="developer", description="b", status=BEAD_READY)
+        self.storage.create_bead(bead_id="B0003", title="Third", agent_type="developer", description="c", status=BEAD_READY)
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> str:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 24)
+                await pilot.pause()
+                initial = app.runtime_state.selected_bead_id or "-"
+                self.assertEqual("B0001", initial)
+                # Press 'G' to jump to last
+                await pilot.press("G")
+                await pilot.pause()
+                return app.runtime_state.selected_bead_id or "-"
+
+        after_G = asyncio.run(exercise_app())
+        self.assertEqual("B0003", after_G)
+
+    def test_n_key_navigates_to_next_detail_section(self) -> None:
+        """Pressing 'n' in the detail panel should navigate to the next section."""
+        bead = self.storage.create_bead(
+            bead_id="B0001", title="Sectioned", agent_type="developer",
+            description="detail", status=BEAD_READY,
+            acceptance_criteria=["criterion 1"],
+            expected_files=["src/foo.py"],
+        )
+        bead.handoff_summary = HandoffSummary(remaining="Needs review.")
+        self.storage.save_bead(bead)
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[int, int]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                await pilot.press("tab")
+                await pilot.pause()
+                initial_section = app._active_detail_section_index
+                await pilot.press("n")
+                await pilot.pause()
+                return initial_section, app._active_detail_section_index
+
+        initial, after_n = asyncio.run(exercise_app())
+        self.assertEqual(0, initial)
+        self.assertEqual(1, after_n)
+
+    def test_N_key_navigates_to_previous_detail_section(self) -> None:
+        """Pressing 'N' in the detail panel should navigate to the previous section."""
+        bead = self.storage.create_bead(
+            bead_id="B0001", title="Sectioned", agent_type="developer",
+            description="detail", status=BEAD_READY,
+            acceptance_criteria=["criterion 1"],
+            expected_files=["src/foo.py"],
+        )
+        bead.handoff_summary = HandoffSummary(remaining="Needs review.")
+        self.storage.save_bead(bead)
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[int, int]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                await pilot.press("tab")
+                await pilot.pause()
+                # Navigate forward twice
+                await pilot.press("n")
+                await pilot.pause()
+                await pilot.press("n")
+                await pilot.pause()
+                after_forward = app._active_detail_section_index
+                # Navigate back
+                await pilot.press("N")
+                await pilot.pause()
+                return after_forward, app._active_detail_section_index
+
+        after_forward, after_N = asyncio.run(exercise_app())
+        self.assertEqual(2, after_forward)
+        self.assertEqual(1, after_N)
+
+    def test_c_key_cancels_pending_retry(self) -> None:
+        """Pressing 'c' should cancel a pending retry action (replaces old 'n' binding)."""
+        self.storage.create_bead(
+            bead_id="B0001", title="Blocked", agent_type="developer",
+            description="blocked", status=BEAD_BLOCKED,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[str, str, str]:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                # Start retry flow
+                await pilot.press("t")
+                await pilot.pause()
+                pending_status = app.runtime_state.status_message
+                # Cancel with 'c'
+                await pilot.press("c")
+                await pilot.pause()
+                bead_after = self.storage.load_bead("B0001")
+                return pending_status, app.runtime_state.status_message, bead_after.status
+
+        pending, after_cancel, bead_status = asyncio.run(exercise_app())
+        self.assertIn("Confirm retry", pending)
+        self.assertIn("Cancelled", after_cancel)
+        self.assertEqual(BEAD_BLOCKED, bead_status)
+
+    def test_c_key_cancels_pending_status_update(self) -> None:
+        """Pressing 'c' should cancel a pending status update action."""
+        self.storage.create_bead(
+            bead_id="B0001", title="Ready", agent_type="documentation",
+            description="ready", status=BEAD_READY,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[str, str, str]:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                # Start status update flow
+                await pilot.press("u")
+                await pilot.press("d")
+                await pilot.pause()
+                pending_status = app.runtime_state.status_message
+                # Cancel with 'c'
+                await pilot.press("c")
+                await pilot.pause()
+                bead_after = self.storage.load_bead("B0001")
+                return pending_status, app.runtime_state.status_message, bead_after.status
+
+        pending, after_cancel, bead_status = asyncio.run(exercise_app())
+        self.assertIn("done", pending.lower())
+        self.assertIn("Cancelled", after_cancel)
+        self.assertEqual(BEAD_READY, bead_status)
+
+    def test_detail_panel_subtitle_shows_updated_keybinding_hints(self) -> None:
+        """The detail panel subtitle should show 'n/N section' instead of old '[/] section'."""
+        self.storage.create_bead(
+            bead_id="B0001", title="Test", agent_type="developer",
+            description="test", status=BEAD_READY,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> str:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                await pilot.press("tab")
+                await pilot.pause()
+                detail_panel = app.screen.query_one("#detail-panel")
+                subtitle = detail_panel.border_subtitle
+                return subtitle.plain if hasattr(subtitle, "plain") else str(subtitle)
+
+        subtitle = asyncio.run(exercise_app())
+        self.assertIn("n/N section", subtitle)
+        self.assertNotIn("[/]", subtitle)
+
+    def test_bindings_include_g_G_n_N_c_keys(self) -> None:
+        """The TUI app bindings should include g, G, n, N, and c keys."""
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> dict:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                bindings = {}
+                for b in app.BINDINGS:
+                    bindings[b.key] = b.action
+                return bindings
+
+        bindings = asyncio.run(exercise_app())
+        self.assertEqual("go_home", bindings.get("g"))
+        self.assertEqual("go_end", bindings.get("G"))
+        self.assertEqual("next_detail_section", bindings.get("n"))
+        self.assertEqual("previous_detail_section", bindings.get("N"))
+        self.assertEqual("cancel_pending_action", bindings.get("c"))
+
     # ── Async scheduler worker tests (B0131) ──────────────────
 
     def test_tui_scheduler_reporter_posts_events_to_state_log(self) -> None:
