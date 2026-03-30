@@ -1825,6 +1825,158 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual("auto", list_overflow)
         self.assertEqual("auto", detail_overflow)
 
+    def test_tree_widget_hides_root_node_and_shows_beads_as_top_level(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Alpha", agent_type="developer", description="alpha", status=BEAD_READY)
+        self.storage.create_bead(
+            bead_id="B0001-1", title="Child", agent_type="developer", description="child",
+            parent_id="B0001", dependencies=["B0001"], status=BEAD_OPEN,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[bool, int, str]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                bead_tree = app.screen.query_one("#bead-tree")
+                return (
+                    bead_tree.show_root,
+                    len(list(bead_tree.root.children)),
+                    bead_tree.root.children[0].label.plain if bead_tree.root.children else "-",
+                )
+
+        show_root, child_count, first_label = asyncio.run(exercise_app())
+
+        self.assertFalse(show_root)
+        self.assertEqual(1, child_count)
+        self.assertIn("B0001", first_label)
+
+    def test_enter_key_in_list_panel_delegates_to_tree_not_merge(self) -> None:
+        root = self.storage.create_bead(bead_id="B0001", title="Root", agent_type="developer", description="root", status=BEAD_READY)
+        self.storage.create_bead(
+            bead_id="B0001-1", title="Child", agent_type="developer", description="child",
+            parent_id="B0001", dependencies=["B0001"], status=BEAD_OPEN,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[bool, str]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+
+                # Press Enter on list panel — should delegate to tree, not trigger merge
+                await pilot.press("enter")
+                await pilot.pause()
+
+                return (
+                    app.runtime_state.awaiting_merge_confirmation,
+                    app.runtime_state.status_message,
+                )
+
+        awaiting_merge, status = asyncio.run(exercise_app())
+
+        # Enter in list panel should NOT have triggered merge flow
+        self.assertFalse(awaiting_merge)
+        self.assertNotIn("Confirm merge", status)
+
+    def test_enter_key_blocked_during_help_overlay_in_list_panel(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Root", agent_type="developer", description="root", status=BEAD_READY)
+        self.storage.create_bead(
+            bead_id="B0001-1", title="Child", agent_type="developer", description="child",
+            parent_id="B0001", dependencies=["B0001"], status=BEAD_OPEN,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[str, str]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+
+                await pilot.press("?")
+                await pilot.pause()
+                overlay_status = app.runtime_state.status_message
+
+                # Press enter while help overlay is open
+                await pilot.press("enter")
+                await pilot.pause()
+                after_enter_status = app.runtime_state.status_message
+
+                return overlay_status, after_enter_status
+
+        overlay_status, after_enter_status = asyncio.run(exercise_app())
+
+        self.assertIn("Help overlay open", overlay_status)
+        # Enter should have been blocked — status unchanged
+        self.assertIn("Help overlay open", after_enter_status)
+
+    def test_list_panel_cache_detects_status_change_and_triggers_rebuild(self) -> None:
+        bead = self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[int, int]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+
+                # First call should be a no-op (already rendered)
+                bead_tree = app.screen.query_one("#bead-tree")
+                with patch.object(bead_tree, "clear") as clear_mock:
+                    app._update_list_panel()
+                    first_calls = clear_mock.call_count
+
+                # Change the bead status and refresh
+                bead.status = BEAD_BLOCKED
+                self.storage.save_bead(bead)
+                app.runtime_state.refresh()
+                # Now update should rebuild
+                with patch.object(app, "_populate_bead_tree") as populate_mock:
+                    app._update_list_panel()
+                    second_calls = populate_mock.call_count
+
+                return first_calls, second_calls
+
+        no_change_calls, after_change_calls = asyncio.run(exercise_app())
+
+        self.assertEqual(0, no_change_calls)
+        self.assertEqual(1, after_change_calls)
+
+    def test_tree_node_collapse_expand_event_handlers_update_tracked_set(self) -> None:
+        from textual.widgets import Tree as TextualTree
+
+        self.storage.create_bead(bead_id="B0001", title="Root", agent_type="developer", description="root", status=BEAD_READY)
+        self.storage.create_bead(
+            bead_id="B0001-1", title="Child", agent_type="developer", description="child",
+            parent_id="B0001", dependencies=["B0001"], status=BEAD_OPEN,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[bool, bool, bool]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                bead_tree = app.screen.query_one("#bead-tree")
+                root_node = bead_tree.root.children[0]
+
+                # Directly simulate collapse event
+                root_node.collapse()
+                await pilot.pause()
+                after_collapse = "B0001" in app._collapsed_bead_ids
+
+                # Directly simulate expand event
+                root_node.expand()
+                await pilot.pause()
+                after_expand = "B0001" in app._collapsed_bead_ids
+
+                # Verify tree has children
+                has_children = len(list(root_node.children)) > 0
+
+                return after_collapse, after_expand, has_children
+
+        after_collapse, after_expand, has_children = asyncio.run(exercise_app())
+
+        self.assertTrue(after_collapse)
+        self.assertFalse(after_expand)
+        self.assertTrue(has_children)
+
     def test_command_tui_rejects_descendant_scope_before_launch(self) -> None:
         feature_root_id, _ = self._create_feature_tree()
         stream = io.StringIO()
