@@ -198,7 +198,8 @@ Refresh modes and focus cues:
 - `a` enables or disables timed refreshes without enabling scheduler runs
 - `S` switches timed refreshes into timed scheduler passes; if timed refresh is off, `S` enables it first
 - turning timed refresh off always returns the screen to full manual mode and also disables timed scheduler runs
-- the status panel shows the current mode and focused panel, and the focused list or detail panel keeps the accent border so operators can see whether navigation keys will move the list selection or scroll the detail view
+- the active list or detail panel switches to a double success-color border with a light tint, inactive panels keep the standard accent border, and panel titles explicitly flip between `[ACTIVE]` and `[idle]`
+- the status panel includes an `Active Panel:` line so operators can immediately tell whether keyboard input will drive list navigation or detail scrolling
 
 Keyboard bindings:
 
@@ -255,7 +256,7 @@ Refresh, help, and operator-action behavior:
 - `S` enables or disables continuous scheduler mode for timed refreshes; when enabled, each timed refresh runs one scheduler cycle instead of a read-only refresh, using the same scoped/global rules as `s`
 - `s` runs the same one-shot scheduler path as `orchestrator run --once`; if the TUI was launched with `--feature-root <bead_id>` the run stays inside that feature tree, otherwise it operates across the full execution root
 - `Tab` and `Shift+Tab` move focus between the list and detail panels without changing the layout or selection
-- the focused panel keeps the accent border so it is always clear whether navigation keys will move the list selection or scroll the detail view, without changing the layout
+- the focused panel keeps the stronger active chrome and `[ACTIVE]` title so it is always clear whether navigation keys will move the list selection or scroll the detail view, without changing the layout
 - selecting a different bead from the list resets the detail view to the top of that bead's metadata so keyboard and wheel scrolling always starts from the new selection
 - `?` opens a modal shortcut reference without changing the current bead selection or filter state
 - while the help overlay is open, `?` and `Esc` close it and other keys are ignored by the overlay

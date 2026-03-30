@@ -43,6 +43,8 @@ from codex_orchestrator.tui import (
     collect_tree_rows,
     format_detail_panel,
     format_help_overlay,
+    render_detail_panel,
+    render_tree_panel,
     run_tui,
     supported_filter_modes,
 )
@@ -525,6 +527,7 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertFalse(state.continuous_run_enabled)
         self.assertEqual("timed refresh", state.last_action)
         self.assertEqual("refresh/7s", state.last_result)
+        self.assertIn("Active Panel: detail scroll", state.status_panel_text())
         self.assertIn("Mode: timed refresh every 7s | scheduler=manual | focus=detail", state.status_panel_text())
 
         state.toggle_continuous_run()
@@ -535,6 +538,24 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertFalse(state.continuous_run_enabled)
         self.assertEqual("manual", state.last_result)
         self.assertIn("Mode: manual refresh | scheduler=manual | focus=detail", state.status_panel_text())
+
+    def test_renderers_include_explicit_active_panel_cues(self) -> None:
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        rows = build_tree_rows([bead])
+
+        list_render = render_tree_panel(rows, 0, focused=True)
+        detail_render = render_detail_panel(bead, focused=False)
+
+        self.assertIn("Beads [ACTIVE]", list_render)
+        self.assertIn(">> B0001", list_render)
+        self.assertIn("Details [idle]", detail_render)
+        self.assertIn("Press Tab to focus.", detail_render)
 
     def test_runtime_defaults_to_manual_refresh_until_explicit_auto_mode_is_enabled(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
@@ -921,6 +942,68 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(0, offset_after_list_click)
         self.assertEqual("B0002", selected_after_list_click)
         self.assertEqual(PANEL_DETAIL, focused_panel)
+
+    def test_focus_indicator_updates_panel_titles_for_keyboard_and_mouse_switches(self) -> None:
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Scrollable",
+            agent_type="developer",
+            description="scroll",
+            status=BEAD_READY,
+            acceptance_criteria=[f"criterion {index}" for index in range(20)],
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        class FakeOffset:
+            def __init__(self, y: int) -> None:
+                self.y = y
+
+        class FakeClickEvent:
+            def __init__(self, widget: object, y: int) -> None:
+                self.widget = widget
+                self._offset = FakeOffset(y)
+
+            def get_content_offset(self, widget: object) -> FakeOffset:
+                return self._offset
+
+        def title_text(value: object) -> str:
+            text = value.plain if hasattr(value, "plain") else str(value)
+            return text.replace("\\[", "[").replace("\\]", "]")
+
+        async def exercise_app() -> tuple[object, object, object, object, object, object, str]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                list_panel = app.screen.query_one("#list-panel")
+                detail_panel = app.screen.query_one("#detail-panel")
+                initial_titles = (title_text(list_panel.border_title), title_text(detail_panel.border_title))
+
+                await pilot.press("tab")
+                await pilot.pause()
+                after_keyboard_titles = (title_text(list_panel.border_title), title_text(detail_panel.border_title))
+
+                app.on_click(FakeClickEvent(list_panel, y=2))
+                after_mouse_titles = (title_text(list_panel.border_title), title_text(detail_panel.border_title))
+
+                return (
+                    initial_titles[0],
+                    initial_titles[1],
+                    after_keyboard_titles[0],
+                    after_keyboard_titles[1],
+                    after_mouse_titles[0],
+                    after_mouse_titles[1],
+                    app.runtime_state.status_panel_text(),
+                )
+
+        initial_list, initial_detail, keyboard_list, keyboard_detail, mouse_list, mouse_detail, status_panel = asyncio.run(exercise_app())
+
+        self.assertEqual("Beads [ACTIVE]", initial_list)
+        self.assertEqual("Details [idle]", initial_detail)
+        self.assertEqual("Beads [idle]", keyboard_list)
+        self.assertEqual("Details [ACTIVE]", keyboard_detail)
+        self.assertEqual("Beads [ACTIVE]", mouse_list)
+        self.assertEqual("Details [idle]", mouse_detail)
+        self.assertIn("Active Panel: list navigation", status_panel)
 
     def test_detail_scroll_reuses_rendered_content_during_keyboard_scroll(self) -> None:
         self.storage.create_bead(

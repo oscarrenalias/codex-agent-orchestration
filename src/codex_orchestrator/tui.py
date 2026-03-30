@@ -7,6 +7,8 @@ from datetime import datetime
 from types import ModuleType
 from typing import Callable, Iterable
 
+from rich.text import Text
+
 from .console import ConsoleReporter
 from .models import (
     BEAD_BLOCKED,
@@ -182,6 +184,17 @@ def format_footer(
     cursor = "-" if selected_index is None else str(selected_index + 1)
     run_mode = "continuous" if continuous_run_enabled else "manual"
     return f"filter={filter_mode} | run={run_mode} | rows={total_rows} | selected={cursor} | {format_status_counts(beads)} | ? help"
+
+
+def _panel_badge(panel_name: str, *, focused: bool) -> str:
+    state = "ACTIVE" if focused else "idle"
+    return f"{panel_name} [{state}]"
+
+
+def _focus_status_hint(focused_panel: str) -> str:
+    if focused_panel == PANEL_DETAIL:
+        return "detail scroll"
+    return "list navigation"
 
 
 def format_detail_panel(bead: Bead | None) -> str:
@@ -525,6 +538,7 @@ class TuiRuntimeState:
     def status_panel_text(self) -> str:
         return "\n".join([
             f"Status: {self.status_message}",
+            f"Active Panel: {_focus_status_hint(self.focused_panel)}",
             f"Mode: {self.mode_summary()}",
             f"Activity: {self.activity_message}",
             f"Last Action: {self.last_action}",
@@ -918,19 +932,21 @@ def render_tree_panel(
     rows: list[TreeRow],
     selected_index: int | None,
     *,
+    focused: bool = False,
     scroll_offset: int = 0,
     viewport_height: int | None = None,
 ) -> str:
     if not rows:
-        return "Beads\n\nNo beads match the current filter."
+        return f"{_panel_badge('Beads', focused=focused)}\n\nNo beads match the current filter."
 
     visible_rows = rows
     if viewport_height is not None:
         visible_height = max(0, viewport_height - 2)
         visible_rows = rows[scroll_offset:scroll_offset + visible_height]
-    lines = ["Beads", ""]
+    selected_marker = ">>" if focused else " >"
+    lines = [_panel_badge("Beads", focused=focused), ""]
     for index, row in enumerate(visible_rows, start=scroll_offset):
-        marker = ">" if selected_index == index else " "
+        marker = selected_marker if selected_index == index else "  "
         lines.append(f"{marker} {row.label} [{row.bead.status}]")
     return "\n".join(lines)
 
@@ -938,6 +954,7 @@ def render_tree_panel(
 def render_detail_panel(
     bead: Bead | None,
     *,
+    focused: bool = False,
     scroll_offset: int = 0,
     viewport_height: int | None = None,
 ) -> str:
@@ -945,7 +962,8 @@ def render_detail_panel(
     if viewport_height is not None:
         visible_height = max(0, viewport_height - 2)
         lines = lines[scroll_offset:scroll_offset + visible_height]
-    return "\n".join(["Details", "", *lines])
+    focus_hint = "Arrow keys scroll here." if focused else "Press Tab to focus."
+    return "\n".join([_panel_badge("Details", focused=focused), focus_hint, *lines])
 
 
 def load_textual_runtime() -> ModuleType:
@@ -1042,11 +1060,13 @@ def build_tui_app(
         }
 
         .focused {
-            border: round $success;
+            border: double $success;
+            background: $success 12%;
+            tint: $success 8%;
         }
 
         #status-panel {
-            height: 9;
+            height: 10;
         }
         """
 
@@ -1289,6 +1309,10 @@ def build_tui_app(
 
             list_panel.set_class(self.runtime_state.focused_panel == PANEL_LIST, "focused")
             detail_panel.set_class(self.runtime_state.focused_panel == PANEL_DETAIL, "focused")
+            list_panel.border_title = Text(_panel_badge("Beads", focused=self.runtime_state.focused_panel == PANEL_LIST))
+            list_panel.border_subtitle = "Enter/j/k move selection" if self.runtime_state.focused_panel == PANEL_LIST else "Tab to activate"
+            detail_panel.border_title = Text(_panel_badge("Details", focused=self.runtime_state.focused_panel == PANEL_DETAIL))
+            detail_panel.border_subtitle = "j/k/PgUp/PgDn scroll" if self.runtime_state.focused_panel == PANEL_DETAIL else "Tab to activate"
 
         def _sync_panel_focus(self) -> None:
             try:
@@ -1308,6 +1332,7 @@ def build_tui_app(
             list_render = render_tree_panel(
                 self.runtime_state.rows,
                 self.runtime_state.selected_index,
+                focused=self.runtime_state.focused_panel == PANEL_LIST,
                 scroll_offset=self.runtime_state.list_scroll_offset,
                 viewport_height=self._list_viewport_height(),
             )
@@ -1321,7 +1346,10 @@ def build_tui_app(
             except NoMatches:
                 return
             self.runtime_state.clamp_detail_scroll(self._detail_viewport_height())
-            detail_render = "\n".join(["Details", "", self.runtime_state.detail_panel_body()])
+            detail_render = render_detail_panel(
+                self.runtime_state.selected_bead(),
+                focused=self.runtime_state.focused_panel == PANEL_DETAIL,
+            )
             if force or detail_render != self._last_detail_render:
                 bead_detail.update(detail_render)
                 self._last_detail_render = detail_render
