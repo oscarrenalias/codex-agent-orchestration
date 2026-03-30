@@ -288,7 +288,8 @@ class TestClaudeAgentTypeThreading(unittest.TestCase):
             "updated_docs": [], "next_action": "", "next_agent": "",
             "block_reason": "", "conflict_risks": "", "new_beads": [],
         }
-        with patch.object(runner, "_exec_json", return_value=result_payload) as mock_exec, \
+        mock_response = {"structured_output": result_payload}
+        with patch.object(runner, "_exec_json_with_response", return_value=(result_payload, mock_response)) as mock_exec, \
              patch("codex_orchestrator.runner.build_worker_prompt", return_value="mocked prompt"):
             runner.run_bead(bead, workdir=Path("/tmp"), context_paths=[])
             _, kwargs = mock_exec.call_args
