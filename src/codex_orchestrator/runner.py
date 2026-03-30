@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import tempfile
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -188,13 +189,29 @@ class CodexAgentRunner(AgentRunner):
         context_paths: list[Path],
         execution_env: dict[str, str] | None = None,
     ) -> AgentRunResult:
+        prompt = build_worker_prompt(bead, context_paths, workdir)
+        prompt_chars = len(prompt)
+        prompt_lines = prompt.count("\n") + 1
+
+        start = time.monotonic()
         payload = self._exec_json(
-            build_worker_prompt(bead, context_paths, workdir),
+            prompt,
             schema=AGENT_OUTPUT_SCHEMA,
             workdir=workdir,
             execution_env=execution_env,
         )
-        return AgentRunResult(**payload)
+        duration_ms = int((time.monotonic() - start) * 1000)
+
+        result = AgentRunResult(**payload)
+        result.telemetry = {
+            "duration_ms": duration_ms,
+            "prompt_chars": prompt_chars,
+            "prompt_lines": prompt_lines,
+            "source": "measured",
+            "prompt_text": prompt,
+            "response_text": json.dumps(payload),
+        }
+        return result
 
     def propose_plan(self, spec_text: str) -> PlanProposal:
         payload = self._exec_json(build_planner_prompt(spec_text), schema=PLANNER_OUTPUT_SCHEMA, workdir=Path.cwd())
@@ -235,6 +252,22 @@ class ClaudeCodeAgentRunner(AgentRunner):
         execution_env: dict[str, str] | None = None,
         agent_type: str | None = None,
     ) -> dict:
+        payload, _response = self._exec_json_with_response(
+            prompt, schema=schema, workdir=workdir,
+            execution_env=execution_env, agent_type=agent_type,
+        )
+        return payload
+
+    def _exec_json_with_response(
+        self,
+        prompt: str,
+        *,
+        schema: dict,
+        workdir: Path,
+        execution_env: dict[str, str] | None = None,
+        agent_type: str | None = None,
+    ) -> tuple[dict, dict]:
+        """Run claude -p and return (structured_payload, raw_response_dict)."""
         tools = self.config.allowed_tools_for("claude", agent_type or "developer")
         cmd = [
             self.backend.binary,
@@ -266,12 +299,12 @@ class ClaudeCodeAgentRunner(AgentRunner):
         # Claude Code --output-format json puts schema-validated data in "structured_output"
         structured = response.get("structured_output")
         if structured is not None:
-            return structured
+            return structured, response
         # Fallback: try parsing "result" as JSON (e.g. when schema enforcement is skipped)
         result_text = response.get("result", "")
         if result_text:
             try:
-                return json.loads(result_text)
+                return json.loads(result_text), response
             except json.JSONDecodeError:
                 pass
         # Schema enforcement can fail on long agentic runs where the agent produces
@@ -283,7 +316,7 @@ class ClaudeCodeAgentRunner(AgentRunner):
                 agent_type=agent_type,
             )
             if retry_result is not None:
-                return retry_result
+                return retry_result, response
         raise RuntimeError(
             f"claude -p produced no structured output. "
             f"is_error={response.get('is_error')}, "
@@ -351,14 +384,41 @@ class ClaudeCodeAgentRunner(AgentRunner):
         context_paths: list[Path],
         execution_env: dict[str, str] | None = None,
     ) -> AgentRunResult:
-        payload = self._exec_json(
-            build_worker_prompt(bead, context_paths, workdir),
+        prompt = build_worker_prompt(bead, context_paths, workdir)
+        prompt_chars = len(prompt)
+        prompt_lines = prompt.count("\n") + 1
+
+        start = time.monotonic()
+        payload, response = self._exec_json_with_response(
+            prompt,
             schema=AGENT_OUTPUT_SCHEMA,
             workdir=workdir,
             execution_env=execution_env,
             agent_type=bead.agent_type,
         )
-        return AgentRunResult(**payload)
+        duration_ms = int((time.monotonic() - start) * 1000)
+
+        usage = response.get("usage", {})
+        result = AgentRunResult(**payload)
+        result.telemetry = {
+            "cost_usd": response.get("total_cost_usd"),
+            "duration_ms": duration_ms,
+            "duration_api_ms": response.get("duration_api_ms"),
+            "num_turns": response.get("num_turns"),
+            "input_tokens": usage.get("input_tokens"),
+            "output_tokens": usage.get("output_tokens"),
+            "cache_creation_tokens": usage.get("cache_creation_input_tokens"),
+            "cache_read_tokens": usage.get("cache_read_input_tokens"),
+            "stop_reason": response.get("stop_reason"),
+            "session_id": response.get("session_id"),
+            "permission_denials": response.get("permission_denials"),
+            "prompt_chars": prompt_chars,
+            "prompt_lines": prompt_lines,
+            "source": "provider",
+            "prompt_text": prompt,
+            "response_text": json.dumps(response),
+        }
+        return result
 
     def propose_plan(self, spec_text: str) -> PlanProposal:
         payload = self._exec_json(

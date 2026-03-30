@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import io
+import os
 import shutil
 import subprocess
 import sys
@@ -2273,6 +2274,538 @@ class OrchestratorTests(unittest.TestCase):
 
         self.assertEqual(1, exit_code)
         self.assertIn("Hint: install project dependencies", stream.getvalue())
+
+
+    # -- Telemetry tests (B0115) -----------------------------------------
+
+    def test_agent_run_result_telemetry_defaults_to_none(self) -> None:
+        result = AgentRunResult(outcome="completed", summary="done")
+        self.assertIsNone(result.telemetry)
+
+    def test_codex_runner_populates_minimal_telemetry(self) -> None:
+        """CodexAgentRunner.run_bead attaches measured telemetry fields."""
+        from codex_orchestrator.runner import CodexAgentRunner
+
+        bead = self.storage.create_bead(title="Telemetry codex", agent_type="developer", description="test")
+        bead.status = BEAD_IN_PROGRESS
+
+        fake_payload = {
+            "outcome": "completed",
+            "summary": "done",
+            "completed": "",
+            "remaining": "",
+            "risks": "",
+            "verdict": "approved",
+            "findings_count": 0,
+            "requires_followup": False,
+            "expected_files": [],
+            "expected_globs": [],
+            "touched_files": [],
+            "changed_files": [],
+            "updated_docs": [],
+            "next_action": "",
+            "next_agent": "",
+            "block_reason": "",
+            "conflict_risks": "",
+            "new_beads": [],
+        }
+
+        runner = CodexAgentRunner()
+        with patch.object(runner, "_exec_json", return_value=fake_payload):
+            result = runner.run_bead(bead, workdir=self.root, context_paths=[])
+
+        self.assertIsNotNone(result.telemetry)
+        self.assertEqual(result.telemetry["source"], "measured")
+        self.assertIn("duration_ms", result.telemetry)
+        self.assertIsInstance(result.telemetry["duration_ms"], int)
+        self.assertGreaterEqual(result.telemetry["duration_ms"], 0)
+        self.assertIn("prompt_chars", result.telemetry)
+        self.assertIsInstance(result.telemetry["prompt_chars"], int)
+        self.assertGreater(result.telemetry["prompt_chars"], 0)
+        self.assertIn("prompt_lines", result.telemetry)
+        self.assertIsInstance(result.telemetry["prompt_lines"], int)
+        self.assertGreater(result.telemetry["prompt_lines"], 0)
+        self.assertIn("prompt_text", result.telemetry)
+        self.assertIn("response_text", result.telemetry)
+
+    def test_claude_runner_populates_provider_telemetry(self) -> None:
+        """ClaudeCodeAgentRunner.run_bead extracts all provider fields from response envelope."""
+        from codex_orchestrator.runner import ClaudeCodeAgentRunner
+
+        bead = self.storage.create_bead(title="Telemetry claude", agent_type="developer", description="test")
+        bead.status = BEAD_IN_PROGRESS
+
+        fake_payload = {
+            "outcome": "completed",
+            "summary": "done",
+            "completed": "",
+            "remaining": "",
+            "risks": "",
+            "verdict": "approved",
+            "findings_count": 0,
+            "requires_followup": False,
+            "expected_files": [],
+            "expected_globs": [],
+            "touched_files": [],
+            "changed_files": [],
+            "updated_docs": [],
+            "next_action": "",
+            "next_agent": "",
+            "block_reason": "",
+            "conflict_risks": "",
+            "new_beads": [],
+        }
+        fake_response = {
+            "structured_output": fake_payload,
+            "total_cost_usd": 0.42,
+            "duration_api_ms": 12345,
+            "num_turns": 3,
+            "usage": {
+                "input_tokens": 1000,
+                "output_tokens": 500,
+                "cache_creation_input_tokens": 200,
+                "cache_read_input_tokens": 100,
+            },
+            "stop_reason": "end_turn",
+            "session_id": "sess-abc123",
+            "permission_denials": 0,
+        }
+
+        runner = ClaudeCodeAgentRunner()
+        with patch.object(
+            runner, "_exec_json_with_response",
+            return_value=(fake_payload, fake_response),
+        ):
+            result = runner.run_bead(bead, workdir=self.root, context_paths=[])
+
+        self.assertIsNotNone(result.telemetry)
+        t = result.telemetry
+        self.assertEqual(t["source"], "provider")
+        self.assertEqual(t["cost_usd"], 0.42)
+        self.assertEqual(t["duration_api_ms"], 12345)
+        self.assertEqual(t["num_turns"], 3)
+        self.assertEqual(t["input_tokens"], 1000)
+        self.assertEqual(t["output_tokens"], 500)
+        self.assertEqual(t["cache_creation_tokens"], 200)
+        self.assertEqual(t["cache_read_tokens"], 100)
+        self.assertEqual(t["stop_reason"], "end_turn")
+        self.assertEqual(t["session_id"], "sess-abc123")
+        self.assertEqual(t["permission_denials"], 0)
+        # Also has measured fields
+        self.assertIn("duration_ms", t)
+        self.assertIsInstance(t["duration_ms"], int)
+        self.assertGreaterEqual(t["duration_ms"], 0)
+        self.assertIn("prompt_chars", t)
+        self.assertIn("prompt_lines", t)
+        self.assertIn("prompt_text", t)
+        self.assertIn("response_text", t)
+
+    def test_codex_telemetry_prompt_chars_and_lines_match_actual_prompt(self) -> None:
+        """Verify prompt_chars and prompt_lines reflect the actual prompt content."""
+        from codex_orchestrator.runner import CodexAgentRunner
+
+        bead = self.storage.create_bead(title="Telemetry prompt", agent_type="developer", description="test")
+        bead.status = BEAD_IN_PROGRESS
+
+        fake_payload = {
+            "outcome": "completed",
+            "summary": "done",
+            "completed": "",
+            "remaining": "",
+            "risks": "",
+            "verdict": "approved",
+            "findings_count": 0,
+            "requires_followup": False,
+            "expected_files": [],
+            "expected_globs": [],
+            "touched_files": [],
+            "changed_files": [],
+            "updated_docs": [],
+            "next_action": "",
+            "next_agent": "",
+            "block_reason": "",
+            "conflict_risks": "",
+            "new_beads": [],
+        }
+
+        captured_prompts: list[str] = []
+
+        def mock_exec_json(prompt, *, schema, workdir, execution_env=None):
+            captured_prompts.append(prompt)
+            return fake_payload
+
+        runner = CodexAgentRunner()
+        with patch.object(runner, "_exec_json", side_effect=mock_exec_json):
+            result = runner.run_bead(bead, workdir=self.root, context_paths=[])
+
+        self.assertEqual(len(captured_prompts), 1)
+        actual_prompt = captured_prompts[0]
+        self.assertEqual(result.telemetry["prompt_chars"], len(actual_prompt))
+        self.assertEqual(result.telemetry["prompt_lines"], actual_prompt.count("\n") + 1)
+
+
+    # -- Telemetry artifact storage tests (B0118) ---------------------------
+
+    def test_initialize_creates_telemetry_dir(self) -> None:
+        """RepositoryStorage.initialize() creates .orchestrator/telemetry/."""
+        fresh_root = Path(tempfile.mkdtemp())
+        try:
+            storage = RepositoryStorage(fresh_root)
+            telemetry_dir = fresh_root / ".orchestrator" / "telemetry"
+            self.assertFalse(telemetry_dir.exists())
+            storage.initialize()
+            self.assertTrue(telemetry_dir.is_dir())
+        finally:
+            shutil.rmtree(fresh_root)
+
+    def test_telemetry_dir_attribute(self) -> None:
+        """RepositoryStorage.telemetry_dir points to .orchestrator/telemetry."""
+        storage = RepositoryStorage(self.root)
+        self.assertEqual(storage.telemetry_dir, self.root.resolve() / ".orchestrator" / "telemetry")
+
+    def test_write_telemetry_artifact_creates_file(self) -> None:
+        """write_telemetry_artifact writes a JSON file at the expected path."""
+        path = self.storage.write_telemetry_artifact(
+            bead_id="B9999",
+            agent_type="developer",
+            attempt=1,
+            started_at="2026-03-30T10:00:00+00:00",
+            finished_at="2026-03-30T10:05:00+00:00",
+            outcome="completed",
+            prompt_text="prompt here",
+            response_text='{"result": "ok"}',
+            parsed_result={"outcome": "completed"},
+            metrics={"duration_ms": 300000, "source": "measured"},
+            error=None,
+        )
+        self.assertTrue(path.exists())
+        self.assertEqual(path, self.storage.telemetry_dir / "B9999" / "1.json")
+
+    def test_write_telemetry_artifact_content(self) -> None:
+        """Artifact file contains all required fields from the spec."""
+        self.storage.write_telemetry_artifact(
+            bead_id="B8888",
+            agent_type="tester",
+            attempt=2,
+            started_at="2026-03-30T10:00:00+00:00",
+            finished_at="2026-03-30T10:01:00+00:00",
+            outcome="blocked",
+            prompt_text="test prompt",
+            response_text=None,
+            parsed_result=None,
+            metrics={"duration_ms": 60000},
+            error={"stage": "parse", "message": "bad JSON"},
+        )
+        artifact_path = self.storage.telemetry_dir / "B8888" / "2.json"
+        data = json.loads(artifact_path.read_text(encoding="utf-8"))
+        self.assertEqual(data["telemetry_version"], 1)
+        self.assertEqual(data["bead_id"], "B8888")
+        self.assertEqual(data["agent_type"], "tester")
+        self.assertEqual(data["attempt"], 2)
+        self.assertEqual(data["started_at"], "2026-03-30T10:00:00+00:00")
+        self.assertEqual(data["finished_at"], "2026-03-30T10:01:00+00:00")
+        self.assertEqual(data["outcome"], "blocked")
+        self.assertEqual(data["prompt_text"], "test prompt")
+        self.assertIsNone(data["response_text"])
+        self.assertIsNone(data["parsed_result"])
+        self.assertEqual(data["metrics"], {"duration_ms": 60000})
+        self.assertEqual(data["error"], {"stage": "parse", "message": "bad JSON"})
+
+    def test_write_telemetry_artifact_atomic_write(self) -> None:
+        """Artifact is written atomically — no .tmp file left behind."""
+        self.storage.write_telemetry_artifact(
+            bead_id="B7777",
+            agent_type="developer",
+            attempt=1,
+            started_at="t0",
+            finished_at="t1",
+            outcome="completed",
+            prompt_text="p",
+            response_text="r",
+            parsed_result={},
+            metrics={},
+            error=None,
+        )
+        bead_dir = self.storage.telemetry_dir / "B7777"
+        tmp_files = list(bead_dir.glob("*.tmp"))
+        self.assertEqual(tmp_files, [])
+
+    def test_write_telemetry_artifact_multiple_attempts(self) -> None:
+        """Multiple attempts for the same bead create separate numbered files."""
+        for attempt in (1, 2, 3):
+            self.storage.write_telemetry_artifact(
+                bead_id="B6666",
+                agent_type="developer",
+                attempt=attempt,
+                started_at="t0",
+                finished_at="t1",
+                outcome="completed",
+                prompt_text=f"prompt {attempt}",
+                response_text=f"response {attempt}",
+                parsed_result={"attempt": attempt},
+                metrics={"attempt": attempt},
+                error=None,
+            )
+        bead_dir = self.storage.telemetry_dir / "B6666"
+        self.assertTrue((bead_dir / "1.json").exists())
+        self.assertTrue((bead_dir / "2.json").exists())
+        self.assertTrue((bead_dir / "3.json").exists())
+        data3 = json.loads((bead_dir / "3.json").read_text())
+        self.assertEqual(data3["prompt_text"], "prompt 3")
+
+    def test_write_telemetry_artifact_returns_path(self) -> None:
+        """write_telemetry_artifact returns the Path to the written file."""
+        result = self.storage.write_telemetry_artifact(
+            bead_id="B5555",
+            agent_type="review",
+            attempt=1,
+            started_at="t0",
+            finished_at="t1",
+            outcome="completed",
+            prompt_text="p",
+            response_text="r",
+            parsed_result={},
+            metrics={},
+            error=None,
+        )
+        self.assertIsInstance(result, Path)
+        self.assertTrue(result.exists())
+
+    def test_write_telemetry_artifact_failed_attempt(self) -> None:
+        """Failed attempt artifacts have null response_text/parsed_result and populated error."""
+        self.storage.write_telemetry_artifact(
+            bead_id="B4444",
+            agent_type="developer",
+            attempt=1,
+            started_at="2026-03-30T10:00:00+00:00",
+            finished_at="2026-03-30T10:02:00+00:00",
+            outcome="blocked",
+            prompt_text="run the task",
+            response_text=None,
+            parsed_result=None,
+            metrics={"duration_ms": 120000, "source": "measured"},
+            error={"stage": "execution", "message": "process exited with code 1"},
+        )
+        artifact_path = self.storage.telemetry_dir / "B4444" / "1.json"
+        data = json.loads(artifact_path.read_text(encoding="utf-8"))
+        self.assertIsNone(data["response_text"])
+        self.assertIsNone(data["parsed_result"])
+        self.assertIsNotNone(data["error"])
+        self.assertEqual(data["error"]["stage"], "execution")
+        self.assertEqual(data["error"]["message"], "process exited with code 1")
+        self.assertEqual(data["prompt_text"], "run the task")
+        self.assertEqual(data["outcome"], "blocked")
+
+    def test_write_telemetry_artifact_creates_directories(self) -> None:
+        """write_telemetry_artifact auto-creates bead subdirectory under telemetry/."""
+        fresh_root = Path(tempfile.mkdtemp())
+        try:
+            storage = RepositoryStorage(fresh_root)
+            storage.initialize()
+            bead_dir = storage.telemetry_dir / "B3333"
+            self.assertFalse(bead_dir.exists())
+            storage.write_telemetry_artifact(
+                bead_id="B3333",
+                agent_type="tester",
+                attempt=1,
+                started_at="t0",
+                finished_at="t1",
+                outcome="completed",
+                prompt_text="p",
+                response_text="r",
+                parsed_result={},
+                metrics={},
+                error=None,
+            )
+            self.assertTrue(bead_dir.is_dir())
+            self.assertTrue((bead_dir / "1.json").exists())
+        finally:
+            shutil.rmtree(fresh_root)
+
+    def test_gitignore_contains_telemetry_entry(self) -> None:
+        """.gitignore includes .orchestrator/telemetry/ to exclude heavy artifacts."""
+        gitignore = (REPO_ROOT / ".gitignore").read_text()
+        self.assertIn(".orchestrator/telemetry/", gitignore)
+
+    # --- Scheduler telemetry integration tests (B0123) ---
+
+    def _run_bead_with_telemetry(self, outcome="completed", telemetry=None):
+        """Helper: create a developer bead, run it through scheduler with given telemetry."""
+        bead = self.storage.create_bead(title="Telemetry test", agent_type="developer", description="work")
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome=outcome,
+                    summary="done" if outcome == "completed" else "problem",
+                    completed="implemented",
+                    remaining="",
+                    risks="none",
+                    expected_files=["src/app.py"],
+                    touched_files=["src/app.py"],
+                    changed_files=["src/app.py"],
+                    telemetry=telemetry,
+                    block_reason="" if outcome != "blocked" else "blocked reason",
+                )
+            },
+            writes={bead.bead_id: {"src/app.py": "print('ok')\n"}},
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        return bead.bead_id, result
+
+    def test_telemetry_populates_bead_metadata(self) -> None:
+        """After run, bead.metadata['telemetry'] is populated from AgentRunResult.telemetry."""
+        telemetry = {"source": "measured", "duration_ms": 1234, "prompt_chars": 500, "prompt_lines": 10}
+        bead_id, _ = self._run_bead_with_telemetry(telemetry=telemetry)
+        bead = self.storage.load_bead(bead_id)
+        self.assertIn("telemetry", bead.metadata)
+        self.assertEqual(bead.metadata["telemetry"]["source"], "measured")
+        self.assertEqual(bead.metadata["telemetry"]["duration_ms"], 1234)
+
+    def test_telemetry_history_grows_with_attempts(self) -> None:
+        """telemetry_history grows with each attempt."""
+        bead = self.storage.create_bead(title="History test", agent_type="developer", description="work")
+        telemetry1 = {"source": "measured", "duration_ms": 100}
+        telemetry2 = {"source": "measured", "duration_ms": 200}
+
+        # Simulate two runs by manually invoking _store_telemetry
+        result1 = AgentRunResult(outcome="failed", summary="fail1", telemetry=telemetry1, block_reason="err")
+        result2 = AgentRunResult(outcome="completed", summary="ok", telemetry=telemetry2)
+
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler._store_telemetry(bead, result1)
+        scheduler._store_telemetry(bead, result2)
+
+        history = bead.metadata.get("telemetry_history", [])
+        self.assertEqual(len(history), 2)
+        self.assertEqual(history[0]["attempt"], 1)
+        self.assertEqual(history[1]["attempt"], 2)
+        self.assertEqual(history[0]["duration_ms"], 100)
+        self.assertEqual(history[1]["duration_ms"], 200)
+
+    def test_telemetry_history_capped_at_default_10(self) -> None:
+        """telemetry_history is capped at 10 entries by default."""
+        bead = self.storage.create_bead(title="Cap test", agent_type="developer", description="work")
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        for i in range(15):
+            result = AgentRunResult(outcome="completed", summary=f"run {i}", telemetry={"source": "measured", "duration_ms": i})
+            scheduler._store_telemetry(bead, result)
+
+        history = bead.metadata["telemetry_history"]
+        self.assertEqual(len(history), 10)
+        # First 10 attempts get sequential numbers; after cap, attempt = len(history)+1
+        # which plateaus at cap+1 once history is full
+        self.assertEqual(history[0]["attempt"], 6)
+        self.assertEqual(history[-1]["attempt"], 11)
+
+    def test_telemetry_max_attempts_env_var_override(self) -> None:
+        """ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS env var overrides default cap."""
+        bead = self.storage.create_bead(title="Env cap test", agent_type="developer", description="work")
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        with patch.dict(os.environ, {"ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS": "3"}):
+            for i in range(5):
+                result = AgentRunResult(outcome="completed", summary=f"run {i}", telemetry={"source": "measured", "duration_ms": i})
+                scheduler._store_telemetry(bead, result)
+
+        history = bead.metadata["telemetry_history"]
+        self.assertEqual(len(history), 3)
+        self.assertEqual(history[0]["attempt"], 3)
+        self.assertEqual(history[-1]["attempt"], 4)
+
+    def test_telemetry_invalid_env_var_falls_back_to_default(self) -> None:
+        """Invalid ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS values fall back to default 10."""
+        for bad_value in ["abc", "0", "-5", ""]:
+            with patch.dict(os.environ, {"ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS": bad_value}):
+                self.assertEqual(Scheduler._telemetry_max_attempts(), 10, f"Failed for value: {bad_value!r}")
+
+    def test_telemetry_captured_for_completed_outcome(self) -> None:
+        """Telemetry is stored when outcome is completed."""
+        telemetry = {"source": "measured", "duration_ms": 500}
+        bead_id, result = self._run_bead_with_telemetry(outcome="completed", telemetry=telemetry)
+        self.assertIn(bead_id, result.completed)
+        bead = self.storage.load_bead(bead_id)
+        self.assertIn("telemetry", bead.metadata)
+
+    def test_telemetry_captured_for_blocked_outcome(self) -> None:
+        """Telemetry is stored when outcome is blocked."""
+        telemetry = {"source": "measured", "duration_ms": 300}
+        bead_id, result = self._run_bead_with_telemetry(outcome="blocked", telemetry=telemetry)
+        self.assertIn(bead_id, result.blocked)
+        bead = self.storage.load_bead(bead_id)
+        self.assertIn("telemetry", bead.metadata)
+
+    def test_telemetry_captured_for_failed_outcome(self) -> None:
+        """Telemetry is stored when outcome is failed."""
+        telemetry = {"source": "measured", "duration_ms": 200}
+        bead_id, result = self._run_bead_with_telemetry(outcome="failed", telemetry=telemetry)
+        self.assertIn(bead_id, result.blocked)
+        bead = self.storage.load_bead(bead_id)
+        self.assertIn("telemetry", bead.metadata)
+
+    def test_telemetry_none_gracefully_handled(self) -> None:
+        """When telemetry is None, no telemetry metadata is written."""
+        bead_id, _ = self._run_bead_with_telemetry(telemetry=None)
+        bead = self.storage.load_bead(bead_id)
+        self.assertNotIn("telemetry", bead.metadata)
+        self.assertNotIn("telemetry_history", bead.metadata)
+
+    def test_telemetry_artifact_file_written(self) -> None:
+        """After a run with telemetry, an artifact file exists in telemetry dir."""
+        telemetry = {"source": "measured", "duration_ms": 700, "prompt_text": "hello", "response_text": "world"}
+        bead_id, _ = self._run_bead_with_telemetry(telemetry=telemetry)
+        artifact_dir = self.storage.telemetry_dir / bead_id
+        self.assertTrue(artifact_dir.exists(), "Telemetry artifact directory should exist")
+        artifacts = list(artifact_dir.glob("*.json"))
+        self.assertGreaterEqual(len(artifacts), 1, "At least one artifact file should exist")
+        data = json.loads(artifacts[0].read_text())
+        self.assertEqual(data["bead_id"], bead_id)
+        self.assertEqual(data["telemetry_version"], 1)
+
+    def test_telemetry_write_failure_preserves_bead_outcome(self) -> None:
+        """If telemetry artifact write fails, the bead outcome is preserved."""
+        bead = self.storage.create_bead(title="Write fail test", agent_type="developer", description="work")
+        telemetry = {"source": "measured", "duration_ms": 100}
+        result = AgentRunResult(outcome="completed", summary="ok", telemetry=telemetry)
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+
+        # Break the telemetry write by making write_telemetry_artifact raise
+        original_write = self.storage.write_telemetry_artifact
+        def failing_write(**kwargs):
+            raise IOError("disk full")
+        self.storage.write_telemetry_artifact = failing_write
+
+        try:
+            scheduler._store_telemetry(bead, result)
+        finally:
+            self.storage.write_telemetry_artifact = original_write
+
+        # Telemetry metadata should still be set (it's written before the artifact)
+        self.assertIn("telemetry", bead.metadata)
+        # A warning record should be appended
+        warnings = [r for r in bead.execution_history if r.event == "telemetry_write_warning"]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("disk full", warnings[0].summary)
+
+    def test_telemetry_lightweight_excludes_prompt_response_text(self) -> None:
+        """bead.metadata['telemetry'] excludes heavy prompt_text and response_text fields."""
+        telemetry = {"source": "measured", "duration_ms": 42, "prompt_text": "big prompt", "response_text": "big response"}
+        bead_id, _ = self._run_bead_with_telemetry(telemetry=telemetry)
+        bead = self.storage.load_bead(bead_id)
+        self.assertNotIn("prompt_text", bead.metadata["telemetry"])
+        self.assertNotIn("response_text", bead.metadata["telemetry"])
+        self.assertEqual(bead.metadata["telemetry"]["duration_ms"], 42)
+
+    def test_telemetry_attempt_numbering_sequential(self) -> None:
+        """Attempt numbers in telemetry_history are sequential starting from 1."""
+        bead = self.storage.create_bead(title="Attempt num test", agent_type="developer", description="work")
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        for i in range(3):
+            result = AgentRunResult(outcome="completed", summary=f"run {i}", telemetry={"source": "measured", "duration_ms": i * 100})
+            scheduler._store_telemetry(bead, result)
+
+        history = bead.metadata["telemetry_history"]
+        attempts = [entry["attempt"] for entry in history]
+        self.assertEqual(attempts, [1, 2, 3])
 
 
 if __name__ == "__main__":

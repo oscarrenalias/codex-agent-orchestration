@@ -19,7 +19,7 @@ src/codex_orchestrator/
   cli.py          CLI dispatch and output formatting
   config.py       YAML config loader + frozen dataclass models
   scheduler.py    Orchestration loop: leases, conflicts, followups (all params from config)
-  storage.py      Bead JSON persistence under .orchestrator/beads/
+  storage.py      Bead JSON persistence under .orchestrator/beads/ + telemetry artifacts
   models.py       Bead, Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
   prompts.py      Worker/planner prompt construction + guardrail loading (config-overridable)
@@ -31,7 +31,7 @@ src/codex_orchestrator/
 
 templates/agents/   Guardrail templates per agent type (mandatory)
 .agents/skills/     Skill definitions (SKILL.md + agents/openai.yaml)
-.orchestrator/      Runtime state: beads/, logs/, worktrees/, agent-runs/, config.yaml
+.orchestrator/      Runtime state: beads/, logs/, worktrees/, telemetry/, agent-runs/, config.yaml
 ```
 
 ## Key Concepts
@@ -79,6 +79,68 @@ Additional tools granted per agent type:
 These defaults live in `default_config()` and can be overridden in `.orchestrator/config.yaml` under each backend's `allowed_tools_default` and `allowed_tools_by_agent` keys.
 
 Beads are backend-agnostic. A bead started with Codex can be retried with Claude Code via `orchestrator --runner claude retry <bead_id>`.
+
+### Runner telemetry capture
+
+Both runners measure wall-clock duration and prompt size around every `run_bead()` call and attach the metrics to `AgentRunResult.telemetry` (a `dict[str, Any] | None`, defaults to `None`).
+
+**Codex** captures minimal metrics (`source: "measured"`):
+
+| Field | Description |
+|---|---|
+| `duration_ms` | Wall-clock time of the subprocess |
+| `prompt_chars` | Prompt length in characters |
+| `prompt_lines` | Prompt length in lines |
+| `prompt_text` | Full prompt sent to the agent |
+| `response_text` | Raw JSON response |
+
+**Claude Code** additionally extracts provider-supplied fields from the JSON response envelope (`source: "provider"`):
+
+| Field | Source in response |
+|---|---|
+| `cost_usd` | `total_cost_usd` |
+| `duration_api_ms` | `duration_api_ms` |
+| `num_turns` | `num_turns` |
+| `input_tokens` | `usage.input_tokens` |
+| `output_tokens` | `usage.output_tokens` |
+| `cache_creation_tokens` | `usage.cache_creation_input_tokens` |
+| `cache_read_tokens` | `usage.cache_read_input_tokens` |
+| `stop_reason` | `stop_reason` |
+| `session_id` | `session_id` |
+| `permission_denials` | `permission_denials` |
+
+The scheduler integrates telemetry into its `_finalize()` flow via `_store_telemetry()`, which runs after building the handoff summary but before outcome-specific processing (blocked/completed/failed). This ensures telemetry is captured for all outcomes.
+
+### Scheduler telemetry integration
+
+`Scheduler._store_telemetry(bead, agent_result)` implements two-tier storage:
+
+1. **Tier 1 (bead metadata)**: Strips heavy fields (`prompt_text`, `response_text`) and stores lightweight metrics in `bead.metadata["telemetry"]` (latest attempt, overwritten each run) and appends to `bead.metadata["telemetry_history"]` (all attempts, capped).
+2. **Tier 2 (artifact file)**: Writes the full prompt/response artifact via `storage.write_telemetry_artifact()`.
+
+Attempt numbering is derived from `len(telemetry_history) + 1` at write time.
+
+The history cap is configurable via `ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS` (default 10). Invalid, zero, or negative values fall back to the default. When exceeded, oldest entries are pruned after appending the new entry.
+
+If the telemetry write fails, the bead outcome is preserved — a `telemetry_write_warning` event is appended to `execution_history` instead of raising.
+
+### Telemetry artifact storage
+
+Full prompt/response text for every bead execution attempt is persisted as a JSON artifact file at `.orchestrator/telemetry/<bead_id>/<attempt>.json`. These files are gitignored (heavy, potentially sensitive) and written atomically by `RepositoryStorage.write_telemetry_artifact()`.
+
+Each artifact contains: `telemetry_version`, `bead_id`, `agent_type`, `attempt`, `started_at`, `finished_at`, `outcome`, `prompt_text`, `response_text`, `parsed_result`, `metrics`, and `error`. Failed attempts store `null` for `response_text`/`parsed_result` and populate `error` with `{"stage": "...", "message": "..."}`.
+
+The `telemetry_dir` (`self.state_dir / "telemetry"`) is created alongside other state directories during `RepositoryStorage.initialize()`.
+
+### Scheduler telemetry integration
+
+After each bead execution, `Scheduler._finalize()` stores telemetry in two tiers: lightweight metrics in `bead.metadata["telemetry"]` (current attempt) and `bead.metadata["telemetry_history"]` (capped list of all attempts), plus full artifact files on disk. Heavy fields (`prompt_text`, `response_text`) are excluded from bead metadata.
+
+The `telemetry_history` list is capped to 10 entries by default. Override with `ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS` env var (positive integer; invalid values fall back to default). Oldest entries are dropped when the cap is exceeded.
+
+Telemetry failures are non-fatal: the bead outcome is preserved and a `telemetry_write_warning` event is recorded in `execution_history`.
+
+See [docs/scheduler-telemetry.md](docs/scheduler-telemetry.md) for the full schema, flow diagram, and optimization signals table.
 
 ## Configuration
 

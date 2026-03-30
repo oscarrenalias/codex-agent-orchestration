@@ -188,6 +188,7 @@ class AgentRunResult:
     new_beads: list[dict[str, Any]] = field(default_factory=list)
     block_reason: str = ""
     conflict_risks: str = ""
+    telemetry: dict[str, Any] | None = None
 
 
 @dataclass
