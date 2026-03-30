@@ -201,6 +201,7 @@ Key bindings:
 - `Home` and `End`: jump to the start or end of whichever panel currently has focus, selecting the first or last visible bead in the list or jumping to the top or bottom of the detail view
 - `f`: next filter
 - `Shift+f`: previous filter
+- `a`: toggle timed refresh on or off
 - `?`: toggle the help overlay (`? help` stays visible in the footer)
 - `Esc`: close the help overlay
 - `r`: manual refresh, or choose `ready` while the status update flow is active
@@ -217,6 +218,7 @@ Key bindings:
 
 Operator shortcuts:
 
+- `a` toggles the timed refresh loop on or off without enabling timed scheduler runs
 - `s` is the operator shortcut for a single scheduler pass from inside the TUI
 - `S` turns timed refreshes into timed scheduler passes by toggling continuous run mode on or off
 - `t` starts a retry confirmation flow for the selected blocked bead, and `y` is required to execute the retry
@@ -225,6 +227,7 @@ Operator shortcuts:
 
 Refresh, help, and operator-action behavior:
 
+- `a` controls whether the timed refresh loop is active; turning it off also returns the TUI to fully manual refresh mode and disables timed scheduler runs
 - timed refreshes run every `--refresh-seconds` seconds, keep the current selection when possible, and update the activity line
 - when continuous mode is enabled with `S`, each timed refresh runs one scheduler cycle instead of a read-only refresh, using the same scoped/global rules as `s`
 - `s` runs the same one-shot scheduler path as `orchestrator run --once`; if the TUI was launched with `--feature-root <bead_id>` the run stays inside that feature tree, otherwise it operates across the full execution root
@@ -265,6 +268,6 @@ Filter semantics are aligned to the scheduler status model:
 
 When `--feature-root` is set, the requested feature-root bead stays visible even if the active status filter would otherwise hide it.
 
-The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The bottom status panel records the current status line, latest activity, `Last Action`, and `Last Result @ HH:MM:SS`, so the operator can see which action ran most recently, whether it succeeded, failed, or was rejected, and when that result was recorded. The footer formatter emits a compact single-line summary such as `filter=default | run=manual | rows=5 | selected=2 | open=1 | ready=1 | ... | ? help`, and flips to `run=continuous` when auto-run mode is enabled.
+The detail formatter renders both bead-level scope fields and the latest handoff summary, including `expected_files`, `expected_globs`, `touched_files`, `changed_files`, `updated_docs`, `next_action`, `next_agent`, and the effective `conflict_risks`. The bottom status panel records the current status line, an explicit `Mode:` line, latest activity, `Last Action`, and `Last Result @ HH:MM:SS`, so the operator can see which action ran most recently, whether it succeeded, failed, or was rejected, and when that result was recorded. The `Mode:` line also carries the current refresh/scheduler mode and the active focus target, for example `manual refresh | scheduler=manual | focus=list`, `timed refresh every 3s | scheduler=manual | focus=detail`, or `timed scheduler every 3s | focus=list`. The footer formatter emits a compact single-line summary such as `filter=default | run=manual | rows=5 | selected=2 | open=1 | ready=1 | ... | ? help`, and flips to `run=continuous` when auto-run mode is enabled.
 
 Regression coverage for the CLI parser, missing-dependency handling, helper functions, runtime state, scheduler action handlers, status update flow, and merge confirmation flow lives in `tests/test_orchestrator.py` and `tests/test_tui.py`.
