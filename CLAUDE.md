@@ -19,7 +19,7 @@ src/codex_orchestrator/
   cli.py          CLI dispatch and output formatting
   config.py       YAML config loader + frozen dataclass models
   scheduler.py    Orchestration loop: leases, conflicts, followups (all params from config)
-  storage.py      Bead JSON persistence under .orchestrator/beads/
+  storage.py      Bead JSON persistence under .orchestrator/beads/ + telemetry artifacts
   models.py       Bead, Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
   prompts.py      Worker/planner prompt construction + guardrail loading (config-overridable)
@@ -31,7 +31,7 @@ src/codex_orchestrator/
 
 templates/agents/   Guardrail templates per agent type (mandatory)
 .agents/skills/     Skill definitions (SKILL.md + agents/openai.yaml)
-.orchestrator/      Runtime state: beads/, logs/, worktrees/, agent-runs/, config.yaml
+.orchestrator/      Runtime state: beads/, logs/, worktrees/, telemetry/, agent-runs/, config.yaml
 ```
 
 ## Key Concepts
@@ -110,6 +110,14 @@ Both runners measure wall-clock duration and prompt size around every `run_bead(
 | `permission_denials` | `permission_denials` |
 
 The scheduler stores telemetry opaquely — it does not interpret the dict contents.
+
+### Telemetry artifact storage
+
+Full prompt/response text for every bead execution attempt is persisted as a JSON artifact file at `.orchestrator/telemetry/<bead_id>/<attempt>.json`. These files are gitignored (heavy, potentially sensitive) and written atomically by `RepositoryStorage.write_telemetry_artifact()`.
+
+Each artifact contains: `telemetry_version`, `bead_id`, `agent_type`, `attempt`, `started_at`, `finished_at`, `outcome`, `prompt_text`, `response_text`, `parsed_result`, `metrics`, and `error`. Failed attempts store `null` for `response_text`/`parsed_result` and populate `error` with `{"stage": "...", "message": "..."}`.
+
+The `telemetry_dir` (`self.state_dir / "telemetry"`) is created alongside other state directories during `RepositoryStorage.initialize()`.
 
 ## Configuration
 
