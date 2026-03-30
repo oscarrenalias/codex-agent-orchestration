@@ -230,6 +230,19 @@ Both modes are thread-safe — `ConsoleReporter` serializes all output through a
 
 `CliSchedulerReporter` wraps both modes. It creates a `SpinnerPool` when `max_workers > 1` and calls `reporter.stop()` in a `finally` block to clean up the spinner region on exit.
 
+## TUI Scheduler Integration
+
+The TUI runs scheduler cycles asynchronously in a background worker thread so the UI remains responsive during long-running agent executions. Key components:
+
+- **`--max-workers N`** flag on `orchestrator tui` controls scheduler parallelism (default 1). Passed through `run_tui()` and `build_tui_app()` into `TuiRuntimeState`.
+- **`TuiSchedulerReporter`** implements `SchedulerReporter` and posts timestamped events (bead started/completed/blocked/failed) to the TUI's `RichLog` scheduler log widget via `app.call_from_thread()`.
+- **Async worker pattern**: `_start_scheduler_worker()` launches `run_worker()` with `exclusive=True`. The worker calls `TuiRuntimeState.run_scheduler_cycle(reporter=...)` which invokes `scheduler.run_once()` directly (not `command_run`). On completion, `_on_scheduler_worker_done()` resets state and re-renders.
+- **Guard against double-runs**: Both the app-level `_scheduler_worker_running` flag and the state-level `scheduler_running` flag prevent concurrent cycles.
+- **Status bar**: The old 6-line status panel is replaced by a compact 2-line status bar (`#status-bar`) showing mode and status, plus a separate `#scheduler-log` `RichLog` widget for live scheduler output. The `[RUNNING]` indicator appears in the status bar while a cycle is active.
+- **Continuous mode**: When timed refresh fires with `continuous_run_enabled`, it calls `_start_scheduler_worker()` (async) instead of blocking the UI thread.
+
+Keybindings: `s` triggers a single scheduler cycle, `S` toggles continuous mode.
+
 ## Conventions
 
 - Guardrail templates are **mandatory**. Missing `templates/agents/{agent_type}.md` fails the bead with `FileNotFoundError`.
