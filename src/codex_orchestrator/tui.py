@@ -1023,14 +1023,14 @@ def render_tree_panel(
     viewport_height: int | None = None,
 ) -> str:
     if not rows:
-        return f"{_beads_panel_title(filter_mode, focused=focused)}\n\nNo beads match the current filter."
+        return "No beads match the current filter."
 
     visible_rows = rows
     if viewport_height is not None:
-        visible_height = max(0, viewport_height - 2)
+        visible_height = max(0, viewport_height)
         visible_rows = rows[scroll_offset:scroll_offset + visible_height]
     selected_marker = ">>" if focused else " >"
-    lines = [_beads_panel_title(filter_mode, focused=focused), ""]
+    lines: list[str] = []
     for index, row in enumerate(visible_rows, start=scroll_offset):
         marker = selected_marker if selected_index == index else "  "
         lines.append(f"{marker} {row.label} [{row.bead.status}]")
@@ -1046,10 +1046,10 @@ def render_detail_panel(
 ) -> str:
     lines = format_detail_panel(bead).splitlines()
     if viewport_height is not None:
-        visible_height = max(0, viewport_height - 2)
+        visible_height = max(0, viewport_height - 1)
         lines = lines[scroll_offset:scroll_offset + visible_height]
     focus_hint = "Arrow keys scroll here." if focused else "Press Tab to focus."
-    return "\n".join([_panel_badge("Details", focused=focused), focus_hint, *lines])
+    return "\n".join([focus_hint, *lines])
 
 
 def load_textual_runtime() -> ModuleType:
@@ -1428,6 +1428,7 @@ def build_tui_app(
             try:
                 list_panel = self.query_one("#list-panel", Vertical)
                 detail_panel = self.query_one("#detail-panel", VerticalScroll)
+                status_panel = self.query_one("#status-panel", Static)
             except NoMatches:
                 # Main panels are not mounted on top-level while modal screens are active.
                 return
@@ -1447,6 +1448,7 @@ def build_tui_app(
                 if self.runtime_state.focused_panel == PANEL_DETAIL
                 else "Tab to activate"
             )
+            status_panel.border_title = Text("Status")
 
         def _sync_panel_focus(self) -> None:
             try:

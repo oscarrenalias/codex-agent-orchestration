@@ -190,7 +190,7 @@ The runtime renders three panels:
 
 - a left-side tree of visible beads in feature-root order
 - a right-side detail panel for the selected bead, including scope and handoff fields
-- a bottom status panel with the current status message, latest activity, and footer counts
+- a bottom status panel titled in the border so the body stays dedicated to the current status message, latest activity, and footer counts
 
 Refresh modes and focus cues:
 
@@ -199,6 +199,7 @@ Refresh modes and focus cues:
 - `S` switches timed refreshes into timed scheduler passes; if timed refresh is off, `S` enables it first
 - turning timed refresh off always returns the screen to full manual mode and also disables timed scheduler runs
 - the active list or detail panel switches to a double success-color border with a light tint, inactive panels keep the standard accent border, and panel titles explicitly flip between `[ACTIVE]` and `[idle]`
+- panel names live in the border titles (`Beads`, `Details`, and `Status`) instead of consuming the first body row inside each panel
 - the Beads panel title also carries the active filter label, for example `Beads [Default] [ACTIVE]` or `Beads [Blocked] [idle]`, so the current tree scope stays visible without reading the footer
 - the status panel includes an `Active Panel:` line so operators can immediately tell whether keyboard input will drive list navigation or detail scrolling
 

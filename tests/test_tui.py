@@ -555,13 +555,14 @@ class TuiRegressionTests(unittest.TestCase):
         blocked_render = render_tree_panel(rows, 0, filter_mode=BEAD_BLOCKED, focused=False)
         detail_render = render_detail_panel(bead, focused=False)
 
-        self.assertIn("Beads [Default] [ACTIVE]", list_render)
-        self.assertIn("Beads [Blocked] [idle]", blocked_render)
         self.assertIn(">> B0001", list_render)
-        self.assertIn("Details [idle]", detail_render)
-        self.assertIn("Press Tab to focus.", detail_render)
+        self.assertNotIn("Beads [Default] [ACTIVE]", list_render)
+        self.assertNotIn("Beads [Blocked] [idle]", blocked_render)
+        self.assertEqual("No beads match the current filter.", render_tree_panel([], None))
+        self.assertNotIn("Details [idle]", detail_render)
+        self.assertTrue(detail_render.startswith("Press Tab to focus."))
 
-    def test_app_filter_cycle_updates_beads_panel_header(self) -> None:
+    def test_app_filter_cycle_updates_panel_border_titles(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Open", agent_type="developer", description="open", status=BEAD_OPEN)
         self.storage.create_bead(
             bead_id="B0002",
@@ -572,23 +573,33 @@ class TuiRegressionTests(unittest.TestCase):
         )
         app = build_tui_app(self.storage, refresh_seconds=60)
 
-        async def exercise_app() -> tuple[str, str]:
+        def title_text(value: object) -> str:
+            text = value.plain if hasattr(value, "plain") else str(value)
+            return text.replace("\\[", "[").replace("\\]", "]")
+
+        async def exercise_app() -> tuple[str, str, str, str]:
             async with app.run_test() as pilot:
                 await pilot.pause()
                 list_panel = app.screen.query_one("#list-panel")
-                default_title = str(list_panel.border_title)
+                detail_panel = app.screen.query_one("#detail-panel")
+                status_panel = app.screen.query_one("#status-panel")
+                default_title = title_text(list_panel.border_title)
+                detail_title = title_text(detail_panel.border_title)
+                status_title = title_text(status_panel.border_title)
 
                 for _ in range(6):
                     await pilot.press("f")
                     await pilot.pause()
 
-                ready_title = str(app.screen.query_one("#list-panel").border_title)
-                return default_title, ready_title
+                ready_title = title_text(app.screen.query_one("#list-panel").border_title)
+                return default_title, ready_title, detail_title, status_title
 
-        default_title, ready_title = asyncio.run(exercise_app())
+        default_title, ready_title, detail_title, status_title = asyncio.run(exercise_app())
 
         self.assertIn("Beads [Default] [ACTIVE]", default_title)
         self.assertIn("Beads [Ready] [ACTIVE]", ready_title)
+        self.assertIn("Details [idle]", detail_title)
+        self.assertEqual("Status", status_title)
 
     def test_runtime_defaults_to_manual_refresh_until_explicit_auto_mode_is_enabled(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
