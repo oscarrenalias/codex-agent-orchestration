@@ -44,9 +44,16 @@ class TestModelFor(unittest.TestCase):
 
     def test_returns_per_agent_model_when_set(self):
         """model_for returns the agent-specific model from model_by_agent."""
-        for agent in ("developer", "tester", "planner", "review", "documentation"):
+        expected = {
+            "developer": "claude-sonnet-4-6",
+            "tester": "claude-sonnet-4-6",
+            "planner": "claude-sonnet-4-6",
+            "review": "claude-haiku-4-5-20251001",
+            "documentation": "claude-haiku-4-5-20251001",
+        }
+        for agent, expected_model in expected.items():
             model = self.cfg.model_for("claude", agent)
-            self.assertEqual(model, "claude-sonnet-4-6", f"agent={agent}")
+            self.assertEqual(model, expected_model, f"agent={agent}")
 
     def test_falls_back_to_model_default(self):
         """When agent_type is not in model_by_agent, falls back to model_default."""
@@ -105,9 +112,16 @@ class TestDefaultConfigModelFields(unittest.TestCase):
         self.assertEqual(self.claude.model_default, "claude-sonnet-4-6")
 
     def test_model_by_agent_all_types(self):
-        for agent in ("developer", "tester", "planner", "review", "documentation"):
+        expected = {
+            "developer": "claude-sonnet-4-6",
+            "tester": "claude-sonnet-4-6",
+            "planner": "claude-sonnet-4-6",
+            "review": "claude-haiku-4-5-20251001",
+            "documentation": "claude-haiku-4-5-20251001",
+        }
+        for agent, expected_model in expected.items():
             self.assertIn(agent, self.claude.model_by_agent)
-            self.assertEqual(self.claude.model_by_agent[agent], "claude-sonnet-4-6")
+            self.assertEqual(self.claude.model_by_agent[agent], expected_model)
 
     def test_codex_has_no_model(self):
         codex = default_config().backend("codex")
