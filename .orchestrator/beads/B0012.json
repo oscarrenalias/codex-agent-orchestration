@@ -3,7 +3,7 @@
   "title": "Integrate Scheduler Telemetry Across Outcomes",
   "agent_type": "developer",
   "description": "Wire scheduler execution paths to persist telemetry for completed, blocked, and failed attempts, including runner exceptions and parse failures, while preserving bead outcomes when telemetry writes fail.",
-  "status": "ready",
+  "status": "handed_off",
   "bead_type": "task",
   "parent_id": "B0009",
   "dependencies": [
@@ -33,6 +33,9 @@
     "completed": "",
     "remaining": "",
     "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
     "changed_files": [],
     "updated_docs": [],
     "next_action": "",
@@ -43,7 +46,7 @@
     "touched_files": [],
     "conflict_risks": ""
   },
-  "block_reason": "",
+  "block_reason": "Deferred by operator: archived for now; do not schedule.",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -55,6 +58,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-03-30T09:22:52.124579+00:00",
+      "event": "updated",
+      "agent_type": "developer",
+      "summary": "Bead updated via CLI",
       "details": {}
     }
   ],
