@@ -1083,6 +1083,8 @@ def build_tui_app(
     class BeadTree(Tree[Bead]):
         """Tree widget for displaying beads with native expand/collapse."""
 
+        show_root = False
+
         def _node_label(self, bead: Bead) -> str:
             return f"{bead.bead_id} · {bead.title} [{bead.status}]"
 
@@ -1203,7 +1205,7 @@ def build_tui_app(
             Binding("t", "retry_blocked", "Retry"),
             Binding("u", "start_status_update", "Status"),
             Binding("m", "request_merge", "Merge"),
-            Binding("enter", "confirm_merge", "Confirm", show=False),
+            Binding("enter", "confirm_merge", "Confirm", show=False, priority=True),
             Binding("b", "choose_blocked_status", "Blocked", show=False),
             Binding("d", "choose_done_status", "Done", show=False),
             Binding("y", "confirm_pending_action", "Confirm", show=False),
@@ -1217,7 +1219,7 @@ def build_tui_app(
                 feature_root_id=feature_root_id,
                 refresh_seconds=refresh_seconds,
             )
-            self._last_list_render = ""
+            self._last_list_render = ()
             self._last_detail_render = ""
             self._last_status_render = ""
             self._active_detail_section_index = 0
@@ -1397,9 +1399,19 @@ def build_tui_app(
             self._update_status_panel()
 
         def action_confirm_merge(self) -> None:
+            if self.runtime_state.help_overlay_visible:
+                return
             if self.runtime_state.focused_panel == PANEL_DETAIL and not self.runtime_state.awaiting_merge_confirmation:
                 if self._toggle_active_detail_section():
                     return
+            if not self.runtime_state.awaiting_merge_confirmation and self.runtime_state.focused_panel == PANEL_LIST:
+                # Delegate Enter to the Tree for expand/collapse toggle
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_toggle_node()
+                except NoMatches:
+                    pass
+                return
             self.runtime_state.confirm_merge()
             self._render_all(force_detail=True)
 
@@ -1522,6 +1534,14 @@ def build_tui_app(
                 bead_tree.select_node(node_map[selected_id])
 
         def _update_list_panel(self) -> None:
+            # Build a cache key from bead IDs, statuses, and titles to skip redundant rebuilds
+            cache_key = tuple(
+                (row.bead_id, row.bead.status, row.bead.title, row.depth)
+                for row in self.runtime_state.rows
+            )
+            if cache_key == self._last_list_render:
+                return
+            self._last_list_render = cache_key
             self._populate_bead_tree()
 
         def _update_detail_panel(self, *, force: bool = False, reset_scroll: bool = False) -> None:
