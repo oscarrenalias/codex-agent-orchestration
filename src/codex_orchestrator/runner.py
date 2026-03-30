@@ -50,7 +50,26 @@ AGENT_OUTPUT_SCHEMA = {
             },
         },
     },
-    "required": ["outcome", "summary", "completed", "remaining", "risks", "expected_files", "expected_globs", "touched_files", "changed_files", "updated_docs", "next_action", "next_agent", "block_reason", "conflict_risks", "new_beads"],
+    "required": [
+        "outcome",
+        "summary",
+        "completed",
+        "remaining",
+        "risks",
+        "verdict",
+        "findings_count",
+        "requires_followup",
+        "expected_files",
+        "expected_globs",
+        "touched_files",
+        "changed_files",
+        "updated_docs",
+        "next_action",
+        "next_agent",
+        "block_reason",
+        "conflict_risks",
+        "new_beads",
+    ],
 }
 
 PLANNER_OUTPUT_SCHEMA = {
