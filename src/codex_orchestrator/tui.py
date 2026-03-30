@@ -39,6 +39,18 @@ def _format_duration_ms(ms: float | int | None) -> str:
     return f"{minutes}:{seconds:02d}"
 
 
+_DEFAULT_PANEL_WIDTH = 120
+
+
+def _truncate_title(title: str, max_width: int) -> str:
+    """Truncate *title* to *max_width* characters, adding '...' when trimmed."""
+    if len(title) <= max_width:
+        return title
+    if max_width <= 3:
+        return "..."[:max_width]
+    return title[: max_width - 3] + "..."
+
+
 def _telemetry_badge(bead: Bead) -> str:
     """Return compact telemetry badge like '[$0.32, 2:55]' or empty string."""
     telemetry = bead.metadata.get("telemetry")
@@ -1151,10 +1163,12 @@ def render_tree_panel(
     focused: bool = False,
     scroll_offset: int = 0,
     viewport_height: int | None = None,
+    panel_width: int | None = None,
 ) -> str:
     if not rows:
         return "No beads match the current filter."
 
+    width = panel_width if panel_width is not None else _DEFAULT_PANEL_WIDTH
     visible_rows = rows
     if viewport_height is not None:
         visible_height = max(0, viewport_height)
@@ -1164,7 +1178,15 @@ def render_tree_panel(
     for index, row in enumerate(visible_rows, start=scroll_offset):
         marker = selected_marker if selected_index == index else "  "
         badge = _telemetry_badge(row.bead)
-        lines.append(f"{marker} {row.label} [{row.bead.status}]{badge}")
+        status_tag = f" [{row.bead.status}]"
+        indent = "  " * row.depth
+        bead_prefix = f"{row.bead.bead_id} · "
+        suffix = f"{status_tag}{badge}"
+        # Fixed parts: marker + space + indent + bead_prefix + suffix
+        fixed_len = len(marker) + 1 + len(indent) + len(bead_prefix) + len(suffix)
+        title_budget = width - fixed_len
+        title = _truncate_title(row.bead.title, max(0, title_budget))
+        lines.append(f"{marker} {indent}{bead_prefix}{title}{suffix}")
     return "\n".join(lines)
 
 
@@ -1217,9 +1239,14 @@ def build_tui_app(
 
         show_root = False
 
-        def _node_label(self, bead: Bead) -> str:
+        def _node_label(self, bead: Bead, width: int | None = None) -> str:
             badge = _telemetry_badge(bead)
-            return f"{bead.bead_id} · {bead.title} [{bead.status}]{badge}"
+            prefix = f"{bead.bead_id} · "
+            suffix = f" [{bead.status}]{badge}"
+            avail = (width if width is not None else _DEFAULT_PANEL_WIDTH)
+            title_budget = avail - len(prefix) - len(suffix)
+            title = _truncate_title(bead.title, max(0, title_budget))
+            return f"{prefix}{title}{suffix}"
 
     class HelpOverlay(ModalScreen[None]):
         CSS = """
@@ -1654,7 +1681,8 @@ def build_tui_app(
                 bead = row.bead
                 parent_node = node_map.get(bead.parent_id) if bead.parent_id else None
                 target = parent_node if parent_node is not None else bead_tree.root
-                label = bead_tree._node_label(bead)
+                tree_width = bead_tree.size.width if bead_tree.size.width > 0 else None
+                label = bead_tree._node_label(bead, width=tree_width)
                 if row.has_children:
                     node = target.add(label, data=bead)
                 else:
