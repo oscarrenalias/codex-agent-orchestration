@@ -478,7 +478,7 @@ def command_tui(args: argparse.Namespace, storage: RepositoryStorage, console: C
 
 def command_run(args: argparse.Namespace, scheduler: Scheduler, console: ConsoleReporter) -> int:
     reporter = CliSchedulerReporter(console, max_workers=args.max_workers)
-    aggregate = {"started": [], "completed": [], "blocked": [], "deferred": []}
+    aggregate = {"started": [], "completed": [], "blocked": [], "deferred": [], "correctives_created": []}
     console.section("Scheduler")
     scope = f", feature_root={args.feature_root}" if args.feature_root else ""
     console.info(f"Starting scheduler loop with max_workers={args.max_workers}{scope}")
@@ -493,7 +493,8 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             aggregate["completed"].extend(result.completed)
             aggregate["blocked"].extend(result.blocked)
             aggregate["deferred"].extend(result.deferred)
-            if args.once or not result.started:
+            aggregate["correctives_created"].extend(result.correctives_created)
+            if args.once or (not result.started and not result.correctives_created):
                 break
     finally:
         reporter.stop()
