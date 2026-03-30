@@ -228,6 +228,15 @@ class CodexAgentRunner(AgentRunner):
         return PlanChild(**child_data)
 
 
+def _add_numeric(target: dict, source: dict, key: str) -> None:
+    """Add *source[key]* into *target[key]*, treating None/missing as 0."""
+    src_val = source.get(key)
+    if src_val is None:
+        return
+    tgt_val = target.get(key)
+    target[key] = (tgt_val or 0) + src_val
+
+
 class ClaudeCodeAgentRunner(AgentRunner):
     @property
     def backend_name(self) -> str:
@@ -311,11 +320,17 @@ class ClaudeCodeAgentRunner(AgentRunner):
         # a conversational summary instead of structured output.  Make a lightweight
         # follow-up call (no tools, single turn) to reformat the result.
         if result_text and not response.get("is_error"):
-            retry_result = self._retry_structured_output(
+            retry_result, retry_response = self._retry_structured_output(
                 result_text, schema=schema, workdir=workdir, execution_env=execution_env,
                 agent_type=agent_type,
             )
             if retry_result is not None:
+                # Merge retry cost/duration into the main response so telemetry
+                # reflects the total spend while keeping the main run's turn
+                # count, token usage, and session_id.
+                if retry_response is not None:
+                    _add_numeric(response, retry_response, "total_cost_usd")
+                    _add_numeric(response, retry_response, "duration_api_ms")
                 return retry_result, response
         raise RuntimeError(
             f"claude -p produced no structured output. "
@@ -332,8 +347,12 @@ class ClaudeCodeAgentRunner(AgentRunner):
         workdir: Path,
         execution_env: dict[str, str] | None = None,
         agent_type: str | None = None,
-    ) -> dict | None:
-        """Single-turn, no-tool retry to convert a conversational result to JSON."""
+    ) -> tuple[dict | None, dict | None]:
+        """Single-turn, no-tool retry to convert a conversational result to JSON.
+
+        Returns (structured_payload, retry_response_envelope).  Both are None
+        when the retry fails.
+        """
         retry_prompt = (
             "The agent run below completed successfully but returned a conversational "
             "summary instead of the required JSON schema.  Convert the agent's result "
@@ -360,21 +379,21 @@ class ClaudeCodeAgentRunner(AgentRunner):
             check=False, cwd=workdir, env=env,
         )
         if proc.returncode != 0:
-            return None
+            return None, None
         try:
             response = json.loads(proc.stdout)
         except json.JSONDecodeError:
-            return None
+            return None, None
         structured = response.get("structured_output")
         if structured is not None:
-            return structured
+            return structured, response
         result_text = response.get("result", "")
         if result_text:
             try:
-                return json.loads(result_text)
+                return json.loads(result_text), response
             except json.JSONDecodeError:
                 pass
-        return None
+        return None, None
 
     def run_bead(
         self,

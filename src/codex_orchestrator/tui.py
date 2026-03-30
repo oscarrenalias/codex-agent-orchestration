@@ -1075,10 +1075,16 @@ def build_tui_app(
     from textual.css.query import NoMatches
     from textual.containers import Center, Horizontal, Vertical, VerticalScroll
     from textual.screen import ModalScreen
-    from textual.widgets import Collapsible, Static
+    from textual.widgets import Collapsible, Static, Tree
 
     class FocusableStatic(Static):
         can_focus = True
+
+    class BeadTree(Tree[Bead]):
+        """Tree widget for displaying beads with native expand/collapse."""
+
+        def _node_label(self, bead: Bead) -> str:
+            return f"{bead.bead_id} · {bead.title} [{bead.status}]"
 
     class HelpOverlay(ModalScreen[None]):
         CSS = """
@@ -1137,7 +1143,7 @@ def build_tui_app(
             width: 1fr;
         }
 
-        #bead-list, #bead-detail {
+        #bead-tree, #bead-detail {
             height: 1fr;
         }
 
@@ -1216,11 +1222,12 @@ def build_tui_app(
             self._last_status_render = ""
             self._active_detail_section_index = 0
             self._detail_collapsed = {section: True for section in DETAIL_SECTION_ORDER}
+            self._collapsed_bead_ids: set[str] = set()
 
         def compose(self) -> ComposeResult:
             with Horizontal(id="top-row"):
                 with Vertical(id="list-panel"):
-                    yield FocusableStatic(id="bead-list")
+                    yield BeadTree("Beads", id="bead-tree")
                 with VerticalScroll(id="detail-panel", can_focus=True):
                     with Vertical(id="bead-detail"):
                         yield Static(id="detail-summary")
@@ -1238,6 +1245,7 @@ def build_tui_app(
             self.title = "Orchestrator TUI"
             self.sub_title = feature_root_id or "all features"
             self.set_interval(refresh_seconds, self._on_interval_tick)
+            self._populate_bead_tree()
             self._render_all()
             self._sync_panel_focus()
 
@@ -1259,10 +1267,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(1)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_cursor_down()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_move_up(self) -> None:
@@ -1271,10 +1280,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(-1)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_cursor_up()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_page_up(self) -> None:
@@ -1283,10 +1293,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(-10)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_page_up()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_page_down(self) -> None:
@@ -1295,10 +1306,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(10)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_page_down()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_go_home(self) -> None:
@@ -1307,10 +1319,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection_to_start()
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_scroll_home()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_go_end(self) -> None:
@@ -1319,17 +1332,20 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection_to_end()
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_scroll_end()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_filter_next(self) -> None:
+            self._collapsed_bead_ids.clear()
             self.runtime_state.cycle_filter(1)
             self._render_all(force_detail=True, reset_detail_scroll=True)
 
         def action_filter_previous(self) -> None:
+            self._collapsed_bead_ids.clear()
             self.runtime_state.cycle_filter(-1)
             self._render_all(force_detail=True, reset_detail_scroll=True)
 
@@ -1456,27 +1472,57 @@ def build_tui_app(
                     self.query_one("#detail-panel", VerticalScroll).focus()
                     self._focus_active_detail_section()
                 else:
-                    self.query_one("#bead-list", Static).focus()
+                    self.query_one("#bead-tree", BeadTree).focus()
             except NoMatches:
                 return
 
-        def _update_list_panel(self) -> None:
+        def _populate_bead_tree(self) -> None:
+            """Rebuild the Tree widget from current runtime_state rows."""
             try:
-                bead_list = self.query_one("#bead-list", Static)
+                bead_tree = self.query_one("#bead-tree", BeadTree)
             except NoMatches:
                 return
-            self.runtime_state.ensure_selection_visible(self._list_viewport_height())
-            list_render = render_tree_panel(
-                self.runtime_state.rows,
-                self.runtime_state.selected_index,
-                filter_mode=self.runtime_state.filter_mode,
-                focused=self.runtime_state.focused_panel == PANEL_LIST,
-                scroll_offset=self.runtime_state.list_scroll_offset,
-                viewport_height=self._list_viewport_height(),
-            )
-            if list_render != self._last_list_render:
-                bead_list.update(list_render)
-                self._last_list_render = list_render
+
+            bead_tree.clear()
+            rows = self.runtime_state.rows
+            if not rows:
+                bead_tree.root.set_label("No beads match the current filter.")
+                return
+
+            bead_tree.root.set_label("Beads")
+            # Build a map from bead_id to tree node for parent lookups
+            node_map: dict[str, object] = {}
+            for row in rows:
+                bead = row.bead
+                parent_node = node_map.get(bead.parent_id) if bead.parent_id else None
+                target = parent_node if parent_node is not None else bead_tree.root
+                label = bead_tree._node_label(bead)
+                if row.has_children:
+                    node = target.add(label, data=bead)
+                else:
+                    node = target.add_leaf(label, data=bead)
+                node_map[bead.bead_id] = node
+
+            # Restore collapsed state
+            for bead_id in self._collapsed_bead_ids:
+                if bead_id in node_map:
+                    node_map[bead_id].collapse()
+
+            # Expand all non-collapsed nodes (Tree defaults to collapsed)
+            for bead_id, node in node_map.items():
+                if bead_id not in self._collapsed_bead_ids and hasattr(node, 'expand'):
+                    node.expand()
+
+            # Also expand root
+            bead_tree.root.expand()
+
+            # Restore selection
+            selected_id = self.runtime_state.selected_bead_id
+            if selected_id and selected_id in node_map:
+                bead_tree.select_node(node_map[selected_id])
+
+        def _update_list_panel(self) -> None:
+            self._populate_bead_tree()
 
         def _update_detail_panel(self, *, force: bool = False, reset_scroll: bool = False) -> None:
             try:
@@ -1515,7 +1561,7 @@ def build_tui_app(
 
         def _list_viewport_height(self) -> int | None:
             try:
-                return self.query_one("#bead-list", Static).content_region.height
+                return self.query_one("#bead-tree", BeadTree).content_region.height
             except NoMatches:
                 return None
 
@@ -1576,20 +1622,34 @@ def build_tui_app(
             self.call_after_refresh(self._focus_active_detail_section)
             return True
 
+        def on_tree_node_highlighted(self, event: Tree.NodeHighlighted[Bead]) -> None:
+            bead = event.node.data
+            if bead is None:
+                return
+            previous_selection = self._selection_marker()
+            for index, row in enumerate(self.runtime_state.rows):
+                if row.bead_id == bead.bead_id:
+                    self.runtime_state.select_index(index)
+                    break
+            changed = self._selection_changed(previous_selection)
+            self._update_detail_panel(force=changed, reset_scroll=changed)
+            self._update_status_panel()
+
+        def on_tree_node_collapsed(self, event: Tree.NodeCollapsed[Bead]) -> None:
+            bead = event.node.data
+            if bead is not None:
+                self._collapsed_bead_ids.add(bead.bead_id)
+
+        def on_tree_node_expanded(self, event: Tree.NodeExpanded[Bead]) -> None:
+            bead = event.node.data
+            if bead is not None:
+                self._collapsed_bead_ids.discard(bead.bead_id)
+
         def on_collapsible_collapsed(self, event: Collapsible.Collapsed) -> None:
             self._sync_detail_state_from_collapsible(event.collapsible, collapsed=True)
 
         def on_collapsible_expanded(self, event: Collapsible.Expanded) -> None:
             self._sync_detail_state_from_collapsible(event.collapsible, collapsed=False)
-
-        def _list_index_from_y(self, y: int) -> int | None:
-            row_y = y - 2
-            if row_y < 0:
-                return None
-            index = self.runtime_state.list_scroll_offset + row_y
-            if index >= len(self.runtime_state.rows):
-                return None
-            return index
 
         def _selection_marker(self) -> tuple[str | None, int | None]:
             return self.runtime_state.selected_bead_id, self.runtime_state.selected_index
@@ -1609,20 +1669,9 @@ def build_tui_app(
             widget = getattr(event, "widget", None)
             if widget is None:
                 return
-            if self._widget_matches_panel(widget, {"bead-list", "list-panel"}):
-                offset = event.get_content_offset(widget)
-                if offset is None:
-                    return
-                index = self._list_index_from_y(offset.y)
+            if self._widget_matches_panel(widget, {"bead-tree", "list-panel"}):
+                # Tree widget handles its own click-to-select; just sync focus
                 self.runtime_state.set_focused_panel(PANEL_LIST, announce=False)
-                if index is not None:
-                    previous_selection = self._selection_marker()
-                    self.runtime_state.select_index(index)
-                    self._update_list_panel()
-                    self._update_detail_panel(
-                        force=self._selection_changed(previous_selection),
-                        reset_scroll=self._selection_changed(previous_selection),
-                    )
                 self._render_focus()
                 self._sync_panel_focus()
                 self._update_status_panel()
@@ -1656,32 +1705,19 @@ def build_tui_app(
                 if hasattr(event, "stop"):
                     event.stop()
                 return
-            if self._widget_matches_panel(widget, {"bead-list", "list-panel"}):
+            if self._widget_matches_panel(widget, {"bead-tree", "list-panel"}):
+                # Tree widget handles its own scrolling
                 self.runtime_state.set_focused_panel(PANEL_LIST, announce=False)
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(direction)
                 self._render_focus()
                 self._sync_panel_focus()
-                self._update_list_panel()
-                self._update_detail_panel(
-                    force=self._selection_changed(previous_selection),
-                    reset_scroll=self._selection_changed(previous_selection),
-                )
                 self._update_status_panel()
-                if hasattr(event, "stop"):
-                    event.stop()
                 return
             if self.runtime_state.focused_panel == PANEL_DETAIL:
                 self.runtime_state.scroll_detail(direction, self._detail_viewport_height())
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(direction)
-                self._update_list_panel()
-                self._update_detail_panel(
-                    force=self._selection_changed(previous_selection),
-                    reset_scroll=self._selection_changed(previous_selection),
-                )
+                # Fallback: delegate scroll to the tree
+                pass
             self._update_status_panel()
 
         def _sync_detail_section_from_widget(self, widget: object) -> None:
