@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Codex-based multi-agent orchestration MVP"
 requires-python = ">=3.11"
 dependencies = [
+    "pyyaml>=6,<7",
     "textual>=0.85,<1",
 ]
 
