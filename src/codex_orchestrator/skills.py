@@ -5,10 +5,14 @@ import json
 import shutil
 from pathlib import Path
 
+from .config import OrchestratorConfig
 from .models import Bead
 from .prompts import load_guardrail_template
 
 
+# Intentionally not externalized to config. The skill allowlist is tightly coupled
+# to the skill directory structure and guardrail templates; externalizing it to YAML
+# would require also externalizing the skill catalog, which is a separate concern.
 AGENT_SKILL_ALLOWLIST: dict[str, tuple[str, ...]] = {
     "planner": (
         "core/base-orchestrator",
@@ -82,25 +86,20 @@ def _bundle_hash(repo_root: Path, skill_ids: list[str]) -> str:
     return digest
 
 
-_BACKEND_SKILLS_DIR: dict[str, str] = {
-    "codex": ".agents",
-    "claude": ".claude",
-}
-
-
 def prepare_isolated_execution_root(
     *,
     orchestrator_state_dir: Path,
     catalog_repo_root: Path,
     workspace_repo_root: Path,
     bead: Bead,
+    config: OrchestratorConfig,
     runner_backend: str = "codex",
 ) -> tuple[Path, dict[str, object]]:
     skill_ids = allowed_skill_ids(bead.agent_type)
     if not skill_ids:
         raise RuntimeError(f"No skills configured for agent type: {bead.agent_type}")
 
-    skills_parent = _BACKEND_SKILLS_DIR.get(runner_backend, ".agents")
+    skills_parent = config.backend(runner_backend).skills_dir
     exec_root = orchestrator_state_dir / "agent-runs" / bead.bead_id
     skills_root = exec_root / skills_parent / "skills"
     repo_link = exec_root / "repo"
@@ -128,7 +127,10 @@ def prepare_isolated_execution_root(
     if runner_backend == "claude":
         try:
             _, guardrail_text = load_guardrail_template(
-                bead.agent_type, root=catalog_repo_root,
+                bead.agent_type,
+                root=catalog_repo_root,
+                templates_dir=config.templates_dir,
+                agent_types=config.agent_types,
             )
             (exec_root / "CLAUDE.md").write_text(guardrail_text + "\n", encoding="utf-8")
         except FileNotFoundError:

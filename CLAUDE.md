@@ -17,12 +17,13 @@ uv run orchestrator tui                           # interactive terminal UI
 ```
 src/codex_orchestrator/
   cli.py          CLI dispatch and output formatting
-  scheduler.py    Orchestration loop: leases, conflicts, followups
+  config.py       YAML config loader + frozen dataclass models
+  scheduler.py    Orchestration loop: leases, conflicts, followups (all params from config)
   storage.py      Bead JSON persistence under .orchestrator/beads/
   models.py       Bead, Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
-  prompts.py      Worker/planner prompt construction + guardrail loading
-  skills.py       Skill allowlists and isolated execution root setup
+  prompts.py      Worker/planner prompt construction + guardrail loading (config-overridable)
+  skills.py       Skill allowlists and isolated execution root setup (config-driven)
   gitutils.py     Worktree creation, commits, merges
   planner.py      Spec-to-bead-graph planning service
   tui.py          Textual-based interactive UI
@@ -30,7 +31,7 @@ src/codex_orchestrator/
 
 templates/agents/   Guardrail templates per agent type (mandatory)
 .agents/skills/     Skill definitions (SKILL.md + agents/openai.yaml)
-.orchestrator/      Runtime state: beads/, logs/, worktrees/, agent-runs/
+.orchestrator/      Runtime state: beads/, logs/, worktrees/, agent-runs/, config.yaml
 ```
 
 ## Key Concepts
@@ -41,13 +42,13 @@ templates/agents/   Guardrail templates per agent type (mandatory)
 
 **Verdicts**: Review and tester beads produce `verdict: approved | needs_changes`. Verdict is the control-flow signal; narrative fields (`completed`, `remaining`) are context only.
 
-**Followup beads**: When a developer bead completes, the scheduler auto-creates `-test`, `-docs`, `-review` children.
+**Followup beads**: When a developer bead completes, the scheduler auto-creates followup children using suffixes from `config.scheduler.followup_suffixes` (default: `-test`, `-docs`, `-review`).
 
-**Corrective beads**: Transient failures (quota, timeout) get up to 2 automatic `-corrective` retries.
+**Corrective beads**: Transient failures matching `config.scheduler.transient_block_patterns` get up to `config.scheduler.max_corrective_attempts` (default 2) automatic `-corrective` retries.
 
 ## Multi-Backend Support
 
-Two runners exist side by side. Select via `--runner` flag or `ORCHESTRATOR_RUNNER` env var (default: `codex`).
+Two runners exist side by side. Select via `--runner` flag, `ORCHESTRATOR_RUNNER` env var, or `config.default_runner` (resolved in that priority order).
 
 Isolated execution root layout per backend:
 
@@ -57,7 +58,77 @@ Isolated execution root layout per backend:
 | Agent steering | Embedded in prompt | `exec_root/CLAUDE.md` (auto-loaded) |
 | CLI invocation | `codex exec --full-auto` | `claude -p --dangerously-skip-permissions` |
 
+Both runners accept `config: OrchestratorConfig` and `backend: BackendConfig` at construction. Binary paths, CLI flags, and allowed tools are read from config -- not hardcoded. If constructed without arguments (e.g. in tests), runners fall back to `default_config()`.
+
+CLI commands are split into **structural flags** (per-invocation values like `--output-schema`, `--json-schema`, `-C`, `-p`) that stay in code, and **backend flags** (like `--full-auto`, `--dangerously-skip-permissions`) that come from `config.backend(name).flags`.
+
+Claude Code's `--allowedTools` list is resolved per agent type via `config.allowed_tools_for("claude", agent_type)`, which merges the backend's `allowed_tools_default` with the agent-specific additions from `allowed_tools_by_agent`.
+
+Default tools shared by all Claude Code agent types: `Edit`, `Write`, `Read`, `Bash`, `Glob`, `Grep`, `Skill`, `ToolSearch`, `WebSearch`, `WebFetch`.
+
+Additional tools granted per agent type:
+
+| Agent type | Extra tools |
+|---|---|
+| `developer` | `Agent`, `NotebookEdit`, `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` |
+| `tester` | `Agent`, `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` |
+| `documentation` | `NotebookEdit` |
+| `planner` | _(none)_ |
+| `review` | _(none)_ |
+
+These defaults live in `default_config()` and can be overridden in `.orchestrator/config.yaml` under each backend's `allowed_tools_default` and `allowed_tools_by_agent` keys.
+
 Beads are backend-agnostic. A bead started with Codex can be retried with Claude Code via `orchestrator --runner claude retry <bead_id>`.
+
+## Configuration
+
+Orchestrator settings live in `.orchestrator/config.yaml`. The config module (`src/codex_orchestrator/config.py`) loads this file and exposes frozen dataclasses:
+
+- **`OrchestratorConfig`** -- top-level: `default_runner`, `templates_dir`, `agent_types`, `scheduler`, `backends`.
+- **`SchedulerConfig`** -- lease timeouts, corrective/followup suffixes, transient failure patterns.
+- **`BackendConfig`** -- per-backend binary path, skills dir, CLI flags, and tool allowlists.
+
+Key functions:
+
+- `load_config(root)` -- loads config from `root/.orchestrator/config.yaml`; falls back to `default_config()` if the file is missing.
+- `default_config()` -- returns built-in defaults matching the previously hardcoded values.
+- `config.backend(name)` -- returns the `BackendConfig` for a backend; raises `KeyError` with valid options on unknown name.
+- `config.allowed_tools_for(backend, agent_type)` -- returns the deduplicated union of default + per-agent tools for a backend.
+
+If no config file exists, all behaviour is identical to the hardcoded defaults. The YAML file has three top-level blocks: `common` (shared settings and scheduler), `codex`, and `claude` (per-backend settings including tool allowlists).
+
+### Config wiring
+
+`cli.make_services(root, runner_backend)` is the entry point that threads config through the system:
+
+1. Loads config via `load_config(root)`.
+2. Resolves the backend: `runner_backend` arg > `$ORCHESTRATOR_RUNNER` > `config.default_runner`.
+3. Looks up the runner class from `_RUNNER_CLASSES` and the `BackendConfig` from `config.backend(name)`.
+4. Passes both `config` and `backend` to the runner constructor.
+
+Unknown backend names produce a `SystemExit` listing valid options from `config.backends.keys()`.
+
+### Scheduler config wiring
+
+`Scheduler.__init__` reads all operational parameters from `self.config.scheduler` into instance attributes. There are no module-level constants for scheduler tuning -- all values come from config:
+
+| Instance attribute | Config source | Default |
+|---|---|---|
+| `self.followup_suffixes` | `config.scheduler.followup_suffixes` | `{"tester": "test", "documentation": "docs", "review": "review"}` |
+| `self.corrective_suffix` | `config.scheduler.corrective_suffix` | `"corrective"` |
+| `self.max_corrective_attempts` | `config.scheduler.max_corrective_attempts` | `2` |
+| `self.transient_block_patterns` | `config.scheduler.transient_block_patterns` | 10 built-in patterns (auth, timeout, etc.) |
+| `self.lease_timeout_minutes` | `config.scheduler.lease_timeout_minutes` | `30` |
+| `self.runnable_reassign_agents` | `config.agent_types` | all 5 built-in types |
+| `self.followup_agent_by_suffix` | derived from `followup_suffixes` | `{"-test": "tester", ...}` |
+
+### Skills config wiring
+
+`prepare_isolated_execution_root()` accepts `config: OrchestratorConfig` and `runner_backend: str`. The skills directory is resolved via `config.backend(runner_backend).skills_dir` (`.agents` for Codex, `.claude` for Claude Code). `AGENT_SKILL_ALLOWLIST` remains as a module-level constant intentionally -- it is tightly coupled to the skill directory structure and not externalized to YAML.
+
+### Prompts config wiring
+
+`guardrail_template_path()` and `load_guardrail_template()` accept optional `templates_dir` and `agent_types` parameters. When provided, they override the built-in `DEFAULT_TEMPLATES_DIR` and `BUILT_IN_AGENT_TYPES` constants. The scheduler passes `config.templates_dir` and `config.agent_types` to these functions. `supported_agent_types(config_types)` returns the config-provided list or falls back to the built-in constant.
 
 ## Conventions
 
