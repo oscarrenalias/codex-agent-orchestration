@@ -80,6 +80,37 @@ These defaults live in `default_config()` and can be overridden in `.orchestrato
 
 Beads are backend-agnostic. A bead started with Codex can be retried with Claude Code via `orchestrator --runner claude retry <bead_id>`.
 
+### Runner telemetry capture
+
+Both runners measure wall-clock duration and prompt size around every `run_bead()` call and attach the metrics to `AgentRunResult.telemetry` (a `dict[str, Any] | None`, defaults to `None`).
+
+**Codex** captures minimal metrics (`source: "measured"`):
+
+| Field | Description |
+|---|---|
+| `duration_ms` | Wall-clock time of the subprocess |
+| `prompt_chars` | Prompt length in characters |
+| `prompt_lines` | Prompt length in lines |
+| `prompt_text` | Full prompt sent to the agent |
+| `response_text` | Raw JSON response |
+
+**Claude Code** additionally extracts provider-supplied fields from the JSON response envelope (`source: "provider"`):
+
+| Field | Source in response |
+|---|---|
+| `cost_usd` | `total_cost_usd` |
+| `duration_api_ms` | `duration_api_ms` |
+| `num_turns` | `num_turns` |
+| `input_tokens` | `usage.input_tokens` |
+| `output_tokens` | `usage.output_tokens` |
+| `cache_creation_tokens` | `usage.cache_creation_input_tokens` |
+| `cache_read_tokens` | `usage.cache_read_input_tokens` |
+| `stop_reason` | `stop_reason` |
+| `session_id` | `session_id` |
+| `permission_denials` | `permission_denials` |
+
+The scheduler stores telemetry opaquely — it does not interpret the dict contents.
+
 ## Configuration
 
 Orchestrator settings live in `.orchestrator/config.yaml`. The config module (`src/codex_orchestrator/config.py`) loads this file and exposes frozen dataclasses:
