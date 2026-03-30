@@ -48,7 +48,7 @@ templates/agents/   Guardrail templates per agent type (mandatory)
 
 ## Multi-Backend Support
 
-Two runners exist side by side. Select via `--runner` flag or `ORCHESTRATOR_RUNNER` env var (default: `codex`).
+Two runners exist side by side. Select via `--runner` flag, `ORCHESTRATOR_RUNNER` env var, or `config.default_runner` (resolved in that priority order).
 
 Isolated execution root layout per backend:
 
@@ -57,6 +57,12 @@ Isolated execution root layout per backend:
 | Skills directory | `exec_root/.agents/skills/` | `exec_root/.claude/skills/` |
 | Agent steering | Embedded in prompt | `exec_root/CLAUDE.md` (auto-loaded) |
 | CLI invocation | `codex exec --full-auto` | `claude -p --dangerously-skip-permissions` |
+
+Both runners accept `config: OrchestratorConfig` and `backend: BackendConfig` at construction. Binary paths, CLI flags, and allowed tools are read from config -- not hardcoded. If constructed without arguments (e.g. in tests), runners fall back to `default_config()`.
+
+CLI commands are split into **structural flags** (per-invocation values like `--output-schema`, `--json-schema`, `-C`, `-p`) that stay in code, and **backend flags** (like `--full-auto`, `--dangerously-skip-permissions`) that come from `config.backend(name).flags`.
+
+Claude Code's `--allowedTools` list is resolved per agent type via `config.allowed_tools_for("claude", agent_type)`, which merges the backend's `allowed_tools_default` with the agent-specific additions from `allowed_tools_by_agent`.
 
 Beads are backend-agnostic. A bead started with Codex can be retried with Claude Code via `orchestrator --runner claude retry <bead_id>`.
 
@@ -72,9 +78,21 @@ Key functions:
 
 - `load_config(root)` -- loads config from `root/.orchestrator/config.yaml`; falls back to `default_config()` if the file is missing.
 - `default_config()` -- returns built-in defaults matching the previously hardcoded values.
+- `config.backend(name)` -- returns the `BackendConfig` for a backend; raises `KeyError` with valid options on unknown name.
 - `config.allowed_tools_for(backend, agent_type)` -- returns the deduplicated union of default + per-agent tools for a backend.
 
 If no config file exists, all behaviour is identical to the hardcoded defaults. The YAML file has three top-level blocks: `common` (shared settings and scheduler), `codex`, and `claude` (per-backend settings including tool allowlists).
+
+### Config wiring
+
+`cli.make_services(root, runner_backend)` is the entry point that threads config through the system:
+
+1. Loads config via `load_config(root)`.
+2. Resolves the backend: `runner_backend` arg > `$ORCHESTRATOR_RUNNER` > `config.default_runner`.
+3. Looks up the runner class from `_RUNNER_CLASSES` and the `BackendConfig` from `config.backend(name)`.
+4. Passes both `config` and `backend` to the runner constructor.
+
+Unknown backend names produce a `SystemExit` listing valid options from `config.backends.keys()`.
 
 ## Conventions
 
