@@ -2419,5 +2419,120 @@ class TuiTelemetryDisplayTests(unittest.TestCase):
         self.assertEqual(DETAIL_SECTION_TELEMETRY, DETAIL_SECTION_ORDER[-1])
 
 
+class TuiTitleTruncationTests(unittest.TestCase):
+    """Tests for B0133: Truncate bead titles to single line in list panel."""
+
+    # -- _truncate_title unit tests -------------------------------------------
+
+    def test_truncate_title_short_title_unchanged(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual("Hello", _truncate_title("Hello", 10))
+
+    def test_truncate_title_exact_fit_unchanged(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual("Hello", _truncate_title("Hello", 5))
+
+    def test_truncate_title_long_title_gets_ellipsis(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        result = _truncate_title("Hello World", 8)
+        self.assertEqual("Hello...", result)
+        self.assertEqual(8, len(result))
+
+    def test_truncate_title_max_width_3_returns_ellipsis(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual("...", _truncate_title("Hello World", 3))
+
+    def test_truncate_title_max_width_2_returns_partial_ellipsis(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual("..", _truncate_title("Hello World", 2))
+
+    def test_truncate_title_max_width_1_returns_single_dot(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual(".", _truncate_title("Hello World", 1))
+
+    def test_truncate_title_max_width_0_returns_empty(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual("", _truncate_title("Hello World", 0))
+
+    def test_truncate_title_max_width_4_keeps_one_char_plus_ellipsis(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual("H...", _truncate_title("Hello World", 4))
+
+    def test_truncate_title_empty_title(self) -> None:
+        from codex_orchestrator.tui import _truncate_title
+        self.assertEqual("", _truncate_title("", 10))
+
+    # -- render_tree_panel truncation integration -----------------------------
+
+    def test_render_tree_panel_truncates_long_title(self) -> None:
+        long_title = "A" * 200
+        bead = Bead(bead_id="B0001", title=long_title, agent_type="developer", description="d", status=BEAD_READY)
+        rows = build_tree_rows([bead])
+        output = render_tree_panel(rows, selected_index=0, focused=True, panel_width=60)
+        lines = output.splitlines()
+        self.assertEqual(1, len(lines))
+        self.assertIn("...", lines[0])
+        # Line should not exceed panel_width
+        self.assertLessEqual(len(lines[0]), 60)
+
+    def test_render_tree_panel_short_title_not_truncated(self) -> None:
+        bead = Bead(bead_id="B0001", title="Short", agent_type="developer", description="d", status=BEAD_READY)
+        rows = build_tree_rows([bead])
+        output = render_tree_panel(rows, selected_index=0, focused=True, panel_width=120)
+        self.assertIn("Short", output)
+        self.assertNotIn("...", output)
+
+    def test_render_tree_panel_respects_panel_width_parameter(self) -> None:
+        title = "Medium length title for testing"
+        bead = Bead(bead_id="B0001", title=title, agent_type="developer", description="d", status=BEAD_READY)
+        rows = build_tree_rows([bead])
+        # With a wide panel, title should fit
+        wide_output = render_tree_panel(rows, selected_index=0, focused=True, panel_width=200)
+        self.assertIn(title, wide_output)
+        # With a narrow panel, title should be truncated
+        narrow_output = render_tree_panel(rows, selected_index=0, focused=True, panel_width=40)
+        self.assertNotIn(title, narrow_output)
+        self.assertIn("...", narrow_output)
+
+    def test_render_tree_panel_default_width_used_when_none(self) -> None:
+        from codex_orchestrator.tui import _DEFAULT_PANEL_WIDTH
+        long_title = "X" * 200
+        bead = Bead(bead_id="B0001", title=long_title, agent_type="developer", description="d", status=BEAD_READY)
+        rows = build_tree_rows([bead])
+        output = render_tree_panel(rows, selected_index=0, focused=True)
+        lines = output.splitlines()
+        self.assertLessEqual(len(lines[0]), _DEFAULT_PANEL_WIDTH)
+
+    def test_render_tree_panel_nested_bead_title_truncation(self) -> None:
+        parent = Bead(bead_id="B0001", title="Parent", agent_type="planner", description="p", status=BEAD_READY)
+        child = Bead(
+            bead_id="B0001-dev",
+            title="C" * 200,
+            agent_type="developer",
+            description="d",
+            status=BEAD_READY,
+            parent_id="B0001",
+        )
+        rows = build_tree_rows([parent, child])
+        output = render_tree_panel(rows, selected_index=0, focused=True, panel_width=60)
+        for line in output.splitlines():
+            self.assertLessEqual(len(line), 60, f"Line exceeds panel_width: {line!r}")
+
+    def test_render_tree_panel_truncation_with_telemetry_badge(self) -> None:
+        long_title = "T" * 200
+        bead = Bead(bead_id="B0001", title=long_title, agent_type="developer", description="d", status=BEAD_READY)
+        bead.metadata["telemetry"] = {"cost_usd": 0.42, "duration_ms": 130_000}
+        rows = build_tree_rows([bead])
+        output = render_tree_panel(rows, selected_index=0, focused=True, panel_width=80)
+        lines = output.splitlines()
+        self.assertEqual(1, len(lines))
+        # Badge should still be present
+        self.assertIn("[$0.42, 2:10]", lines[0])
+        # Title should be truncated
+        self.assertIn("...", lines[0])
+        # Line should respect width
+        self.assertLessEqual(len(lines[0]), 80)
+
+
 if __name__ == "__main__":
     unittest.main()
