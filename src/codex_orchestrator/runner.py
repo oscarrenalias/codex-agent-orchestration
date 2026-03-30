@@ -161,6 +161,7 @@ class CodexAgentRunner(AgentRunner):
         ]
         try:
             env = os.environ.copy()
+            env.pop("VIRTUAL_ENV", None)
             if execution_env:
                 env.update(execution_env)
             proc = subprocess.run(cmd, input=prompt, text=True, capture_output=True, check=False, env=env)
@@ -227,6 +228,7 @@ class ClaudeCodeAgentRunner(AgentRunner):
             "--json-schema", json.dumps(schema),
         ]
         env = os.environ.copy()
+        env.pop("VIRTUAL_ENV", None)
         if execution_env:
             env.update(execution_env)
         proc = subprocess.run(
@@ -294,9 +296,10 @@ class ClaudeCodeAgentRunner(AgentRunner):
             "--allowedTools", "Edit,Write,Read,Bash,Glob,Grep,Skill,ToolSearch,Agent,WebSearch,WebFetch,NotebookEdit,TaskCreate,TaskUpdate,TaskGet,TaskList",
             "--output-format", "json",
             "--json-schema", json.dumps(schema),
-            "--max-turns", "1",
+            "--max-turns", "2",
         ]
         env = os.environ.copy()
+        env.pop("VIRTUAL_ENV", None)
         if execution_env:
             env.update(execution_env)
         proc = subprocess.run(

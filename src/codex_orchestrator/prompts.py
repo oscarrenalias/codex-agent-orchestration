@@ -98,7 +98,9 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
         f"{json.dumps(payload, indent=2)}\n\n"
         "Available repository context files:\n"
         f"{render_context_snippets(context_paths, root)}\n\n"
-        "Return a JSON object matching the required schema. "
+        "CRITICAL: Your final message MUST be a JSON object matching the required output schema. "
+        "Do not end with a conversational summary or status update — the orchestrator parses your "
+        "last message as JSON and will fail if it is not valid JSON. "
         "Always include a concise summary, structured handoff fields, actual touched files, "
         "updated scope if it changed, conflict risks for downstream agents, and any newly discovered sub-beads."
     )
