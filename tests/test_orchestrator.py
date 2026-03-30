@@ -2275,5 +2275,173 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("Hint: install project dependencies", stream.getvalue())
 
 
+    # -- Telemetry tests (B0115) -----------------------------------------
+
+    def test_agent_run_result_telemetry_defaults_to_none(self) -> None:
+        result = AgentRunResult(outcome="completed", summary="done")
+        self.assertIsNone(result.telemetry)
+
+    def test_codex_runner_populates_minimal_telemetry(self) -> None:
+        """CodexAgentRunner.run_bead attaches measured telemetry fields."""
+        from codex_orchestrator.runner import CodexAgentRunner
+
+        bead = self.storage.create_bead(title="Telemetry codex", agent_type="developer", description="test")
+        bead.status = BEAD_IN_PROGRESS
+
+        fake_payload = {
+            "outcome": "completed",
+            "summary": "done",
+            "completed": "",
+            "remaining": "",
+            "risks": "",
+            "verdict": "approved",
+            "findings_count": 0,
+            "requires_followup": False,
+            "expected_files": [],
+            "expected_globs": [],
+            "touched_files": [],
+            "changed_files": [],
+            "updated_docs": [],
+            "next_action": "",
+            "next_agent": "",
+            "block_reason": "",
+            "conflict_risks": "",
+            "new_beads": [],
+        }
+
+        runner = CodexAgentRunner()
+        with patch.object(runner, "_exec_json", return_value=fake_payload):
+            result = runner.run_bead(bead, workdir=self.root, context_paths=[])
+
+        self.assertIsNotNone(result.telemetry)
+        self.assertEqual(result.telemetry["source"], "measured")
+        self.assertIn("duration_ms", result.telemetry)
+        self.assertIsInstance(result.telemetry["duration_ms"], int)
+        self.assertGreaterEqual(result.telemetry["duration_ms"], 0)
+        self.assertIn("prompt_chars", result.telemetry)
+        self.assertIsInstance(result.telemetry["prompt_chars"], int)
+        self.assertGreater(result.telemetry["prompt_chars"], 0)
+        self.assertIn("prompt_lines", result.telemetry)
+        self.assertIsInstance(result.telemetry["prompt_lines"], int)
+        self.assertGreater(result.telemetry["prompt_lines"], 0)
+        self.assertIn("prompt_text", result.telemetry)
+        self.assertIn("response_text", result.telemetry)
+
+    def test_claude_runner_populates_provider_telemetry(self) -> None:
+        """ClaudeCodeAgentRunner.run_bead extracts all provider fields from response envelope."""
+        from codex_orchestrator.runner import ClaudeCodeAgentRunner
+
+        bead = self.storage.create_bead(title="Telemetry claude", agent_type="developer", description="test")
+        bead.status = BEAD_IN_PROGRESS
+
+        fake_payload = {
+            "outcome": "completed",
+            "summary": "done",
+            "completed": "",
+            "remaining": "",
+            "risks": "",
+            "verdict": "approved",
+            "findings_count": 0,
+            "requires_followup": False,
+            "expected_files": [],
+            "expected_globs": [],
+            "touched_files": [],
+            "changed_files": [],
+            "updated_docs": [],
+            "next_action": "",
+            "next_agent": "",
+            "block_reason": "",
+            "conflict_risks": "",
+            "new_beads": [],
+        }
+        fake_response = {
+            "structured_output": fake_payload,
+            "total_cost_usd": 0.42,
+            "duration_api_ms": 12345,
+            "num_turns": 3,
+            "usage": {
+                "input_tokens": 1000,
+                "output_tokens": 500,
+                "cache_creation_input_tokens": 200,
+                "cache_read_input_tokens": 100,
+            },
+            "stop_reason": "end_turn",
+            "session_id": "sess-abc123",
+            "permission_denials": 0,
+        }
+
+        runner = ClaudeCodeAgentRunner()
+        with patch.object(
+            runner, "_exec_json_with_response",
+            return_value=(fake_payload, fake_response),
+        ):
+            result = runner.run_bead(bead, workdir=self.root, context_paths=[])
+
+        self.assertIsNotNone(result.telemetry)
+        t = result.telemetry
+        self.assertEqual(t["source"], "provider")
+        self.assertEqual(t["cost_usd"], 0.42)
+        self.assertEqual(t["duration_api_ms"], 12345)
+        self.assertEqual(t["num_turns"], 3)
+        self.assertEqual(t["input_tokens"], 1000)
+        self.assertEqual(t["output_tokens"], 500)
+        self.assertEqual(t["cache_creation_tokens"], 200)
+        self.assertEqual(t["cache_read_tokens"], 100)
+        self.assertEqual(t["stop_reason"], "end_turn")
+        self.assertEqual(t["session_id"], "sess-abc123")
+        self.assertEqual(t["permission_denials"], 0)
+        # Also has measured fields
+        self.assertIn("duration_ms", t)
+        self.assertIsInstance(t["duration_ms"], int)
+        self.assertGreaterEqual(t["duration_ms"], 0)
+        self.assertIn("prompt_chars", t)
+        self.assertIn("prompt_lines", t)
+        self.assertIn("prompt_text", t)
+        self.assertIn("response_text", t)
+
+    def test_codex_telemetry_prompt_chars_and_lines_match_actual_prompt(self) -> None:
+        """Verify prompt_chars and prompt_lines reflect the actual prompt content."""
+        from codex_orchestrator.runner import CodexAgentRunner
+
+        bead = self.storage.create_bead(title="Telemetry prompt", agent_type="developer", description="test")
+        bead.status = BEAD_IN_PROGRESS
+
+        fake_payload = {
+            "outcome": "completed",
+            "summary": "done",
+            "completed": "",
+            "remaining": "",
+            "risks": "",
+            "verdict": "approved",
+            "findings_count": 0,
+            "requires_followup": False,
+            "expected_files": [],
+            "expected_globs": [],
+            "touched_files": [],
+            "changed_files": [],
+            "updated_docs": [],
+            "next_action": "",
+            "next_agent": "",
+            "block_reason": "",
+            "conflict_risks": "",
+            "new_beads": [],
+        }
+
+        captured_prompts: list[str] = []
+
+        def mock_exec_json(prompt, *, schema, workdir, execution_env=None):
+            captured_prompts.append(prompt)
+            return fake_payload
+
+        runner = CodexAgentRunner()
+        with patch.object(runner, "_exec_json", side_effect=mock_exec_json):
+            result = runner.run_bead(bead, workdir=self.root, context_paths=[])
+
+        self.assertEqual(len(captured_prompts), 1)
+        actual_prompt = captured_prompts[0]
+        self.assertEqual(result.telemetry["prompt_chars"], len(actual_prompt))
+        self.assertEqual(result.telemetry["prompt_lines"], actual_prompt.count("\n") + 1)
+
+
 if __name__ == "__main__":
     unittest.main()
