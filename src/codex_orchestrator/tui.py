@@ -397,6 +397,7 @@ class TuiRuntimeState:
     _rows_cache: list[TreeRow] = field(default_factory=list, init=False, repr=False)
     _beads_cache: list[Bead] = field(default_factory=list, init=False, repr=False)
     _detail_cache: dict[str, tuple[Bead, str]] = field(default_factory=dict, init=False, repr=False)
+    _rendered_detail_content_height: int | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.refresh(activity_message="Loaded bead state.")
@@ -565,11 +566,16 @@ class TuiRuntimeState:
         visible_height = self.visible_detail_height(viewport_height)
         if visible_height <= 0:
             return 0
-        total_lines = len(self.detail_panel_body().splitlines())
+        total_lines = self._rendered_detail_content_height
+        if total_lines is None:
+            total_lines = len(self.detail_panel_body().splitlines())
         return max(0, total_lines - visible_height)
 
     def clamp_detail_scroll(self, viewport_height: int | None) -> None:
         self.detail_scroll_offset = max(0, min(self.detail_scroll_offset, self.detail_max_scroll(viewport_height)))
+
+    def set_rendered_detail_content_height(self, height: int | None) -> None:
+        self._rendered_detail_content_height = None if height is None else max(0, int(height))
 
     def scroll_detail(self, delta: int, viewport_height: int | None) -> bool:
         previous_offset = self.detail_scroll_offset
@@ -1501,6 +1507,7 @@ def build_tui_app(
                 detail_panel = self.query_one("#detail-panel", VerticalScroll)
             except NoMatches:
                 return
+            self.runtime_state.set_rendered_detail_content_height(detail_panel.virtual_size.height)
             self.runtime_state.clamp_detail_scroll(self._detail_viewport_height())
             detail_panel.scroll_to(y=self.runtime_state.detail_scroll_offset, animate=False, force=True)
 
@@ -1696,6 +1703,7 @@ def build_tui_app(
                     f"{_detail_section_title(section)} {'collapsed' if collapsed else 'expanded'}."
                 )
                 self._refresh_detail_sections(self.runtime_state.selected_bead())
+                self.call_after_refresh(self._sync_detail_scroll)
                 self._update_status_panel()
                 return
 

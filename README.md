@@ -235,6 +235,7 @@ Detail scrolling behavior:
 - the long `Acceptance Criteria`, `Files`, and `Handoff` blocks render as Textual `Collapsible` sections and start collapsed so the panel stays compact by default
 - `[` and `]` move the active section target, and `Enter` folds or unfolds that active section while the detail panel is focused
 - scrolling inside the detail panel reuses the rendered detail body instead of rebuilding the metadata block on each step
+- detail scroll bounds follow the rendered `VerticalScroll` container, so expanded sections remain reachable and collapsed sections do not produce phantom scroll offsets
 - list-navigation no-ops at the first or last visible bead do not change the current detail scroll offset
 
 Mouse behavior:

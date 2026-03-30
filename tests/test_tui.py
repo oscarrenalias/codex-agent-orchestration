@@ -1073,6 +1073,41 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(0, update_calls)
         self.assertGreater(detail_offset, 0)
 
+    def test_detail_keyboard_scroll_moves_vertical_scroll_for_expanded_sections(self) -> None:
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Scrollable",
+            agent_type="developer",
+            description="scroll",
+            status=BEAD_READY,
+            acceptance_criteria=[f"criterion {index}" for index in range(80)],
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[float, int, float]:
+            from textual.containers import VerticalScroll
+
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                await pilot.press("tab")
+                await pilot.pause()
+                await pilot.press("enter")
+                await pilot.pause()
+
+                detail_panel = app.screen.query_one("#detail-panel", VerticalScroll)
+                await pilot.press("j")
+                await pilot.pause()
+                await pilot.press("pagedown")
+                await pilot.pause()
+                return detail_panel.scroll_y, app.runtime_state.detail_scroll_offset, detail_panel.max_scroll_y
+
+        scroll_y, detail_offset, max_scroll_y = asyncio.run(exercise_app())
+
+        self.assertGreater(max_scroll_y, 0)
+        self.assertGreater(scroll_y, 0)
+        self.assertGreater(detail_offset, 0)
+
     def test_detail_panel_uses_collapsible_sections_with_compact_defaults(self) -> None:
         bead = self.storage.create_bead(
             bead_id="B0001",
