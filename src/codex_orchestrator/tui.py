@@ -969,7 +969,7 @@ def build_tui_app(
     from textual.app import App, ComposeResult
     from textual.binding import Binding
     from textual.css.query import NoMatches
-    from textual.containers import Center, Horizontal, Vertical
+    from textual.containers import Center, Horizontal, Vertical, VerticalScroll
     from textual.screen import ModalScreen
     from textual.widgets import Static
 
@@ -1037,7 +1037,7 @@ def build_tui_app(
             height: 1fr;
         }
 
-        #bead-detail {
+        #detail-panel {
             overflow-y: auto;
         }
 
@@ -1094,8 +1094,8 @@ def build_tui_app(
             with Horizontal(id="top-row"):
                 with Vertical(id="list-panel"):
                     yield FocusableStatic(id="bead-list")
-                with Vertical(id="detail-panel"):
-                    yield FocusableStatic(id="bead-detail")
+                with VerticalScroll(id="detail-panel", can_focus=True):
+                    yield Static(id="bead-detail")
             yield FocusableStatic(id="status-panel")
 
         def on_mount(self) -> None:
@@ -1103,15 +1103,18 @@ def build_tui_app(
             self.sub_title = feature_root_id or "all features"
             self.set_interval(refresh_seconds, self._on_interval_tick)
             self._render_all()
+            self._sync_panel_focus()
 
         def action_focus_next_panel(self) -> None:
             self.runtime_state.cycle_focus(1)
             self._render_focus()
+            self._sync_panel_focus()
             self._update_status_panel()
 
         def action_focus_previous_panel(self) -> None:
             self.runtime_state.cycle_focus(-1)
             self._render_focus()
+            self._sync_panel_focus()
             self._update_status_panel()
 
         def action_move_down(self) -> None:
@@ -1279,13 +1282,22 @@ def build_tui_app(
         def _render_focus(self) -> None:
             try:
                 list_panel = self.query_one("#list-panel", Vertical)
-                detail_panel = self.query_one("#detail-panel", Vertical)
+                detail_panel = self.query_one("#detail-panel", VerticalScroll)
             except NoMatches:
                 # Main panels are not mounted on top-level while modal screens are active.
                 return
 
             list_panel.set_class(self.runtime_state.focused_panel == PANEL_LIST, "focused")
             detail_panel.set_class(self.runtime_state.focused_panel == PANEL_DETAIL, "focused")
+
+        def _sync_panel_focus(self) -> None:
+            try:
+                if self.runtime_state.focused_panel == PANEL_DETAIL:
+                    self.query_one("#detail-panel", VerticalScroll).focus()
+                else:
+                    self.query_one("#bead-list", Static).focus()
+            except NoMatches:
+                return
 
         def _update_list_panel(self) -> None:
             try:
@@ -1329,10 +1341,10 @@ def build_tui_app(
 
         def _sync_detail_scroll(self) -> None:
             try:
-                bead_detail = self.query_one("#bead-detail", Static)
+                detail_panel = self.query_one("#detail-panel", VerticalScroll)
             except NoMatches:
                 return
-            bead_detail.scroll_to(y=self.runtime_state.detail_scroll_offset, animate=False, force=True)
+            detail_panel.scroll_to(y=self.runtime_state.detail_scroll_offset, animate=False, force=True)
 
         def _list_viewport_height(self) -> int | None:
             try:
@@ -1342,7 +1354,7 @@ def build_tui_app(
 
         def _detail_viewport_height(self) -> int | None:
             try:
-                return self.query_one("#bead-detail", Static).content_region.height
+                return self.query_one("#detail-panel", VerticalScroll).content_region.height
             except NoMatches:
                 return None
 
@@ -1361,12 +1373,19 @@ def build_tui_app(
         def _selection_changed(self, previous_selection: tuple[str | None, int | None]) -> bool:
             return previous_selection != self._selection_marker()
 
+        def _widget_matches_panel(self, widget: object, target_ids: set[str]) -> bool:
+            current = widget
+            while current is not None:
+                if getattr(current, "id", None) in target_ids:
+                    return True
+                current = getattr(current, "parent", None)
+            return False
+
         def on_click(self, event: object) -> None:
             widget = getattr(event, "widget", None)
             if widget is None:
                 return
-            widget_id = getattr(widget, "id", None)
-            if widget_id in {"bead-list", "list-panel"}:
+            if self._widget_matches_panel(widget, {"bead-list", "list-panel"}):
                 offset = event.get_content_offset(widget)
                 if offset is None:
                     return
@@ -1381,11 +1400,13 @@ def build_tui_app(
                         reset_scroll=self._selection_changed(previous_selection),
                     )
                 self._render_focus()
+                self._sync_panel_focus()
                 self._update_status_panel()
                 return
-            if widget_id in {"bead-detail", "detail-panel"}:
+            if self._widget_matches_panel(widget, {"bead-detail", "detail-panel"}):
                 self.runtime_state.set_focused_panel(PANEL_DETAIL, announce=False)
                 self._render_focus()
+                self._sync_panel_focus()
                 self._update_status_panel()
 
         def on_mouse_scroll_down(self, event: object) -> None:
@@ -1396,8 +1417,7 @@ def build_tui_app(
 
         def _route_mouse_scroll(self, event: object, *, direction: int) -> None:
             widget = getattr(event, "widget", None)
-            widget_id = getattr(widget, "id", None)
-            if widget_id in {"bead-detail", "detail-panel"}:
+            if self._widget_matches_panel(widget, {"bead-detail", "detail-panel"}):
                 self.runtime_state.set_focused_panel(PANEL_DETAIL, announce=False)
                 changed = self.runtime_state.scroll_detail(direction, self._detail_viewport_height())
                 if not changed:
@@ -1405,16 +1425,18 @@ def build_tui_app(
                         "Detail view already at the bottom." if direction > 0 else "Detail view already at the top."
                     )
                 self._render_focus()
+                self._sync_panel_focus()
                 self._sync_detail_scroll()
                 self._update_status_panel()
                 if hasattr(event, "stop"):
                     event.stop()
                 return
-            if widget_id in {"bead-list", "list-panel"}:
+            if self._widget_matches_panel(widget, {"bead-list", "list-panel"}):
                 self.runtime_state.set_focused_panel(PANEL_LIST, announce=False)
                 previous_selection = self._selection_marker()
                 self.runtime_state.move_selection(direction)
                 self._render_focus()
+                self._sync_panel_focus()
                 self._update_list_panel()
                 self._update_detail_panel(
                     force=self._selection_changed(previous_selection),

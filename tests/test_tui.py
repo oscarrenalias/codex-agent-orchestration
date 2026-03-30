@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -920,6 +921,39 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(0, offset_after_list_click)
         self.assertEqual("B0002", selected_after_list_click)
         self.assertEqual(PANEL_DETAIL, focused_panel)
+
+    def test_detail_scroll_reuses_rendered_content_during_keyboard_scroll(self) -> None:
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Scrollable",
+            agent_type="developer",
+            description="scroll",
+            status=BEAD_READY,
+            acceptance_criteria=[f"criterion {index}" for index in range(80)],
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[int, int]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+                await pilot.press("tab")
+                await pilot.pause()
+
+                detail_body = app.screen.query_one("#bead-detail")
+                original_update = detail_body.update
+                detail_body.update = Mock(wraps=original_update)
+
+                await pilot.press("j")
+                await pilot.pause()
+                await pilot.press("pagedown")
+                await pilot.pause()
+                return detail_body.update.call_count, app.runtime_state.detail_scroll_offset
+
+        update_calls, detail_offset = asyncio.run(exercise_app())
+
+        self.assertEqual(0, update_calls)
+        self.assertGreater(detail_offset, 0)
 
     def test_mouse_list_boundary_scroll_noop_preserves_detail_scroll(self) -> None:
         self.storage.create_bead(
