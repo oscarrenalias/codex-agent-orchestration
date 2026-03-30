@@ -1,237 +1,218 @@
-# Bead Telemetry And Prompt Logging
+# Bead Execution Telemetry
 
 ## Objective
 
-Add first-class telemetry for every bead execution so operators can inspect exact agent interactions and track token consumption precisely.
-
-The system should persist prompt/response history per bead run, expose token usage at bead level, and provide lightweight rollups for cost and efficiency monitoring.
+Capture execution telemetry for every bead run so operators can track token consumption, cost, duration, and prompt size — and identify optimization opportunities such as prompt bloat, agent looping, or excessive tool use.
 
 ## Why This Matters
 
-The current orchestrator can run beads and persist handoff summaries, but it does not provide enough observability into:
+Claude Code's `--output-format json` response includes rich telemetry (cost, tokens, duration, turns, cache stats) that the runner currently discards. Without this data it is impossible to:
 
-- what prompt was actually sent to the agent
-- what the agent returned before scheduler normalization
-- how many tokens each run consumed
-- how token usage accumulates by bead, agent type, feature root, and plan
+- detect prompt bloat (too many input tokens for the work being done)
+- identify agents that loop or waste turns
+- compare cost across agent types or feature roots
+- reason about whether prompt caching is effective
+- audit what prompt was actually sent to the agent
 
-Without this telemetry, it is difficult to:
-
-- audit unexpected agent behavior
-- compare cost across specs
-- identify prompt bloat and optimize instructions
-- reason about regressions in execution efficiency
+Codex does not provide equivalent metadata, but wall-clock duration can be measured for any subprocess.
 
 ## Scope
 
 In scope:
 
-- persist prompt and response artifacts for each bead execution attempt
-- persist token usage metrics per execution attempt and per bead aggregate
-- expose telemetry in `bead show` and a new lightweight CLI reporting command
-- add deterministic tests for telemetry persistence and reporting
+- Capture provider-supplied telemetry from Claude Code responses
+- Measure wall-clock duration for all backends
+- Store lightweight metrics in bead metadata (capped history)
+- Store full prompt/response text in separate telemetry files (gitignored)
+- Prompt size diagnostics (chars, lines)
 
 Out of scope:
 
-- external telemetry backends (Datadog, OpenTelemetry, etc.)
-- real-time streaming dashboards
-- full pricing engine for every provider/model variation
-- redaction policy framework beyond basic local safeguards
+- `orchestrator usage` CLI rollup command (separate spec)
+- External telemetry backends (Datadog, OpenTelemetry)
+- Token estimation for Codex (Codex doesn't provide token counts)
+- Real-time dashboards
 
 ## Functional Requirements
 
-### 1. Execution Attempt Artifacts
+### 1. Telemetry Capture in Runner
 
-Each bead execution attempt should create a persisted telemetry record under `.orchestrator/`.
+**Both runners** — measure wall-clock duration around the subprocess call:
 
-Recommended layout:
+```python
+start = time.monotonic()
+proc = subprocess.run(...)
+duration_ms = int((time.monotonic() - start) * 1000)
+```
 
-- `.orchestrator/telemetry/<bead_id>/<attempt_id>.json`
+**Both runners** — capture prompt size before calling the subprocess:
 
-Minimum fields per attempt:
+```python
+prompt_chars = len(prompt)
+prompt_lines = prompt.count("\n") + 1
+```
 
-- `telemetry_version` (start with `1`)
-- `bead_id`
-- `agent_type`
-- `attempt_id`
-- `started_at`
-- `finished_at`
-- `outcome` (`completed`, `blocked`, `failed`)
-- `workdir`
-- `model` if available
-- `prompt_text` (exact prompt sent to the agent)
-- `response_text` (raw model output before scheduler normalization; may be `null` on transport failures)
-- `parsed_result` (the normalized JSON payload consumed by scheduler; may be `null` on parse/transport failure)
-- `token_usage` object
-- `error` object (nullable) for failed attempts with at least:
-  - `stage` (`transport`, `execution`, `parse`, `scheduler`)
-  - `message`
+**ClaudeCodeAgentRunner** — extract telemetry fields from the JSON response envelope before discarding it:
 
-Failure-path rules (required):
+| Field | Source in response | Purpose |
+|-------|-------------------|---------|
+| `cost_usd` | `total_cost_usd` | Dollar cost of this run |
+| `duration_ms` | measured | Wall-clock time |
+| `duration_api_ms` | `duration_api_ms` | Time in API calls only |
+| `num_turns` | `num_turns` | Turn count (looping indicator) |
+| `input_tokens` | `usage.input_tokens` | Fresh input tokens |
+| `output_tokens` | `usage.output_tokens` | Generated tokens |
+| `cache_creation_tokens` | `usage.cache_creation_input_tokens` | Tokens written to cache |
+| `cache_read_tokens` | `usage.cache_read_input_tokens` | Tokens read from cache |
+| `stop_reason` | `stop_reason` | Why the run ended |
+| `session_id` | `session_id` | Links to Claude Code session JSONL |
+| `permission_denials` | `permission_denials` | Tool permission blocks |
+| `prompt_chars` | measured | Prompt size in characters |
+| `prompt_lines` | measured | Prompt size in lines |
+| `source` | — | Always `"provider"` for Claude Code |
 
-- telemetry must still be written for failed attempts even when parsing fails
-- on failed attempts:
-  - `response_text` and `parsed_result` are allowed to be `null`
-  - `error` must be present and non-empty
-- `finished_at` must always be written (success or failure)
+**CodexAgentRunner** — minimal telemetry (no provider data):
 
-### 2. Token Usage Model
+| Field | Source | Purpose |
+|-------|--------|---------|
+| `duration_ms` | measured | Wall-clock time |
+| `prompt_chars` | measured | Prompt size in characters |
+| `prompt_lines` | measured | Prompt size in lines |
+| `source` | — | Always `"measured"` for Codex |
 
-Each attempt record should include:
+### 2. Return Telemetry from Runner
 
-- `token_usage.prompt_tokens`
-- `token_usage.completion_tokens`
-- `token_usage.total_tokens`
-- `token_usage.source` (`provider`, `estimated`, `unknown`)
+Add an optional field to `AgentRunResult`:
 
-Behavior:
+```python
+@dataclass
+class AgentRunResult:
+    # ... existing fields ...
+    telemetry: dict[str, Any] | None = None
+```
 
-- precedence order:
-  1. if provider metrics are available from runner transport metadata, persist as `source=provider`
-  2. otherwise compute deterministic local estimate and persist as `source=estimated`
-  3. if estimation cannot run (e.g., missing prompt/response text), persist zeros and `source=unknown`
-- for `source=unknown`, include `token_usage.note` with a short reason
+Backward-compatible (defaults to `None`). The scheduler does not need to understand the telemetry structure — it stores it opaquely.
 
-Implementation contract for current runner:
+### 3. Two-Tier Storage
 
-- v1 should not require provider metrics to be available
-- v1 is valid with deterministic estimation-only behavior (`source=estimated`/`unknown`) as long as source is explicit
+**Tier 1: Bead metadata (lightweight, git-tracked)**
 
-### 3. Bead-Level Aggregation
+Store metrics only — no prompt/response text. Kept in `bead.metadata`:
 
-Bead state should expose aggregate usage across attempts.
+```json
+{
+  "telemetry": {
+    "cost_usd": 0.21,
+    "duration_ms": 45000,
+    "num_turns": 5,
+    "input_tokens": 18000,
+    "output_tokens": 800,
+    "prompt_chars": 12500,
+    "source": "provider"
+  },
+  "telemetry_history": [
+    { "attempt": 1, "cost_usd": 0.15, "duration_ms": 30000, "..." : "..." },
+    { "attempt": 2, "cost_usd": 0.21, "duration_ms": 45000, "..." : "..." }
+  ]
+}
+```
 
-Persist in bead metadata:
+- `telemetry` — latest attempt metrics (overwritten each run)
+- `telemetry_history` — array of all attempt metrics, capped at N entries (default 10). When cap is exceeded, oldest entries are removed. Pruning happens after appending the new entry.
 
-- `metadata.telemetry.attempt_count`
-- `metadata.telemetry.prompt_tokens_total`
-- `metadata.telemetry.completion_tokens_total`
-- `metadata.telemetry.total_tokens`
-- `metadata.telemetry.last_attempt_id`
-- `metadata.telemetry.last_outcome`
+Configurable cap via environment variable `ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS` (default 10). Invalid/zero/negative values fall back to default.
 
-This allows `bead show` to reveal token totals without scanning raw telemetry files.
+**Tier 2: Telemetry artifact files (heavy, gitignored)**
+
+Full prompt and response text stored per attempt at:
+
+```
+.orchestrator/telemetry/<bead_id>/<attempt_number>.json
+```
+
+Contents:
+
+```json
+{
+  "telemetry_version": 1,
+  "bead_id": "B0100",
+  "agent_type": "developer",
+  "attempt": 1,
+  "started_at": "2026-03-30T13:13:49+00:00",
+  "finished_at": "2026-03-30T13:22:29+00:00",
+  "outcome": "completed",
+  "prompt_text": "You are the developer agent for a multi-agent...",
+  "response_text": "{\"type\":\"result\",\"structured_output\":{...},...}",
+  "parsed_result": { "outcome": "completed", "summary": "..." },
+  "metrics": {
+    "cost_usd": 0.21,
+    "duration_ms": 45000,
+    "duration_api_ms": 12000,
+    "num_turns": 5,
+    "input_tokens": 18000,
+    "output_tokens": 800,
+    "cache_creation_tokens": 5500,
+    "cache_read_tokens": 12500,
+    "prompt_chars": 12500,
+    "prompt_lines": 180,
+    "stop_reason": "end_turn",
+    "session_id": "a7bcb983-...",
+    "permission_denials": [],
+    "source": "provider"
+  },
+  "error": null
+}
+```
+
+For failed attempts: `response_text` and `parsed_result` may be `null`, `error` must be populated with `{"stage": "...", "message": "..."}`.
+
+**Gitignore**: add `.orchestrator/telemetry/` to `.gitignore`.
 
 ### 4. Scheduler Integration
 
-Telemetry must be captured for every execution path:
+In `_finalize()`, after processing the agent result:
 
-- successful completion
-- blocked outcome
-- failed execution (including runner exceptions)
+1. Store lightweight metrics in bead metadata (`telemetry` + append to `telemetry_history`)
+2. Write the full artifact file to `.orchestrator/telemetry/<bead_id>/`
+3. If telemetry write fails, still preserve bead outcome — add a warning to `execution_history`
 
-If telemetry write fails:
+Telemetry must be captured for all outcomes: completed, blocked, and failed.
 
-- scheduler should still preserve bead outcome when possible
-- but add a warning in execution history and set a telemetry warning flag in bead metadata
+### 5. Attempt Numbering
 
-### 5. CLI Visibility
+Attempt number is derived from the length of `telemetry_history` + 1 at write time. This keeps numbering sequential and simple.
 
-`bead show` should include aggregated telemetry fields already stored on bead metadata.
+### 6. Key Optimization Signals
 
-Add a new read-only command for detailed usage reporting:
-
-- `orchestrator usage`
-
-Minimum command behavior:
-
-- list top beads by `total_tokens`
-- show totals by `agent_type`
-- show totals by `feature_root_id`
-- optional `--bead <id>` to show attempt-level records for one bead
-
-Required `orchestrator usage` output shape (JSON):
-
-- `totals`:
-  - `prompt_tokens`
-  - `completion_tokens`
-  - `total_tokens`
-- `by_bead`: array of `{bead_id, total_tokens, prompt_tokens, completion_tokens, attempt_count}`
-- `by_agent_type`: array of `{agent_type, total_tokens, prompt_tokens, completion_tokens, attempt_count}`
-- `by_feature_root`: array of `{feature_root_id, total_tokens, prompt_tokens, completion_tokens, attempt_count}`
-- `attempts` (only when `--bead` is passed): attempt records for that bead
-
-Determinism rules:
-
-- sort `by_bead` by `total_tokens` desc, then `bead_id` asc
-- sort `by_agent_type` by `total_tokens` desc, then `agent_type` asc
-- sort `by_feature_root` by `total_tokens` desc, then `feature_root_id` asc
-- `attempts` sorted by `attempt_id` asc
-- empty datasets return empty arrays, not errors
-
-### 6. Prompt Size Insight
-
-For each attempt, persist prompt size diagnostics:
-
-- `prompt_chars`
-- `prompt_lines`
-- `context_file_count`
-- `context_bytes` (sum of linked context file sizes used for prompt construction)
-
-This should help identify prompt growth even before tokenization details are perfect.
-
-### 7. Retention Controls
-
-Add basic retention controls to avoid unbounded growth.
-
-Minimum v1 behavior:
-
-- keep all aggregated bead totals
-- configurable cap for raw attempt artifacts per bead (default 50)
-- when cap exceeded, remove oldest raw attempt files for that bead
-
-Configuration contract:
-
-- default cap: `50`
-- configuration source: `ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS` environment variable (optional override)
-- invalid/zero/negative override values should fall back to default
-- pruning should happen after successful write of the new attempt artifact
-- pruning must not modify bead-level aggregated totals
-
-## Non-Functional Requirements
-
-- telemetry persistence must remain local and deterministic
-- implementation should not require network access
-- write overhead should remain small relative to agent runtime
-- data format should be JSON for easy audit and tooling reuse
+| Metric | What it answers | Action if too high |
+|--------|----------------|-------------------|
+| `input_tokens` | Is the prompt too large? | Reduce context files, trim guardrails |
+| `cache_read_tokens / input_tokens` | Is caching effective? | Restructure prompt for cache-friendly prefixes |
+| `num_turns` | Is the agent looping? | Tighten guardrails, scope test runs |
+| `duration_ms` | Is the bead too slow? | Scope validation, reduce file reads |
+| `cost_usd` | What does each agent type cost? | Compare spend across agent types |
+| `prompt_chars` | Prompt bloat detection | Compare across bead types |
+| `output_tokens` | Is the agent too verbose? | Tighten output requirements |
+| `permission_denials` | Are tools being blocked? | Update `--allowedTools` |
 
 ## Acceptance Criteria
 
-The feature is complete when all of the following are true:
+1. Every bead execution attempt stores lightweight metrics in `bead.metadata.telemetry` and `telemetry_history`
+2. Every attempt writes a full artifact file to `.orchestrator/telemetry/<bead_id>/`
+3. Artifact files include exact `prompt_text` and raw `response_text`
+4. Claude Code runs capture all provider fields (cost, tokens, turns, cache stats, session ID)
+5. Codex runs capture wall-clock duration and prompt size
+6. Failed attempts still produce telemetry (with null response/parsed_result and populated error)
+7. `telemetry_history` is capped at N entries (default 10)
+8. `.orchestrator/telemetry/` is gitignored
+9. All existing tests pass
 
-1. Every bead execution attempt writes a telemetry artifact containing prompt text, raw response text (nullable on failure), normalized response payload (nullable on failure), and token usage fields.
-2. Every bead exposes aggregated token totals in `bead show`.
-3. `orchestrator usage` reports per-bead/per-agent/per-feature totals using the defined deterministic JSON shape.
-4. Token usage source is explicit (`provider`, `estimated`, or `unknown`).
-5. Telemetry is captured for completed, blocked, and failed outcomes.
-6. Tests cover telemetry write/read, failure-path nullability, aggregation updates, deterministic CLI usage output, and retention cap behavior.
+## Files to Modify
 
-## Suggested Implementation Notes
-
-- extend `AgentRunResult` with optional raw output and token usage fields
-- capture telemetry in runner where prompt and raw response are naturally available
-- persist attempt artifacts through storage service methods, not ad hoc file writes in scheduler
-- keep aggregation updates in one place to avoid drift between scheduler paths
-- ensure prompt/response text in telemetry files remain plaintext for auditability
-
-## Example Scenario
-
-Given a developer bead run:
-
-- scheduler starts bead `B0012`
-- runner sends prompt, receives response, and returns parsed result plus token data
-- storage writes `.orchestrator/telemetry/B0012/attempt-0001.json`
-- bead metadata telemetry totals update in `B0012.json`
-
-Given a blocked review bead:
-
-- review returns `outcome=blocked` with unresolved findings
-- telemetry record still persists prompt, response, and token usage
-- `orchestrator usage --bead B0012-review` shows that blocked attempt cost
-
-## Deliverables
-
-- telemetry storage format and persistence for per-attempt prompt/response usage records
-- bead metadata aggregation of token usage totals
-- `orchestrator usage` CLI command for reporting
-- tests for persistence, aggregation, blocked/failed capture, and retention behavior
+| File | Change |
+|------|--------|
+| `src/codex_orchestrator/models.py` | Add `telemetry: dict | None = None` to `AgentRunResult` |
+| `src/codex_orchestrator/runner.py` | Capture timing + Claude Code response fields; populate `telemetry` on result |
+| `src/codex_orchestrator/scheduler.py` | Store telemetry in bead metadata + write artifact files |
+| `src/codex_orchestrator/storage.py` | Add `write_telemetry_artifact()` method |
+| `.gitignore` | Add `.orchestrator/telemetry/` |

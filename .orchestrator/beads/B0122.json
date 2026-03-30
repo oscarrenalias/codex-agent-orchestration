@@ -1,0 +1,71 @@
+{
+  "bead_id": "B0122",
+  "title": "Integrate telemetry into scheduler _finalize and bead metadata",
+  "agent_type": "developer",
+  "description": "In scheduler.py _finalize(), after processing agent result and before marking bead status: (1) extract metrics from agent_result.telemetry into bead.metadata['telemetry'] (latest attempt, overwritten each run), (2) append metrics to bead.metadata['telemetry_history'] array capped at N entries (default 10, configurable via ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS env var \u2014 invalid/zero/negative values fall back to default), (3) derive attempt number from len(telemetry_history) + 1, (4) call storage.write_telemetry_artifact() with full artifact data including prompt_text, response_text, parsed_result, timestamps, and error, (5) wrap telemetry writes in try/except \u2014 if write fails, add warning to execution_history but preserve bead outcome. Telemetry must be captured for all outcomes: completed, blocked, and failed. Handle the case where agent_result.telemetry is None gracefully (skip telemetry storage).",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0113",
+  "dependencies": [
+    "B0114",
+    "B0118"
+  ],
+  "acceptance_criteria": [
+    "bead.metadata['telemetry'] contains latest attempt metrics after each run",
+    "bead.metadata['telemetry_history'] contains array of all attempt metrics",
+    "telemetry_history capped at 10 entries by default (oldest pruned after append)",
+    "Cap configurable via ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS env var",
+    "Invalid/zero/negative env var values fall back to default 10",
+    "Attempt number derived from len(telemetry_history) + 1",
+    "Full artifact file written via storage.write_telemetry_artifact()",
+    "Telemetry captured for completed, blocked, and failed outcomes",
+    "Telemetry write failure adds warning to execution_history but does not affect bead outcome",
+    "Gracefully handles agent_result.telemetry being None"
+  ],
+  "linked_docs": [
+    "specs/bead-telemetry-and-prompt-logging.md"
+  ],
+  "feature_root_id": "B0113",
+  "execution_branch_name": "feature/b0113",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0113",
+  "expected_files": [
+    "src/codex_orchestrator/scheduler.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T15:33:22.859036+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

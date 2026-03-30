@@ -3,7 +3,7 @@
   "title": "Corrective fix for B0073: Add scrollbar to Beads list panel",
   "agent_type": "developer",
   "description": "Blocked reason: Write permission to src/codex_orchestrator/tui.py was denied repeatedly\n\nRemaining work: Apply the one-line CSS edit: change '#detail-panel {' to '#list-panel, #detail-panel {' on line 1144 of tui.py",
-  "status": "blocked",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B0073",
   "dependencies": [],
@@ -93,6 +93,13 @@
       "event": "blocked",
       "agent_type": "developer",
       "summary": "Write permission to src/codex_orchestrator/tui.py was denied again. The corrective fix cannot be applied without write access to that file.",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-03-30T15:31:34.765830+00:00",
+      "event": "updated",
+      "agent_type": "developer",
+      "summary": "Bead updated via CLI",
       "details": {}
     }
   ],

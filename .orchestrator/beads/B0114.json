@@ -1,0 +1,66 @@
+{
+  "bead_id": "B0114",
+  "title": "Add telemetry field to AgentRunResult and capture metrics in runners",
+  "agent_type": "developer",
+  "description": "Add optional telemetry dict field to AgentRunResult in models.py (defaults to None for backward compat). In runner.py, instrument both runners: (1) measure wall-clock duration via time.monotonic() around subprocess calls, (2) measure prompt_chars and prompt_lines before calling subprocess, (3) in ClaudeCodeAgentRunner extract provider telemetry (cost_usd, duration_api_ms, num_turns, input/output tokens, cache stats, stop_reason, session_id, permission_denials) from the JSON response envelope before extracting structured_output, (4) in CodexAgentRunner populate minimal telemetry (duration_ms, prompt_chars, prompt_lines, source='measured'). Both runners must populate agent_result.telemetry before returning. Also capture raw prompt_text and response_text in the telemetry dict for artifact storage downstream.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0113",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "AgentRunResult has telemetry: dict[str, Any] | None = None field",
+    "ClaudeCodeAgentRunner populates telemetry with all provider fields from spec table",
+    "CodexAgentRunner populates telemetry with duration_ms, prompt_chars, prompt_lines, source='measured'",
+    "Wall-clock duration measured via time.monotonic() around subprocess.run()",
+    "prompt_chars and prompt_lines measured from prompt before subprocess call",
+    "Raw prompt_text and response_text captured in telemetry for artifact storage",
+    "Existing runner tests still pass"
+  ],
+  "linked_docs": [
+    "specs/bead-telemetry-and-prompt-logging.md"
+  ],
+  "feature_root_id": "B0113",
+  "execution_branch_name": "feature/b0113",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0113",
+  "expected_files": [
+    "src/codex_orchestrator/models.py",
+    "src/codex_orchestrator/runner.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T15:33:22.833625+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

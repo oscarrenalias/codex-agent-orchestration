@@ -3,7 +3,7 @@
   "title": "Review Telemetry Feature Signoff",
   "agent_type": "review",
   "description": "Perform final review of implementation, tests, and docs to confirm spec compliance and deterministic behavior guarantees.",
-  "status": "handed_off",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B0009",
   "dependencies": [
@@ -67,6 +67,13 @@
     },
     {
       "timestamp": "2026-03-30T09:22:53.154999+00:00",
+      "event": "updated",
+      "agent_type": "review",
+      "summary": "Bead updated via CLI",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-03-30T15:27:13.508696+00:00",
       "event": "updated",
       "agent_type": "review",
       "summary": "Bead updated via CLI",

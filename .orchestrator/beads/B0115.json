@@ -1,0 +1,63 @@
+{
+  "bead_id": "B0115",
+  "title": "Test telemetry capture in runners",
+  "agent_type": "tester",
+  "description": "Verify that AgentRunResult.telemetry field works correctly and that both runners populate telemetry. Test backward compatibility (telemetry defaults to None). Verify ClaudeCodeAgentRunner extracts all provider fields from a mock JSON response envelope. Verify CodexAgentRunner populates minimal telemetry. Verify wall-clock duration is positive. Verify prompt_chars and prompt_lines are correct.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0114",
+  "dependencies": [
+    "B0114"
+  ],
+  "acceptance_criteria": [
+    "Tests verify AgentRunResult.telemetry defaults to None",
+    "Tests verify ClaudeCodeAgentRunner populates all expected telemetry fields",
+    "Tests verify CodexAgentRunner populates duration_ms, prompt_chars, prompt_lines, source",
+    "Tests verify duration_ms is a positive integer",
+    "All new and existing tests pass"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B0113",
+  "execution_branch_name": "feature/b0113",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0113",
+  "expected_files": [
+    "tests/test_orchestrator.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T15:33:22.839189+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

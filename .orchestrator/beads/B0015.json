@@ -3,7 +3,7 @@
   "title": "Update Telemetry Documentation",
   "agent_type": "documentation",
   "description": "Document telemetry artifact layout, token source semantics, retention configuration, and usage CLI examples for operators.",
-  "status": "handed_off",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B0009",
   "dependencies": [
@@ -62,6 +62,13 @@
     },
     {
       "timestamp": "2026-03-30T09:22:52.884608+00:00",
+      "event": "updated",
+      "agent_type": "documentation",
+      "summary": "Bead updated via CLI",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-03-30T15:27:13.347750+00:00",
       "event": "updated",
       "agent_type": "documentation",
       "summary": "Bead updated via CLI",

@@ -1,0 +1,63 @@
+{
+  "bead_id": "B0124",
+  "title": "Document scheduler telemetry integration",
+  "agent_type": "documentation",
+  "description": "Document the telemetry flow through the scheduler, bead metadata schema for telemetry and telemetry_history, history capping behavior, env var configuration, and failure handling.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0122",
+  "dependencies": [
+    "B0122"
+  ],
+  "acceptance_criteria": [
+    "Bead metadata telemetry schema documented",
+    "telemetry_history capping behavior documented",
+    "ORCHESTRATOR_TELEMETRY_MAX_ATTEMPTS env var documented",
+    "Failure handling behavior documented",
+    "Key optimization signals table included"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B0113",
+  "execution_branch_name": "feature/b0113",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0113",
+  "expected_files": [],
+  "expected_globs": [
+    "docs/**/*.md"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T15:33:22.863051+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

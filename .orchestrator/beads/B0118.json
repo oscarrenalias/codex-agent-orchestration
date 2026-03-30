@@ -1,0 +1,65 @@
+{
+  "bead_id": "B0118",
+  "title": "Add telemetry artifact storage and gitignore entry",
+  "agent_type": "developer",
+  "description": "In storage.py, add a write_telemetry_artifact() method to RepositoryStorage that writes full telemetry artifact files to .orchestrator/telemetry/<bead_id>/<attempt_number>.json. The artifact schema must match the spec: telemetry_version, bead_id, agent_type, attempt, started_at, finished_at, outcome, prompt_text, response_text, parsed_result, metrics dict, and error. Use atomic writes (temp file + rename) consistent with existing save_bead() pattern. Add .orchestrator/telemetry/ to .gitignore. Initialize the telemetry directory in RepositoryStorage.initialize() if it doesn't exist.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0113",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "write_telemetry_artifact() method added to RepositoryStorage",
+    "Artifact files written atomically to .orchestrator/telemetry/<bead_id>/<attempt>.json",
+    "Artifact JSON matches spec schema (telemetry_version=1, bead_id, agent_type, attempt, timestamps, outcome, prompt_text, response_text, parsed_result, metrics, error)",
+    ".orchestrator/telemetry/ added to .gitignore",
+    "Telemetry directory created in initialize() if absent",
+    "Failed attempts produce artifacts with null response_text/parsed_result and populated error"
+  ],
+  "linked_docs": [
+    "specs/bead-telemetry-and-prompt-logging.md"
+  ],
+  "feature_root_id": "B0113",
+  "execution_branch_name": "feature/b0113",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0113",
+  "expected_files": [
+    "src/codex_orchestrator/storage.py",
+    ".gitignore"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T15:33:22.847915+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

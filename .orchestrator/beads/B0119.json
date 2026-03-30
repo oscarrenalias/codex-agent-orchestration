@@ -1,0 +1,63 @@
+{
+  "bead_id": "B0119",
+  "title": "Test telemetry artifact storage",
+  "agent_type": "tester",
+  "description": "Test write_telemetry_artifact() writes correct JSON to expected path. Test artifact schema matches spec. Test atomic write behavior. Test directory creation. Test with failed attempts (null response, populated error). Test that artifact files are created in correct hierarchy.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0118",
+  "dependencies": [
+    "B0118"
+  ],
+  "acceptance_criteria": [
+    "Tests verify artifact file path is .orchestrator/telemetry/<bead_id>/<attempt>.json",
+    "Tests verify artifact JSON schema matches spec",
+    "Tests verify failed attempt artifacts have null response and populated error",
+    "Tests verify directory auto-creation",
+    "All new and existing tests pass"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B0113",
+  "execution_branch_name": "feature/b0113",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0113",
+  "expected_files": [
+    "tests/test_orchestrator.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T15:33:22.852614+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

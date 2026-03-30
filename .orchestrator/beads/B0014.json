@@ -3,7 +3,7 @@
   "title": "Add Deterministic Telemetry Tests",
   "agent_type": "tester",
   "description": "Add focused automated tests for telemetry artifact persistence, failure-path nullability, aggregation rollups, deterministic usage command output, and retention-cap pruning behavior.",
-  "status": "handed_off",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B0009",
   "dependencies": [
@@ -65,6 +65,13 @@
     },
     {
       "timestamp": "2026-03-30T09:22:52.382406+00:00",
+      "event": "updated",
+      "agent_type": "tester",
+      "summary": "Bead updated via CLI",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-03-30T15:27:13.191069+00:00",
       "event": "updated",
       "agent_type": "tester",
       "summary": "Bead updated via CLI",

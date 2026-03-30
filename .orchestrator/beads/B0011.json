@@ -3,7 +3,7 @@
   "title": "Implement Telemetry Storage, Aggregation, And Retention",
   "agent_type": "developer",
   "description": "Add storage-layer APIs to persist per-attempt telemetry artifacts under `.orchestrator/telemetry/<bead_id>/`, update bead metadata telemetry aggregates, and enforce raw-attempt retention caps.",
-  "status": "handed_off",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B0009",
   "dependencies": [
@@ -63,6 +63,13 @@
     },
     {
       "timestamp": "2026-03-30T09:22:51.996863+00:00",
+      "event": "updated",
+      "agent_type": "developer",
+      "summary": "Bead updated via CLI",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-03-30T15:27:12.824210+00:00",
       "event": "updated",
       "agent_type": "developer",
       "summary": "Bead updated via CLI",

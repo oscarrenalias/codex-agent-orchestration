@@ -1,0 +1,62 @@
+{
+  "bead_id": "B0126",
+  "title": "Add default timeout to agent subprocess calls",
+  "agent_type": "developer",
+  "description": "Add a timeout parameter to all subprocess.run() calls in runner.py. Default 600 seconds (10 minutes) for main _exec_json calls in both CodexAgentRunner and ClaudeCodeAgentRunner, and 300 seconds (5 minutes) for the _retry_structured_output call. Catch subprocess.TimeoutExpired and raise RuntimeError with a clear timeout message (e.g. 'Agent timed out after 600 seconds'). The scheduler already handles RuntimeError from the runner and will mark the bead as blocked. If externalized configuration (OrchestratorConfig / BackendConfig) is available in the runner, expose the timeout as a config parameter. If config is not yet wired in, use the hardcoded defaults.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": null,
+  "dependencies": [],
+  "acceptance_criteria": [
+    "All 3 subprocess.run() calls in runner.py have a timeout parameter",
+    "Main exec calls timeout at 600 seconds by default",
+    "Retry call timeouts at 300 seconds by default",
+    "subprocess.TimeoutExpired is caught and converted to RuntimeError with a descriptive message",
+    "If OrchestratorConfig is available, timeout is read from config; otherwise hardcoded defaults are used",
+    "All existing tests pass"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B0126",
+  "execution_branch_name": "feature/b0126",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0126",
+  "expected_files": [
+    "src/codex_orchestrator/runner.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T16:07:21.156458+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

@@ -10,6 +10,7 @@ __pycache__/
 .orchestrator/*
 !.orchestrator/beads/
 !.orchestrator/beads/**
+!.orchestrator/config.yaml
 .orchestrator/beads/_archived_legacy*/
 .orchestrator/logs/
 .orchestrator/worktrees/

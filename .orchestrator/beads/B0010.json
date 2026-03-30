@@ -3,7 +3,7 @@
   "title": "Implement Telemetry Data Contracts And Runner Capture",
   "agent_type": "developer",
   "description": "Extend execution result models and runner plumbing to capture raw prompt/response artifacts, token usage source data, and prompt size diagnostics needed for attempt telemetry records.",
-  "status": "handed_off",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B0009",
   "dependencies": [],
@@ -60,6 +60,13 @@
     },
     {
       "timestamp": "2026-03-30T09:22:51.869828+00:00",
+      "event": "updated",
+      "agent_type": "developer",
+      "summary": "Bead updated via CLI",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-03-30T15:27:12.633010+00:00",
       "event": "updated",
       "agent_type": "developer",
       "summary": "Bead updated via CLI",
