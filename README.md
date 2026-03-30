@@ -172,6 +172,8 @@ orchestrator tui --feature-root B0030
 orchestrator tui --refresh-seconds 5
 ```
 
+The TUI starts in manual refresh mode. Opening the screen loads the current bead state once, leaves timed refresh disabled, and keeps scheduler execution in manual mode until the operator explicitly enables one of the automatic modes.
+
 CLI behavior:
 
 - `--feature-root <bead_id>` scopes the screen to one feature tree
@@ -190,7 +192,15 @@ The runtime renders three panels:
 - a right-side detail panel for the selected bead, including scope and handoff fields
 - a bottom status panel with the current status message, latest activity, and footer counts
 
-Key bindings:
+Refresh modes and focus cues:
+
+- startup mode is `manual refresh | scheduler=manual | focus=list`
+- `a` enables or disables timed refreshes without enabling scheduler runs
+- `S` switches timed refreshes into timed scheduler passes; if timed refresh is off, `S` enables it first
+- turning timed refresh off always returns the screen to full manual mode and also disables timed scheduler runs
+- the status panel shows the current mode and focused panel, and the focused list or detail panel keeps the accent border so operators can see whether navigation keys will move the list selection or scroll the detail view
+
+Keyboard bindings:
 
 - `q`: quit
 - `Tab`: move focus forward between the list and detail panels
@@ -216,6 +226,12 @@ Key bindings:
 - `m`: request merge for the selected bead
 - `Enter`: confirm a pending merge
 
+Mouse behavior:
+
+- clicking a visible row in the list focuses the list panel and selects that bead
+- clicking anywhere in the detail panel focuses the detail panel without changing the current selection
+- mouse wheel input follows the hovered panel: wheel events over the list move selection one row at a time, while wheel events over the detail panel scroll long metadata without changing the selected bead
+
 Operator shortcuts:
 
 - `a` toggles the timed refresh loop on or off without enabling timed scheduler runs
@@ -227,10 +243,12 @@ Operator shortcuts:
 
 Refresh, help, and operator-action behavior:
 
+- the initial screen is manual-first: bead data loads once, but there is no timed refresh or timed scheduler activity until the operator enables it
 - `a` controls whether the timed refresh loop is active; turning it off also returns the TUI to fully manual refresh mode and disables timed scheduler runs
 - timed refreshes run every `--refresh-seconds` seconds, keep the current selection when possible, and update the activity line
-- when continuous mode is enabled with `S`, each timed refresh runs one scheduler cycle instead of a read-only refresh, using the same scoped/global rules as `s`
+- `S` enables or disables continuous scheduler mode for timed refreshes; when enabled, each timed refresh runs one scheduler cycle instead of a read-only refresh, using the same scoped/global rules as `s`
 - `s` runs the same one-shot scheduler path as `orchestrator run --once`; if the TUI was launched with `--feature-root <bead_id>` the run stays inside that feature tree, otherwise it operates across the full execution root
+- `Tab` and `Shift+Tab` move focus between the list and detail panels without changing the layout or selection
 - the focused panel keeps the accent border so it is always clear whether navigation keys will move the list selection or scroll the detail view, without changing the layout
 - selecting a different bead from the list resets the detail view to the top of that bead's metadata so keyboard and wheel scrolling always starts from the new selection
 - `?` opens a modal shortcut reference without changing the current bead selection or filter state
@@ -245,8 +263,6 @@ Refresh, help, and operator-action behavior:
 - actions without the required preconditions, including retry on a non-`blocked` bead, status updates without a valid target, or merge on a non-`done` bead, do not mutate bead state
 - `n` cancels a pending merge confirmation, retry confirmation, or status update flow
 - a pending retry confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer blocked
-- clicking a visible row in the list both focuses the list panel and selects that bead; clicking anywhere in the detail panel moves focus there without changing the current selection
-- mouse wheel input routes to the hovered panel: wheels over the list focus the list and move selection one row at a time, while wheels over the detail panel focus the detail view and scroll long bead details without disturbing the current bead selection
 - a pending merge confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer mergeable
 - merge failures stay inside the TUI and are reported in the status panel instead of closing the session
 
