@@ -275,10 +275,17 @@ class ClaudeCodeAgentRunner(AgentRunner):
         workdir: Path,
         execution_env: dict[str, str] | None = None,
         agent_type: str | None = None,
+        model: str | None = ...,
     ) -> tuple[dict, dict]:
-        """Run claude -p and return (structured_payload, raw_response_dict)."""
+        """Run claude -p and return (structured_payload, raw_response_dict).
+
+        When *model* is explicitly passed (including None), it takes precedence
+        over the config-based resolution.  The default sentinel ``...`` means
+        "resolve from config".
+        """
         tools = self.config.allowed_tools_for("claude", agent_type or "developer")
-        model = self.config.model_for("claude", agent_type or "developer")
+        if model is ...:
+            model = self.config.model_for("claude", agent_type or "developer")
         cmd = [
             self.backend.binary,
             "-p",
@@ -325,7 +332,7 @@ class ClaudeCodeAgentRunner(AgentRunner):
         if result_text and not response.get("is_error"):
             retry_result, retry_response = self._retry_structured_output(
                 result_text, schema=schema, workdir=workdir, execution_env=execution_env,
-                agent_type=agent_type,
+                agent_type=agent_type, model=model,
             )
             if retry_result is not None:
                 # Merge retry cost/duration into the main response so telemetry
@@ -350,11 +357,16 @@ class ClaudeCodeAgentRunner(AgentRunner):
         workdir: Path,
         execution_env: dict[str, str] | None = None,
         agent_type: str | None = None,
+        model: str | None = ...,
     ) -> tuple[dict | None, dict | None]:
         """Single-turn, no-tool retry to convert a conversational result to JSON.
 
         Returns (structured_payload, retry_response_envelope).  Both are None
         when the retry fails.
+
+        When *model* is explicitly passed (including None), it takes precedence
+        over the config-based resolution.  The default sentinel ``...`` means
+        "resolve from config".
         """
         retry_prompt = (
             "The agent run below completed successfully but returned a conversational "
@@ -364,7 +376,8 @@ class ClaudeCodeAgentRunner(AgentRunner):
             f"Agent result:\n{agent_result_text}\n"
         )
         tools = self.config.allowed_tools_for("claude", agent_type or "developer")
-        model = self.config.model_for("claude", agent_type or "developer")
+        if model is ...:
+            model = self.config.model_for("claude", agent_type or "developer")
         cmd = [
             self.backend.binary,
             "-p",

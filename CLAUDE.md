@@ -26,7 +26,7 @@ src/codex_orchestrator/
   skills.py       Skill allowlists and isolated execution root setup (config-driven)
   gitutils.py     Worktree creation, commits, merges
   planner.py      Spec-to-bead-graph planning service
-  tui.py          Textual-based interactive UI (async scheduler, collapsible tree)
+  tui.py          Textual-based interactive UI (async scheduler, collapsible tree, telemetry)
   console.py      CLI output helpers (spinners, spinner pool, colours)
 
 templates/agents/   Guardrail templates per agent type (mandatory)
@@ -242,6 +242,14 @@ The TUI runs scheduler cycles asynchronously in a background worker thread so th
 - **Continuous mode**: When timed refresh fires with `continuous_run_enabled`, it calls `_start_scheduler_worker()` (async) instead of blocking the UI thread.
 
 Keybindings: `s` triggers a single scheduler cycle, `S` toggles continuous mode.
+
+### TUI Telemetry Display
+
+Bead telemetry (from `bead.metadata["telemetry"]`) surfaces in two places:
+
+1. **Bead list / tree panel**: Each bead label appends a compact badge like `[$0.32, 2:55]` showing cost and duration. The badge is empty when no telemetry is available. Duration uses `duration_ms` (falling back to `duration_api_ms`) formatted as `m:ss`.
+
+2. **Detail panel — Telemetry section**: A collapsible section (constant `DETAIL_SECTION_TELEMETRY`, added to `DETAIL_SECTION_ORDER`) displays: `cost_usd`, `duration`, `num_turns`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `prompt_chars`, and `session_id`. When `telemetry_history` contains multiple attempts, an additional line shows the attempt count and cumulative cost.
 
 ## Conventions
 
