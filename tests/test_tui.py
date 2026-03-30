@@ -549,13 +549,44 @@ class TuiRegressionTests(unittest.TestCase):
         )
         rows = build_tree_rows([bead])
 
-        list_render = render_tree_panel(rows, 0, focused=True)
+        list_render = render_tree_panel(rows, 0, filter_mode=FILTER_DEFAULT, focused=True)
+        blocked_render = render_tree_panel(rows, 0, filter_mode=BEAD_BLOCKED, focused=False)
         detail_render = render_detail_panel(bead, focused=False)
 
-        self.assertIn("Beads [ACTIVE]", list_render)
+        self.assertIn("Beads [Default] [ACTIVE]", list_render)
+        self.assertIn("Beads [Blocked] [idle]", blocked_render)
         self.assertIn(">> B0001", list_render)
         self.assertIn("Details [idle]", detail_render)
         self.assertIn("Press Tab to focus.", detail_render)
+
+    def test_app_filter_cycle_updates_beads_panel_header(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Open", agent_type="developer", description="open", status=BEAD_OPEN)
+        self.storage.create_bead(
+            bead_id="B0002",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[str, str]:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                list_panel = app.screen.query_one("#list-panel")
+                default_title = str(list_panel.border_title)
+
+                for _ in range(6):
+                    await pilot.press("f")
+                    await pilot.pause()
+
+                ready_title = str(app.screen.query_one("#list-panel").border_title)
+                return default_title, ready_title
+
+        default_title, ready_title = asyncio.run(exercise_app())
+
+        self.assertIn("Beads [Default] [ACTIVE]", default_title)
+        self.assertIn("Beads [Ready] [ACTIVE]", ready_title)
 
     def test_runtime_defaults_to_manual_refresh_until_explicit_auto_mode_is_enabled(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)

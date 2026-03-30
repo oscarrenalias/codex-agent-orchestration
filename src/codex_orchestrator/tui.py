@@ -191,6 +191,14 @@ def _panel_badge(panel_name: str, *, focused: bool) -> str:
     return f"{panel_name} [{state}]"
 
 
+def _format_filter_label(filter_mode: str) -> str:
+    return filter_mode.replace("_", " ").title()
+
+
+def _beads_panel_title(filter_mode: str, *, focused: bool) -> str:
+    return _panel_badge(f"Beads [{_format_filter_label(filter_mode)}]", focused=focused)
+
+
 def _focus_status_hint(focused_panel: str) -> str:
     if focused_panel == PANEL_DETAIL:
         return "detail scroll"
@@ -932,19 +940,20 @@ def render_tree_panel(
     rows: list[TreeRow],
     selected_index: int | None,
     *,
+    filter_mode: str = FILTER_DEFAULT,
     focused: bool = False,
     scroll_offset: int = 0,
     viewport_height: int | None = None,
 ) -> str:
     if not rows:
-        return f"{_panel_badge('Beads', focused=focused)}\n\nNo beads match the current filter."
+        return f"{_beads_panel_title(filter_mode, focused=focused)}\n\nNo beads match the current filter."
 
     visible_rows = rows
     if viewport_height is not None:
         visible_height = max(0, viewport_height - 2)
         visible_rows = rows[scroll_offset:scroll_offset + visible_height]
     selected_marker = ">>" if focused else " >"
-    lines = [_panel_badge("Beads", focused=focused), ""]
+    lines = [_beads_panel_title(filter_mode, focused=focused), ""]
     for index, row in enumerate(visible_rows, start=scroll_offset):
         marker = selected_marker if selected_index == index else "  "
         lines.append(f"{marker} {row.label} [{row.bead.status}]")
@@ -1309,7 +1318,12 @@ def build_tui_app(
 
             list_panel.set_class(self.runtime_state.focused_panel == PANEL_LIST, "focused")
             detail_panel.set_class(self.runtime_state.focused_panel == PANEL_DETAIL, "focused")
-            list_panel.border_title = Text(_panel_badge("Beads", focused=self.runtime_state.focused_panel == PANEL_LIST))
+            list_panel.border_title = Text(
+                _beads_panel_title(
+                    self.runtime_state.filter_mode,
+                    focused=self.runtime_state.focused_panel == PANEL_LIST,
+                )
+            )
             list_panel.border_subtitle = "Enter/j/k move selection" if self.runtime_state.focused_panel == PANEL_LIST else "Tab to activate"
             detail_panel.border_title = Text(_panel_badge("Details", focused=self.runtime_state.focused_panel == PANEL_DETAIL))
             detail_panel.border_subtitle = "j/k/PgUp/PgDn scroll" if self.runtime_state.focused_panel == PANEL_DETAIL else "Tab to activate"
@@ -1332,6 +1346,7 @@ def build_tui_app(
             list_render = render_tree_panel(
                 self.runtime_state.rows,
                 self.runtime_state.selected_index,
+                filter_mode=self.runtime_state.filter_mode,
                 focused=self.runtime_state.focused_panel == PANEL_LIST,
                 scroll_offset=self.runtime_state.list_scroll_offset,
                 viewport_height=self._list_viewport_height(),
