@@ -1,0 +1,67 @@
+{
+  "bead_id": "B0070-review",
+  "title": "Review Render panel titles in borders",
+  "agent_type": "review",
+  "description": "Review implementation for B0070",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B0070",
+  "dependencies": [
+    "B0070",
+    "B0070-test",
+    "B0070-docs"
+  ],
+  "acceptance_criteria": [],
+  "linked_docs": [],
+  "feature_root_id": "B0061",
+  "execution_branch_name": "feature/b0061",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B0061",
+  "expected_files": [
+    "README.md",
+    "src/codex_orchestrator/tui.py",
+    "tests/test_orchestrator.py",
+    "tests/test_tui.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "README.md",
+    "src/codex_orchestrator/tui.py",
+    "tests/test_orchestrator.py",
+    "tests/test_tui.py"
+  ],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "Shared TUI files changed: `src/codex_orchestrator/tui.py` plus adjacent renderer/title tests. Any parallel work modifying panel borders, focus chrome, or renderer output assertions may need merge reconciliation.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-03-30T10:20:41.263168+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}
