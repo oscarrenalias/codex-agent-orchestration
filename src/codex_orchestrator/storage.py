@@ -95,7 +95,13 @@ class RepositoryStorage:
 
     def load_bead(self, bead_id: str) -> Bead:
         path = self.bead_path(bead_id)
+
+        # check if the file exists and was loaded
+        if not path.exists():
+            raise ValueError(f"Bead not found: {bead_id}")
+
         raw = path.read_text(encoding="utf-8")
+
         if not raw.strip():
             raise ValueError(f"Bead file is empty: {path}")
         try:
