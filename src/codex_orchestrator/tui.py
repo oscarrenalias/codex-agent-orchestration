@@ -149,7 +149,7 @@ def load_beads(
         bead for bead in beads
         if bead_matches_filter(bead, filter_mode) or (feature_root_bead is not None and bead.bead_id == feature_root_id)
     ]
-    return sorted(filtered, key=lambda bead: bead.bead_id)
+    return sorted(filtered, key=lambda bead: (bead.execution_history[0].timestamp if bead.execution_history else "", bead.bead_id))
 
 
 def collect_tree_rows(
@@ -162,7 +162,7 @@ def collect_tree_rows(
 
 
 def build_tree_rows(beads: Iterable[Bead]) -> list[TreeRow]:
-    bead_list = sorted(beads, key=lambda bead: bead.bead_id)
+    bead_list = sorted(beads, key=lambda bead: (bead.execution_history[0].timestamp if bead.execution_history else "", bead.bead_id))
     bead_map = {bead.bead_id: bead for bead in bead_list}
     children_by_parent: dict[str | None, list[Bead]] = {}
     for bead in bead_list:
@@ -171,7 +171,7 @@ def build_tree_rows(beads: Iterable[Bead]) -> list[TreeRow]:
 
     rows: list[TreeRow] = []
     for siblings in children_by_parent.values():
-        siblings.sort(key=lambda bead: bead.bead_id)
+        siblings.sort(key=lambda bead: (bead.execution_history[0].timestamp if bead.execution_history else "", bead.bead_id))
 
     def visit(parent_id: str | None, depth: int) -> None:
         for bead in children_by_parent.get(parent_id, []):

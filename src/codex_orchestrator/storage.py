@@ -142,6 +142,10 @@ class RepositoryStorage:
         return sorted(beads, key=self._bead_sort_key)
 
     def allocate_bead_id(self) -> str:
+        """Allocate a new bead ID using UUID format.
+
+        Returns a bead ID of the form B-{first 8 hex chars of UUID}.
+        """
         self.initialize()
         return f"B-{uuid.uuid4().hex[:8]}"
 

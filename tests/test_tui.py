@@ -219,7 +219,7 @@ class TuiRegressionTests(unittest.TestCase):
 
         self.assertEqual(selected.bead_id, state.selected_bead_id)
         self.assertEqual(selected.bead_id, state.selected_bead().bead_id)
-        self.assertEqual(3, state.selected_index)
+        self.assertEqual(1, state.selected_index)
 
     def test_help_overlay_text_documents_toggle_shortcuts(self) -> None:
         overlay = format_help_overlay()
