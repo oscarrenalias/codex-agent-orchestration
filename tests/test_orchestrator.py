@@ -2920,5 +2920,56 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(attempts, [1, 2, 3])
 
 
+    def test_allocate_bead_id_returns_uuid_format(self) -> None:
+        bead_id = self.storage.allocate_bead_id()
+        import re
+        self.assertRegex(bead_id, r"^B-[0-9a-f]{8}$")
+
+    def test_allocate_bead_id_returns_unique_ids(self) -> None:
+        ids = {self.storage.allocate_bead_id() for _ in range(20)}
+        self.assertEqual(20, len(ids))
+
+    def test_allocate_bead_id_via_create_bead_uses_uuid_format(self) -> None:
+        import re
+        bead = self.storage.create_bead(title="UUID test", agent_type="developer", description="work")
+        self.assertRegex(bead.bead_id, r"^B-[0-9a-f]{8}$")
+
+    def test_resolve_bead_id_exact_match(self) -> None:
+        bead = self.storage.create_bead(title="Exact", agent_type="developer", description="work")
+        resolved = self.storage.resolve_bead_id(bead.bead_id)
+        self.assertEqual(bead.bead_id, resolved)
+
+    def test_resolve_bead_id_prefix_match(self) -> None:
+        bead = self.storage.create_bead(title="Prefix", agent_type="developer", description="work")
+        # Use a 4-char prefix (B- plus 2 hex chars) that is unambiguous
+        prefix = bead.bead_id[:4]
+        # If only one bead exists, the prefix resolves to it
+        resolved = self.storage.resolve_bead_id(prefix)
+        self.assertEqual(bead.bead_id, resolved)
+
+    def test_resolve_bead_id_no_match_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            self.storage.resolve_bead_id("B-nonexist")
+        self.assertIn("No bead found", str(ctx.exception))
+
+    def test_resolve_bead_id_ambiguous_raises(self) -> None:
+        # Create two beads then find a common prefix
+        bead_a = self.storage.create_bead(title="A", agent_type="developer", description="a")
+        bead_b = self.storage.create_bead(title="B", agent_type="developer", description="b")
+        # Find a shared prefix (both start with "B-")
+        with self.assertRaises(ValueError) as ctx:
+            self.storage.resolve_bead_id("B-")
+        self.assertIn("Ambiguous prefix", str(ctx.exception))
+        self.assertIn(bead_a.bead_id, str(ctx.exception))
+        self.assertIn(bead_b.bead_id, str(ctx.exception))
+
+    def test_resolve_bead_id_no_beads_dir_raises(self) -> None:
+        import shutil
+        shutil.rmtree(self.storage.beads_dir)
+        with self.assertRaises(ValueError) as ctx:
+            self.storage.resolve_bead_id("B-anything")
+        self.assertIn("No bead found", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
