@@ -37,6 +37,8 @@ class BackendConfig:
     flags: list[str] = field(default_factory=list)
     allowed_tools_default: list[str] = field(default_factory=list)
     allowed_tools_by_agent: dict[str, list[str]] = field(default_factory=dict)
+    model_default: str | None = None
+    model_by_agent: dict[str, str] = field(default_factory=dict)
     timeout_seconds: int = 600
     retry_timeout_seconds: int = 300
 
@@ -59,6 +61,10 @@ class OrchestratorConfig:
             raise KeyError(
                 f"Unknown backend {name!r}. Valid backends: {valid}"
             ) from None
+
+    def model_for(self, backend: str, agent_type: str) -> str | None:
+        cfg = self.backend(backend)
+        return cfg.model_by_agent.get(agent_type, cfg.model_default)
 
     def allowed_tools_for(self, backend: str, agent_type: str) -> list[str]:
         cfg = self.backend(backend)
@@ -125,6 +131,14 @@ def default_config() -> OrchestratorConfig:
                     "review": [],
                     "documentation": ["NotebookEdit"],
                 },
+                model_default="claude-sonnet-4-6",
+                model_by_agent={
+                    "developer": "claude-sonnet-4-6",
+                    "tester": "claude-sonnet-4-6",
+                    "planner": "claude-sonnet-4-6",
+                    "review": "claude-haiku-4-5-20251001",
+                    "documentation": "claude-haiku-4-5-20251001",
+                },
             ),
         },
     )
@@ -163,6 +177,8 @@ def _build_backend(raw: dict) -> BackendConfig:
         allowed_tools_by_agent={
             k: list(v) for k, v in raw.get("allowed_tools_by_agent", {}).items()
         },
+        model_default=raw.get("model_default"),
+        model_by_agent=dict(raw.get("model_by_agent", {})),
         timeout_seconds=raw.get("timeout_seconds", defaults.timeout_seconds),
         retry_timeout_seconds=raw.get("retry_timeout_seconds", defaults.retry_timeout_seconds),
     )

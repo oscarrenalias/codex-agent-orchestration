@@ -232,6 +232,15 @@ class CodexAgentRunner(AgentRunner):
         return PlanChild(**child_data)
 
 
+def _add_numeric(target: dict, source: dict, key: str) -> None:
+    """Add *source[key]* into *target[key]*, treating None/missing as 0."""
+    src_val = source.get(key)
+    if src_val is None:
+        return
+    tgt_val = target.get(key)
+    target[key] = (tgt_val or 0) + src_val
+
+
 class ClaudeCodeAgentRunner(AgentRunner):
     @property
     def backend_name(self) -> str:
@@ -270,9 +279,17 @@ class ClaudeCodeAgentRunner(AgentRunner):
         workdir: Path,
         execution_env: dict[str, str] | None = None,
         agent_type: str | None = None,
+        model: str | None = ...,
     ) -> tuple[dict, dict]:
-        """Run claude -p and return (structured_payload, raw_response_dict)."""
+        """Run claude -p and return (structured_payload, raw_response_dict).
+
+        When *model* is explicitly passed (including None), it takes precedence
+        over the config-based resolution.  The default sentinel ``...`` means
+        "resolve from config".
+        """
         tools = self.config.allowed_tools_for("claude", agent_type or "developer")
+        if model is ...:
+            model = self.config.model_for("claude", agent_type or "developer")
         cmd = [
             self.backend.binary,
             "-p",
@@ -281,6 +298,8 @@ class ClaudeCodeAgentRunner(AgentRunner):
             "--output-format", "json",
             "--json-schema", json.dumps(schema),
         ]
+        if model is not None:
+            cmd.extend(["--model", model])
         env = os.environ.copy()
         env.pop("VIRTUAL_ENV", None)
         if execution_env:
@@ -320,11 +339,17 @@ class ClaudeCodeAgentRunner(AgentRunner):
         # a conversational summary instead of structured output.  Make a lightweight
         # follow-up call (no tools, single turn) to reformat the result.
         if result_text and not response.get("is_error"):
-            retry_result = self._retry_structured_output(
+            retry_result, retry_response = self._retry_structured_output(
                 result_text, schema=schema, workdir=workdir, execution_env=execution_env,
-                agent_type=agent_type,
+                agent_type=agent_type, model=model,
             )
             if retry_result is not None:
+                # Merge retry cost/duration into the main response so telemetry
+                # reflects the total spend while keeping the main run's turn
+                # count, token usage, and session_id.
+                if retry_response is not None:
+                    _add_numeric(response, retry_response, "total_cost_usd")
+                    _add_numeric(response, retry_response, "duration_api_ms")
                 return retry_result, response
         raise RuntimeError(
             f"claude -p produced no structured output. "
@@ -341,8 +366,17 @@ class ClaudeCodeAgentRunner(AgentRunner):
         workdir: Path,
         execution_env: dict[str, str] | None = None,
         agent_type: str | None = None,
-    ) -> dict | None:
-        """Single-turn, no-tool retry to convert a conversational result to JSON."""
+        model: str | None = ...,
+    ) -> tuple[dict | None, dict | None]:
+        """Single-turn, no-tool retry to convert a conversational result to JSON.
+
+        Returns (structured_payload, retry_response_envelope).  Both are None
+        when the retry fails.
+
+        When *model* is explicitly passed (including None), it takes precedence
+        over the config-based resolution.  The default sentinel ``...`` means
+        "resolve from config".
+        """
         retry_prompt = (
             "The agent run below completed successfully but returned a conversational "
             "summary instead of the required JSON schema.  Convert the agent's result "
@@ -351,6 +385,8 @@ class ClaudeCodeAgentRunner(AgentRunner):
             f"Agent result:\n{agent_result_text}\n"
         )
         tools = self.config.allowed_tools_for("claude", agent_type or "developer")
+        if model is ...:
+            model = self.config.model_for("claude", agent_type or "developer")
         cmd = [
             self.backend.binary,
             "-p",
@@ -360,6 +396,8 @@ class ClaudeCodeAgentRunner(AgentRunner):
             "--json-schema", json.dumps(schema),
             "--max-turns", "2",
         ]
+        if model is not None:
+            cmd.extend(["--model", model])
         env = os.environ.copy()
         env.pop("VIRTUAL_ENV", None)
         if execution_env:
@@ -373,21 +411,21 @@ class ClaudeCodeAgentRunner(AgentRunner):
         except subprocess.TimeoutExpired:
             raise RuntimeError(f"Agent retry timed out after {retry_timeout} seconds")
         if proc.returncode != 0:
-            return None
+            return None, None
         try:
             response = json.loads(proc.stdout)
         except json.JSONDecodeError:
-            return None
+            return None, None
         structured = response.get("structured_output")
         if structured is not None:
-            return structured
+            return structured, response
         result_text = response.get("result", "")
         if result_text:
             try:
-                return json.loads(result_text)
+                return json.loads(result_text), response
             except json.JSONDecodeError:
                 pass
-        return None
+        return None, None
 
     def run_bead(
         self,
@@ -401,6 +439,10 @@ class ClaudeCodeAgentRunner(AgentRunner):
         prompt_chars = len(prompt)
         prompt_lines = prompt.count("\n") + 1
 
+        # Resolution order: bead metadata override > config per-agent > config default > none
+        bead_model = bead.metadata.get("model_override") if bead.metadata else None
+        model_kwarg: dict = {"model": bead_model} if bead_model else {}
+
         start = time.monotonic()
         payload, response = self._exec_json_with_response(
             prompt,
@@ -408,6 +450,7 @@ class ClaudeCodeAgentRunner(AgentRunner):
             workdir=workdir,
             execution_env=execution_env,
             agent_type=bead.agent_type,
+            **model_kwarg,
         )
         duration_ms = int((time.monotonic() - start) * 1000)
 

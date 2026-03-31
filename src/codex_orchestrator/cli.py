@@ -175,6 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument("--expected-glob", action="append", default=[])
     update_parser.add_argument("--touched-file", action="append", default=[])
     update_parser.add_argument("--conflict-risks")
+    update_parser.add_argument("--model", help="Set per-bead model override (metadata.model_override)")
 
     list_parser = bead_subparsers.add_parser("list")
     list_parser.add_argument("--plain", action="store_true")
@@ -203,6 +204,7 @@ def build_parser() -> argparse.ArgumentParser:
     tui_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
     tui_parser.add_argument("--feature-root")
     tui_parser.add_argument("--refresh-seconds", type=_refresh_seconds, default=3)
+    tui_parser.add_argument("--max-workers", type=int, default=1)
 
     return parser
 
@@ -382,6 +384,10 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
             bead.touched_files = list(args.touched_file)
         if args.conflict_risks is not None:
             bead.conflict_risks = args.conflict_risks
+        if args.model is not None:
+            if bead.metadata is None:
+                bead.metadata = {}
+            bead.metadata["model_override"] = args.model
         storage.update_bead(bead, event="updated", summary="Bead updated via CLI")
         console.success(f"Updated bead {bead.bead_id}")
         return 0
@@ -465,13 +471,14 @@ def command_tui(args: argparse.Namespace, storage: RepositoryStorage, console: C
         storage,
         feature_root_id=feature_root_id,
         refresh_seconds=args.refresh_seconds,
+        max_workers=args.max_workers,
         stream=console.stream,
     )
 
 
 def command_run(args: argparse.Namespace, scheduler: Scheduler, console: ConsoleReporter) -> int:
     reporter = CliSchedulerReporter(console, max_workers=args.max_workers)
-    aggregate = {"started": [], "completed": [], "blocked": [], "deferred": []}
+    aggregate = {"started": [], "completed": [], "blocked": [], "deferred": [], "correctives_created": []}
     console.section("Scheduler")
     scope = f", feature_root={args.feature_root}" if args.feature_root else ""
     console.info(f"Starting scheduler loop with max_workers={args.max_workers}{scope}")
@@ -486,7 +493,8 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             aggregate["completed"].extend(result.completed)
             aggregate["blocked"].extend(result.blocked)
             aggregate["deferred"].extend(result.deferred)
-            if args.once or not result.started:
+            aggregate["correctives_created"].extend(result.correctives_created)
+            if args.once or (not result.started and not result.correctives_created):
                 break
     finally:
         reporter.stop()

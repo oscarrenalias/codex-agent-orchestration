@@ -4,6 +4,7 @@ import io
 from argparse import Namespace
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from types import ModuleType
 from typing import Callable, Iterable
 
@@ -22,6 +23,51 @@ from .models import (
 from .storage import RepositoryStorage
 
 
+def _make_services(root: Path):
+    """Lazy import to avoid circular dependency with cli module."""
+    from .cli import make_services
+    return make_services(root)
+
+
+def _format_duration_ms(ms: float | int | None) -> str:
+    """Format milliseconds as m:ss."""
+    if ms is None:
+        return "-"
+    total_seconds = int(ms / 1000)
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    return f"{minutes}:{seconds:02d}"
+
+
+_DEFAULT_PANEL_WIDTH = 120
+
+
+def _truncate_title(title: str, max_width: int) -> str:
+    """Truncate *title* to *max_width* characters, adding '...' when trimmed."""
+    if len(title) <= max_width:
+        return title
+    if max_width <= 3:
+        return "..."[:max_width]
+    return title[: max_width - 3] + "..."
+
+
+def _telemetry_badge(bead: Bead) -> str:
+    """Return compact telemetry badge like '[$0.32, 2:55]' or empty string."""
+    telemetry = bead.metadata.get("telemetry")
+    if not telemetry:
+        return ""
+    cost = telemetry.get("cost_usd")
+    duration = telemetry.get("duration_ms") or telemetry.get("duration_api_ms")
+    parts: list[str] = []
+    if cost is not None:
+        parts.append(f"${cost:.2f}")
+    if duration is not None:
+        parts.append(_format_duration_ms(duration))
+    if not parts:
+        return ""
+    return f" [{', '.join(parts)}]"
+
+
 FILTER_DEFAULT = "default"
 FILTER_ALL = "all"
 FILTER_ACTIONABLE = "actionable"
@@ -33,10 +79,12 @@ STATUS_ACTION_TARGETS = (BEAD_READY, BEAD_BLOCKED, BEAD_DONE)
 DETAIL_SECTION_ACCEPTANCE = "acceptance"
 DETAIL_SECTION_FILES = "files"
 DETAIL_SECTION_HANDOFF = "handoff"
+DETAIL_SECTION_TELEMETRY = "telemetry"
 DETAIL_SECTION_ORDER = (
     DETAIL_SECTION_ACCEPTANCE,
     DETAIL_SECTION_FILES,
     DETAIL_SECTION_HANDOFF,
+    DETAIL_SECTION_TELEMETRY,
 )
 
 STATUS_DISPLAY_ORDER = (
@@ -250,6 +298,21 @@ def format_detail_panel(bead: Bead | None) -> str:
         f"  updated_docs: {_format_list(handoff.updated_docs)}",
         f"  conflict_risks: {_value_or_dash(handoff.conflict_risks or bead.conflict_risks)}",
     ]
+    telemetry = bead.metadata.get("telemetry")
+    if telemetry:
+        lines.append("Telemetry:")
+        lines.append(f"  cost_usd: ${telemetry.get('cost_usd', 0):.2f}")
+        lines.append(f"  duration: {_format_duration_ms(telemetry.get('duration_ms') or telemetry.get('duration_api_ms'))}")
+        lines.append(f"  num_turns: {_value_or_dash(telemetry.get('num_turns'))}")
+        lines.append(f"  input_tokens: {_value_or_dash(telemetry.get('input_tokens'))}")
+        lines.append(f"  output_tokens: {_value_or_dash(telemetry.get('output_tokens'))}")
+        lines.append(f"  cache_read_tokens: {_value_or_dash(telemetry.get('cache_read_tokens'))}")
+        lines.append(f"  prompt_chars: {_value_or_dash(telemetry.get('prompt_chars'))}")
+        lines.append(f"  session_id: {_value_or_dash(telemetry.get('session_id'))}")
+        history = bead.metadata.get("telemetry_history")
+        if history and len(history) > 1:
+            total_cost = sum(h.get("cost_usd", 0) or 0 for h in history)
+            lines.append(f"  attempts: {len(history)} (total cost: ${total_cost:.2f})")
     return "\n".join(lines)
 
 
@@ -303,6 +366,25 @@ def _detail_section_body(bead: Bead | None, section: str) -> str:
                 f"conflict_risks: {_value_or_dash(handoff.conflict_risks or bead.conflict_risks)}",
             ]
         )
+    if section == DETAIL_SECTION_TELEMETRY:
+        telemetry = bead.metadata.get("telemetry")
+        if not telemetry:
+            return "No telemetry data."
+        lines = [
+            f"cost_usd: ${telemetry.get('cost_usd', 0):.2f}",
+            f"duration: {_format_duration_ms(telemetry.get('duration_ms') or telemetry.get('duration_api_ms'))}",
+            f"num_turns: {_value_or_dash(telemetry.get('num_turns'))}",
+            f"input_tokens: {_value_or_dash(telemetry.get('input_tokens'))}",
+            f"output_tokens: {_value_or_dash(telemetry.get('output_tokens'))}",
+            f"cache_read_tokens: {_value_or_dash(telemetry.get('cache_read_tokens'))}",
+            f"prompt_chars: {_value_or_dash(telemetry.get('prompt_chars'))}",
+            f"session_id: {_value_or_dash(telemetry.get('session_id'))}",
+        ]
+        history = bead.metadata.get("telemetry_history")
+        if history and len(history) > 1:
+            total_cost = sum(h.get("cost_usd", 0) or 0 for h in history)
+            lines.append(f"attempts: {len(history)} (total cost: ${total_cost:.2f})")
+        return "\n".join(lines)
     raise ValueError(f"Unknown detail section: {section}")
 
 
@@ -311,6 +393,7 @@ def _detail_section_title(section: str) -> str:
         DETAIL_SECTION_ACCEPTANCE: "Acceptance Criteria",
         DETAIL_SECTION_FILES: "Files",
         DETAIL_SECTION_HANDOFF: "Handoff",
+        DETAIL_SECTION_TELEMETRY: "Telemetry",
     }
     return titles[section]
 
@@ -326,7 +409,8 @@ def format_help_overlay() -> str:
             "k / Up      Move list or detail up",
             "PgUp/PgDn   Page list/detail",
             "Home / End  Jump to start/end",
-            "[ / ]      Prev/next detail section",
+            "g / G       Jump to first/last bead",
+            "n / N       Next/prev detail section",
             "f           Next filter",
             "Shift+f     Previous filter",
             "a           Toggle timed refresh",
@@ -337,9 +421,10 @@ def format_help_overlay() -> str:
             "u           Open status update flow",
             "r / b / d   Choose ready, blocked, done in status flow",
             "y           Confirm retry/status update",
-            "n           Cancel pending merge/retry/status",
+            "c           Cancel pending merge/retry/status",
             "m           Request merge",
             "Enter       Toggle detail section / confirm merge",
+            "E           Expand/collapse all tree nodes",
             "q           Quit",
             "",
             "? / Esc     Close help",
@@ -391,6 +476,9 @@ class TuiRuntimeState:
     help_overlay_visible: bool = False
     timed_refresh_enabled: bool = False
     continuous_run_enabled: bool = False
+    scheduler_running: bool = False
+    scheduler_log: list[str] = field(default_factory=list)
+    max_workers: int = 1
     last_action: str = "-"
     last_result: str = "-"
     last_action_at: str = "-"
@@ -621,13 +709,9 @@ class TuiRuntimeState:
         )
 
     def status_panel_text(self) -> str:
+        scheduler_indicator = " [RUNNING]" if self.scheduler_running else ""
         return "\n".join([
-            f"Status: {self.status_message}",
-            f"Active Panel: {_focus_status_hint(self.focused_panel)}",
-            f"Mode: {self.mode_summary()}",
-            f"Activity: {self.activity_message}",
-            f"Last Action: {self.last_action}",
-            f"Last Result: {self.last_result} @ {self.last_action_at}",
+            f"{self.mode_summary()}{scheduler_indicator} | {self.status_message}",
             self.footer_text(),
         ])
 
@@ -749,36 +833,53 @@ class TuiRuntimeState:
         self.refresh(activity_message=console_stream.getvalue().strip() or f"Merged {bead.bead_id}.")
         return True
 
-    def run_scheduler_cycle(self) -> bool:
-        from .cli import command_run, make_services
-
-        console_stream = io.StringIO()
+    def run_scheduler_cycle(
+        self,
+        reporter: object | None = None,
+    ) -> bool:
+        """Run a single scheduler cycle. Called from a worker thread when async."""
+        if self.scheduler_running:
+            self.status_message = "Scheduler cycle already in progress."
+            return False
+        self.scheduler_running = True
+        self._record_action_result(
+            "scheduler run",
+            "started",
+            status_message="Scheduler cycle running...",
+        )
         try:
-            _, scheduler, _ = make_services(self.storage.root)
-            exit_code = command_run(
-                Namespace(once=True, max_workers=1, feature_root=self.feature_root_id),
-                scheduler,
-                ConsoleReporter(stream=console_stream),
+            _, scheduler, _ = _make_services(self.storage.root)
+            result = scheduler.run_once(
+                max_workers=self.max_workers,
+                feature_root_id=self.feature_root_id,
+                reporter=reporter,
             )
         except Exception as exc:
+            self.scheduler_running = False
             self._record_action_result(
                 "scheduler run",
                 f"failed: {exc}",
                 status_message=f"Scheduler run failed: {exc}",
             )
-            self.refresh(activity_message=console_stream.getvalue().strip() or "Scheduler run raised an exception.")
+            self.refresh(activity_message="Scheduler run raised an exception.")
             return False
-        result_text = console_stream.getvalue().strip() or "Scheduler cycle completed."
-        if exit_code != 0:
-            self._record_action_result(
-                "scheduler run",
-                f"failed ({exit_code})",
-                status_message="Scheduler run failed.",
-            )
-            self.refresh(activity_message=result_text)
-            return False
-        self._record_action_result("scheduler run", "success", status_message="Scheduler cycle completed.")
-        self.refresh(activity_message=result_text)
+        summary_parts = []
+        if result.started:
+            summary_parts.append(f"started={len(result.started)}")
+        if result.completed:
+            summary_parts.append(f"completed={len(result.completed)}")
+        if result.blocked:
+            summary_parts.append(f"blocked={len(result.blocked)}")
+        if result.deferred:
+            summary_parts.append(f"deferred={len(result.deferred)}")
+        result_text = ", ".join(summary_parts) if summary_parts else "no ready beads"
+        self.scheduler_running = False
+        self._record_action_result(
+            "scheduler run",
+            "success",
+            status_message=f"Cycle done: {result_text}",
+        )
+        self.refresh(activity_message=f"Cycle: {result_text}")
         return True
 
     def toggle_timed_refresh(self) -> None:
@@ -833,7 +934,7 @@ class TuiRuntimeState:
             return False
         self.awaiting_retry_confirmation = True
         self.pending_retry_bead_id = bead.bead_id
-        self.status_message = f"Confirm retry for {bead.bead_id} with y; n cancels."
+        self.status_message = f"Confirm retry for {bead.bead_id} with y; c cancels."
         return True
 
     def confirm_retry_selected_blocked_bead(self) -> bool:
@@ -907,7 +1008,7 @@ class TuiRuntimeState:
         self.pending_status_bead_id = bead.bead_id
         self.pending_status_target = None
         self.status_message = (
-            f"Status update for {bead.bead_id}: press r, b, or d, then y to confirm or n to cancel."
+            f"Status update for {bead.bead_id}: press r, b, or d, then y to confirm or c to cancel."
         )
 
     def choose_status_target(self, target_status: str) -> None:
@@ -919,7 +1020,7 @@ class TuiRuntimeState:
             self.status_message = f"Unsupported status target: {target_status}."
             return
         self.pending_status_target = target_status
-        self.status_message = f"Confirm update for {bead_id} -> {target_status} with y; n cancels."
+        self.status_message = f"Confirm update for {bead_id} -> {target_status} with y; c cancels."
 
     def cancel_pending_action(self) -> bool:
         if self.awaiting_merge_confirmation:
@@ -1013,6 +1114,49 @@ class TuiRuntimeState:
         self.status_message = status_message
 
 
+class TuiSchedulerReporter:
+    """SchedulerReporter that posts events to a Textual app from a worker thread."""
+
+    def __init__(self, app: object, state: TuiRuntimeState) -> None:
+        self._app = app
+        self._state = state
+
+    def _post(self, text: str) -> None:
+        ts = datetime.now().strftime("%H:%M:%S")
+        line = f"[{ts}] {text}"
+        self._state.scheduler_log.append(line)
+        try:
+            self._app.call_from_thread(self._app._append_log_line, line)
+        except Exception:
+            pass
+
+    def stop(self) -> None:
+        pass
+
+    def lease_expired(self, bead_id: str) -> None:
+        self._post(f"Lease expired: {bead_id} requeued")
+
+    def bead_started(self, bead: Bead) -> None:
+        self._post(f"[{bead.bead_id}] Started {bead.agent_type}: {bead.title}")
+
+    def worktree_ready(self, bead: Bead, branch_name: str, worktree_path: Path) -> None:
+        self._post(f"[{bead.bead_id}] Worktree ready: {worktree_path}")
+
+    def bead_completed(self, bead: Bead, summary: str, created: list[Bead]) -> None:
+        self._post(f"[{bead.bead_id}] Completed")
+        for child in created:
+            self._post(f"[{bead.bead_id}] Created followup {child.bead_id} ({child.agent_type})")
+
+    def bead_deferred(self, bead: Bead, summary: str) -> None:
+        self._post(f"[{bead.bead_id}] Deferred: {summary}")
+
+    def bead_blocked(self, bead: Bead, summary: str) -> None:
+        self._post(f"[{bead.bead_id}] Blocked: {summary}")
+
+    def bead_failed(self, bead: Bead, summary: str) -> None:
+        self._post(f"[{bead.bead_id}] Failed: {summary}")
+
+
 def render_tree_panel(
     rows: list[TreeRow],
     selected_index: int | None,
@@ -1021,10 +1165,12 @@ def render_tree_panel(
     focused: bool = False,
     scroll_offset: int = 0,
     viewport_height: int | None = None,
+    panel_width: int | None = None,
 ) -> str:
     if not rows:
         return "No beads match the current filter."
 
+    width = panel_width if panel_width is not None else _DEFAULT_PANEL_WIDTH
     visible_rows = rows
     if viewport_height is not None:
         visible_height = max(0, viewport_height)
@@ -1033,7 +1179,16 @@ def render_tree_panel(
     lines: list[str] = []
     for index, row in enumerate(visible_rows, start=scroll_offset):
         marker = selected_marker if selected_index == index else "  "
-        lines.append(f"{marker} {row.label} [{row.bead.status}]")
+        badge = _telemetry_badge(row.bead)
+        status_tag = f" [{row.bead.status}]"
+        indent = "  " * row.depth
+        bead_prefix = f"{row.bead.bead_id} · "
+        suffix = f"{status_tag}{badge}"
+        # Fixed parts: marker + space + indent + bead_prefix + suffix
+        fixed_len = len(marker) + 1 + len(indent) + len(bead_prefix) + len(suffix)
+        title_budget = width - fixed_len
+        title = _truncate_title(row.bead.title, max(0, title_budget))
+        lines.append(f"{marker} {indent}{bead_prefix}{title}{suffix}")
     return "\n".join(lines)
 
 
@@ -1068,6 +1223,7 @@ def build_tui_app(
     *,
     feature_root_id: str | None = None,
     refresh_seconds: int = 3,
+    max_workers: int = 1,
 ):
     load_textual_runtime()
     from textual.app import App, ComposeResult
@@ -1075,10 +1231,24 @@ def build_tui_app(
     from textual.css.query import NoMatches
     from textual.containers import Center, Horizontal, Vertical, VerticalScroll
     from textual.screen import ModalScreen
-    from textual.widgets import Collapsible, Static
+    from textual.widgets import Collapsible, RichLog, Static, Tree
 
     class FocusableStatic(Static):
         can_focus = True
+
+    class BeadTree(Tree[Bead]):
+        """Tree widget for displaying beads with native expand/collapse."""
+
+        show_root = False
+
+        def _node_label(self, bead: Bead, width: int | None = None) -> str:
+            badge = _telemetry_badge(bead)
+            prefix = f"{bead.bead_id} · "
+            suffix = f" [{bead.status}]{badge}"
+            avail = (width if width is not None else _DEFAULT_PANEL_WIDTH)
+            title_budget = avail - len(prefix) - len(suffix)
+            title = _truncate_title(bead.title, max(0, title_budget))
+            return f"{prefix}{title}{suffix}"
 
     class HelpOverlay(ModalScreen[None]):
         CSS = """
@@ -1128,16 +1298,13 @@ def build_tui_app(
             height: 1fr;
         }
 
-        #list-panel, #detail-panel, #status-panel {
+        #list-panel, #detail-panel {
             border: round $accent;
             padding: 1;
-        }
-
-        #list-panel, #detail-panel {
             width: 1fr;
         }
 
-        #bead-list, #bead-detail {
+        #bead-tree, #bead-detail {
             height: 1fr;
         }
 
@@ -1168,8 +1335,16 @@ def build_tui_app(
             tint: $success 8%;
         }
 
-        #status-panel {
-            height: 10;
+        #status-bar {
+            height: 3;
+            border: round $accent;
+            padding: 0 1;
+        }
+
+        #scheduler-log {
+            height: 8;
+            border: round $accent;
+            padding: 0 1;
         }
         """
 
@@ -1185,8 +1360,10 @@ def build_tui_app(
             Binding("pagedown", "page_down", "Page Down", show=False),
             Binding("home", "go_home", "Home", show=False),
             Binding("end", "go_end", "End", show=False),
-            Binding("left_square_bracket", "previous_detail_section", "Prev Detail Section", show=False),
-            Binding("right_square_bracket", "next_detail_section", "Next Detail Section", show=False),
+            Binding("g", "go_home", "Go to Top", show=False),
+            Binding("G", "go_end", "Go to Bottom", show=False),
+            Binding("n", "next_detail_section", "Next Detail Section", show=False),
+            Binding("N", "previous_detail_section", "Prev Detail Section", show=False),
             Binding("f", "filter_next", "Next Filter"),
             Binding("shift+f", "filter_previous", "Prev Filter", show=False),
             Binding("question_mark", "toggle_help", "Help", show=False),
@@ -1197,11 +1374,12 @@ def build_tui_app(
             Binding("t", "retry_blocked", "Retry"),
             Binding("u", "start_status_update", "Status"),
             Binding("m", "request_merge", "Merge"),
-            Binding("enter", "confirm_merge", "Confirm", show=False),
+            Binding("enter", "confirm_merge", "Confirm", show=False, priority=True),
             Binding("b", "choose_blocked_status", "Blocked", show=False),
             Binding("d", "choose_done_status", "Done", show=False),
             Binding("y", "confirm_pending_action", "Confirm", show=False),
-            Binding("n", "cancel_pending_action", "Cancel", show=False),
+            Binding("c", "cancel_pending_action", "Cancel", show=False),
+            Binding("E", "toggle_all_tree_nodes", "Expand/Collapse All", show=False),
         ]
 
         def __init__(self) -> None:
@@ -1210,17 +1388,20 @@ def build_tui_app(
                 storage,
                 feature_root_id=feature_root_id,
                 refresh_seconds=refresh_seconds,
+                max_workers=max_workers,
             )
-            self._last_list_render = ""
+            self._last_list_render = ()
             self._last_detail_render = ""
             self._last_status_render = ""
             self._active_detail_section_index = 0
             self._detail_collapsed = {section: True for section in DETAIL_SECTION_ORDER}
+            self._collapsed_bead_ids: set[str] = set()
+            self._scheduler_worker_running = False
 
         def compose(self) -> ComposeResult:
             with Horizontal(id="top-row"):
                 with Vertical(id="list-panel"):
-                    yield FocusableStatic(id="bead-list")
+                    yield BeadTree("Beads", id="bead-tree")
                 with VerticalScroll(id="detail-panel", can_focus=True):
                     with Vertical(id="bead-detail"):
                         yield Static(id="detail-summary")
@@ -1232,14 +1413,22 @@ def build_tui_app(
                                 collapsed=self._detail_collapsed[section],
                                 classes="detail-section",
                             )
-            yield FocusableStatic(id="status-panel")
+            yield Static(id="status-bar")
+            yield RichLog(id="scheduler-log", auto_scroll=True, wrap=True)
 
         def on_mount(self) -> None:
             self.title = "Orchestrator TUI"
             self.sub_title = feature_root_id or "all features"
             self.set_interval(refresh_seconds, self._on_interval_tick)
+            self._populate_bead_tree()
             self._render_all()
             self._sync_panel_focus()
+            try:
+                log_widget = self.query_one("#scheduler-log", RichLog)
+                log_widget.border_title = Text("Scheduler Log")
+                log_widget.write(Text.from_markup("[dim]Press s to run a scheduler cycle, S for continuous mode[/dim]"))
+            except NoMatches:
+                pass
 
         def action_focus_next_panel(self) -> None:
             self.runtime_state.cycle_focus(1)
@@ -1259,10 +1448,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(1)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_cursor_down()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_move_up(self) -> None:
@@ -1271,10 +1461,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(-1)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_cursor_up()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_page_up(self) -> None:
@@ -1283,10 +1474,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(-10)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_page_up()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_page_down(self) -> None:
@@ -1295,10 +1487,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(10)
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_page_down()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_go_home(self) -> None:
@@ -1307,10 +1500,11 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection_to_start()
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_scroll_home()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_go_end(self) -> None:
@@ -1319,17 +1513,20 @@ def build_tui_app(
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection_to_end()
-                self._update_list_panel()
-                self._update_detail_panel(force=self._selection_changed(previous_selection), reset_scroll=self._selection_changed(previous_selection))
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_scroll_end()
+                except NoMatches:
+                    pass
             self._update_status_panel()
 
         def action_filter_next(self) -> None:
+            self._collapsed_bead_ids.clear()
             self.runtime_state.cycle_filter(1)
             self._render_all(force_detail=True, reset_detail_scroll=True)
 
         def action_filter_previous(self) -> None:
+            self._collapsed_bead_ids.clear()
             self.runtime_state.cycle_filter(-1)
             self._render_all(force_detail=True, reset_detail_scroll=True)
 
@@ -1354,8 +1551,7 @@ def build_tui_app(
             self._render_all(force_detail=True)
 
         def action_scheduler_once(self) -> None:
-            self.runtime_state.run_scheduler_cycle()
-            self._render_all(force_detail=True)
+            self._start_scheduler_worker()
 
         def action_toggle_continuous_run(self) -> None:
             self.runtime_state.toggle_continuous_run()
@@ -1381,9 +1577,19 @@ def build_tui_app(
             self._update_status_panel()
 
         def action_confirm_merge(self) -> None:
+            if self.runtime_state.help_overlay_visible:
+                return
             if self.runtime_state.focused_panel == PANEL_DETAIL and not self.runtime_state.awaiting_merge_confirmation:
                 if self._toggle_active_detail_section():
                     return
+            if not self.runtime_state.awaiting_merge_confirmation and self.runtime_state.focused_panel == PANEL_LIST:
+                # Delegate Enter to the Tree for expand/collapse toggle
+                try:
+                    bead_tree = self.query_one("#bead-tree", BeadTree)
+                    bead_tree.action_toggle_node()
+                except NoMatches:
+                    pass
+                return
             self.runtime_state.confirm_merge()
             self._render_all(force_detail=True)
 
@@ -1406,14 +1612,32 @@ def build_tui_app(
             self.runtime_state.cancel_pending_action()
             self._update_status_panel()
 
+        def action_toggle_all_tree_nodes(self) -> None:
+            """Toggle all tree nodes between fully expanded and fully collapsed."""
+            try:
+                bead_tree = self.query_one("#bead-tree", BeadTree)
+            except NoMatches:
+                return
+            rows = self.runtime_state.rows
+            expandable_ids = {row.bead.bead_id for row in rows if row.has_children}
+            if not expandable_ids:
+                return
+            # If any expandable node is collapsed, expand all; otherwise collapse all.
+            any_collapsed = bool(self._collapsed_bead_ids & expandable_ids)
+            if any_collapsed:
+                self._collapsed_bead_ids.clear()
+            else:
+                self._collapsed_bead_ids = set(expandable_ids)
+            self._populate_bead_tree()
+
         def _on_interval_tick(self) -> None:
             if not self.runtime_state.timed_refresh_enabled:
                 return
             if self.runtime_state.continuous_run_enabled:
-                self.runtime_state.run_scheduler_cycle()
+                self._start_scheduler_worker()
             else:
                 self.runtime_state.refresh()
-            self._render_all(force_detail=True)
+                self._render_all(force_detail=True)
 
         def _render_panels(self) -> None:
             self._render_all(force_detail=True)
@@ -1428,7 +1652,7 @@ def build_tui_app(
             try:
                 list_panel = self.query_one("#list-panel", Vertical)
                 detail_panel = self.query_one("#detail-panel", VerticalScroll)
-                status_panel = self.query_one("#status-panel", Static)
+                status_bar = self.query_one("#status-bar", Static)
             except NoMatches:
                 # Main panels are not mounted on top-level while modal screens are active.
                 return
@@ -1444,11 +1668,11 @@ def build_tui_app(
             list_panel.border_subtitle = "Enter/j/k move selection" if self.runtime_state.focused_panel == PANEL_LIST else "Tab to activate"
             detail_panel.border_title = Text(_panel_badge("Details", focused=self.runtime_state.focused_panel == PANEL_DETAIL))
             detail_panel.border_subtitle = (
-                Text("j/k scroll | [/] section | Enter toggle")
+                Text("j/k scroll | n/N section | Enter toggle")
                 if self.runtime_state.focused_panel == PANEL_DETAIL
                 else "Tab to activate"
             )
-            status_panel.border_title = Text("Status")
+            status_bar.border_title = Text("Status")
 
         def _sync_panel_focus(self) -> None:
             try:
@@ -1456,27 +1680,66 @@ def build_tui_app(
                     self.query_one("#detail-panel", VerticalScroll).focus()
                     self._focus_active_detail_section()
                 else:
-                    self.query_one("#bead-list", Static).focus()
+                    self.query_one("#bead-tree", BeadTree).focus()
             except NoMatches:
                 return
 
-        def _update_list_panel(self) -> None:
+        def _populate_bead_tree(self) -> None:
+            """Rebuild the Tree widget from current runtime_state rows."""
             try:
-                bead_list = self.query_one("#bead-list", Static)
+                bead_tree = self.query_one("#bead-tree", BeadTree)
             except NoMatches:
                 return
-            self.runtime_state.ensure_selection_visible(self._list_viewport_height())
-            list_render = render_tree_panel(
-                self.runtime_state.rows,
-                self.runtime_state.selected_index,
-                filter_mode=self.runtime_state.filter_mode,
-                focused=self.runtime_state.focused_panel == PANEL_LIST,
-                scroll_offset=self.runtime_state.list_scroll_offset,
-                viewport_height=self._list_viewport_height(),
+
+            bead_tree.clear()
+            rows = self.runtime_state.rows
+            if not rows:
+                bead_tree.root.set_label("No beads match the current filter.")
+                return
+
+            bead_tree.root.set_label("Beads")
+            # Build a map from bead_id to tree node for parent lookups
+            node_map: dict[str, object] = {}
+            for row in rows:
+                bead = row.bead
+                parent_node = node_map.get(bead.parent_id) if bead.parent_id else None
+                target = parent_node if parent_node is not None else bead_tree.root
+                tree_width = bead_tree.size.width if bead_tree.size.width > 0 else None
+                label = bead_tree._node_label(bead, width=tree_width)
+                if row.has_children:
+                    node = target.add(label, data=bead)
+                else:
+                    node = target.add_leaf(label, data=bead)
+                node_map[bead.bead_id] = node
+
+            # Restore collapsed state
+            for bead_id in self._collapsed_bead_ids:
+                if bead_id in node_map:
+                    node_map[bead_id].collapse()
+
+            # Expand all non-collapsed nodes (Tree defaults to collapsed)
+            for bead_id, node in node_map.items():
+                if bead_id not in self._collapsed_bead_ids and hasattr(node, 'expand'):
+                    node.expand()
+
+            # Also expand root
+            bead_tree.root.expand()
+
+            # Restore selection
+            selected_id = self.runtime_state.selected_bead_id
+            if selected_id and selected_id in node_map:
+                bead_tree.select_node(node_map[selected_id])
+
+        def _update_list_panel(self) -> None:
+            # Build a cache key from bead IDs, statuses, and titles to skip redundant rebuilds
+            cache_key = tuple(
+                (row.bead_id, row.bead.status, row.bead.title, row.depth)
+                for row in self.runtime_state.rows
             )
-            if list_render != self._last_list_render:
-                bead_list.update(list_render)
-                self._last_list_render = list_render
+            if cache_key == self._last_list_render:
+                return
+            self._last_list_render = cache_key
+            self._populate_bead_tree()
 
         def _update_detail_panel(self, *, force: bool = False, reset_scroll: bool = False) -> None:
             try:
@@ -1496,12 +1759,12 @@ def build_tui_app(
 
         def _update_status_panel(self) -> None:
             try:
-                status_panel = self.query_one("#status-panel", Static)
+                status_bar = self.query_one("#status-bar", Static)
             except NoMatches:
                 return
             status_render = self.runtime_state.status_panel_text()
             if status_render != self._last_status_render:
-                status_panel.update(status_render)
+                status_bar.update(status_render)
                 self._last_status_render = status_render
 
         def _sync_detail_scroll(self) -> None:
@@ -1515,7 +1778,7 @@ def build_tui_app(
 
         def _list_viewport_height(self) -> int | None:
             try:
-                return self.query_one("#bead-list", Static).content_region.height
+                return self.query_one("#bead-tree", BeadTree).content_region.height
             except NoMatches:
                 return None
 
@@ -1576,20 +1839,34 @@ def build_tui_app(
             self.call_after_refresh(self._focus_active_detail_section)
             return True
 
+        def on_tree_node_highlighted(self, event: Tree.NodeHighlighted[Bead]) -> None:
+            bead = event.node.data
+            if bead is None:
+                return
+            previous_selection = self._selection_marker()
+            for index, row in enumerate(self.runtime_state.rows):
+                if row.bead_id == bead.bead_id:
+                    self.runtime_state.select_index(index)
+                    break
+            changed = self._selection_changed(previous_selection)
+            self._update_detail_panel(force=changed, reset_scroll=changed)
+            self._update_status_panel()
+
+        def on_tree_node_collapsed(self, event: Tree.NodeCollapsed[Bead]) -> None:
+            bead = event.node.data
+            if bead is not None:
+                self._collapsed_bead_ids.add(bead.bead_id)
+
+        def on_tree_node_expanded(self, event: Tree.NodeExpanded[Bead]) -> None:
+            bead = event.node.data
+            if bead is not None:
+                self._collapsed_bead_ids.discard(bead.bead_id)
+
         def on_collapsible_collapsed(self, event: Collapsible.Collapsed) -> None:
             self._sync_detail_state_from_collapsible(event.collapsible, collapsed=True)
 
         def on_collapsible_expanded(self, event: Collapsible.Expanded) -> None:
             self._sync_detail_state_from_collapsible(event.collapsible, collapsed=False)
-
-        def _list_index_from_y(self, y: int) -> int | None:
-            row_y = y - 2
-            if row_y < 0:
-                return None
-            index = self.runtime_state.list_scroll_offset + row_y
-            if index >= len(self.runtime_state.rows):
-                return None
-            return index
 
         def _selection_marker(self) -> tuple[str | None, int | None]:
             return self.runtime_state.selected_bead_id, self.runtime_state.selected_index
@@ -1609,20 +1886,9 @@ def build_tui_app(
             widget = getattr(event, "widget", None)
             if widget is None:
                 return
-            if self._widget_matches_panel(widget, {"bead-list", "list-panel"}):
-                offset = event.get_content_offset(widget)
-                if offset is None:
-                    return
-                index = self._list_index_from_y(offset.y)
+            if self._widget_matches_panel(widget, {"bead-tree", "list-panel"}):
+                # Tree widget handles its own click-to-select; just sync focus
                 self.runtime_state.set_focused_panel(PANEL_LIST, announce=False)
-                if index is not None:
-                    previous_selection = self._selection_marker()
-                    self.runtime_state.select_index(index)
-                    self._update_list_panel()
-                    self._update_detail_panel(
-                        force=self._selection_changed(previous_selection),
-                        reset_scroll=self._selection_changed(previous_selection),
-                    )
                 self._render_focus()
                 self._sync_panel_focus()
                 self._update_status_panel()
@@ -1656,32 +1922,19 @@ def build_tui_app(
                 if hasattr(event, "stop"):
                     event.stop()
                 return
-            if self._widget_matches_panel(widget, {"bead-list", "list-panel"}):
+            if self._widget_matches_panel(widget, {"bead-tree", "list-panel"}):
+                # Tree widget handles its own scrolling
                 self.runtime_state.set_focused_panel(PANEL_LIST, announce=False)
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(direction)
                 self._render_focus()
                 self._sync_panel_focus()
-                self._update_list_panel()
-                self._update_detail_panel(
-                    force=self._selection_changed(previous_selection),
-                    reset_scroll=self._selection_changed(previous_selection),
-                )
                 self._update_status_panel()
-                if hasattr(event, "stop"):
-                    event.stop()
                 return
             if self.runtime_state.focused_panel == PANEL_DETAIL:
                 self.runtime_state.scroll_detail(direction, self._detail_viewport_height())
                 self._sync_detail_scroll()
             else:
-                previous_selection = self._selection_marker()
-                self.runtime_state.move_selection(direction)
-                self._update_list_panel()
-                self._update_detail_panel(
-                    force=self._selection_changed(previous_selection),
-                    reset_scroll=self._selection_changed(previous_selection),
-                )
+                # Fallback: delegate scroll to the tree
+                pass
             self._update_status_panel()
 
         def _sync_detail_section_from_widget(self, widget: object) -> None:
@@ -1709,6 +1962,42 @@ def build_tui_app(
                 self._update_status_panel()
                 return
 
+        # ── Async scheduler worker ───────────────────────────────
+
+        def _start_scheduler_worker(self) -> None:
+            """Launch a scheduler cycle in a background worker thread."""
+            if self._scheduler_worker_running:
+                self.runtime_state.status_message = "Scheduler cycle already in progress."
+                self._update_status_panel()
+                return
+            self._scheduler_worker_running = True
+            self.runtime_state.scheduler_running = True
+            self._append_log_line(f"[{datetime.now().strftime('%H:%M:%S')}] Scheduler cycle starting...")
+            self._update_status_panel()
+            self.run_worker(self._scheduler_worker_task, exclusive=True)
+
+        def _scheduler_worker_task(self) -> bool:
+            """Runs in a worker thread. Uses TuiSchedulerReporter for live events."""
+            reporter = TuiSchedulerReporter(self, self.runtime_state)
+            try:
+                return self.runtime_state.run_scheduler_cycle(reporter=reporter)
+            finally:
+                self.call_from_thread(self._on_scheduler_worker_done)
+
+        def _on_scheduler_worker_done(self) -> None:
+            """Called on the main thread when the worker finishes."""
+            self._scheduler_worker_running = False
+            self.runtime_state.scheduler_running = False
+            self._render_all(force_detail=True)
+
+        def _append_log_line(self, line: str) -> None:
+            """Append a line to the scheduler log widget. Must be called on the main thread."""
+            try:
+                log_widget = self.query_one("#scheduler-log", RichLog)
+                log_widget.write(Text.from_markup(line))
+            except NoMatches:
+                pass
+
     return OrchestratorTuiApp()
 
 
@@ -1717,10 +2006,11 @@ def run_tui(
     *,
     feature_root_id: str | None = None,
     refresh_seconds: int = 3,
+    max_workers: int = 1,
     stream: object | None = None,
 ) -> int:
     try:
-        app = build_tui_app(storage, feature_root_id=feature_root_id, refresh_seconds=refresh_seconds)
+        app = build_tui_app(storage, feature_root_id=feature_root_id, refresh_seconds=refresh_seconds, max_workers=max_workers)
     except RuntimeError as exc:
         target = stream if hasattr(stream, "write") else None
         message = f"{exc}\nHint: install project dependencies so `textual` is available.\n"

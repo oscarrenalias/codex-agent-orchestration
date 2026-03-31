@@ -212,7 +212,8 @@ Keyboard bindings:
 - `k` or `Up`: move the selected bead up when the list is focused, or scroll the current bead detail up when the detail panel is focused
 - `PageUp` and `PageDown`: move by a larger step in whichever panel currently has focus, paging the bead list or the bead detail view
 - `Home` and `End`: jump to the start or end of whichever panel currently has focus, selecting the first or last visible bead in the list or jumping to the top or bottom of the detail view
-- `[` and `]`: move the active collapsible section target inside the detail panel
+- `g` and `G`: jump to the first or last bead in the list panel
+- `n` and `N`: move the active collapsible section target inside the detail panel
 - `f`: next filter
 - `Shift+f`: previous filter
 - `a`: toggle timed refresh on or off
@@ -226,7 +227,7 @@ Keyboard bindings:
 - `b`: choose `blocked` while the status update flow is active
 - `d`: choose `done` while the status update flow is active
 - `y`: confirm the pending retry or status update
-- `n`: cancel a pending merge, retry, or status update
+- `c`: cancel a pending merge, retry, or status update
 - `m`: request merge for the selected bead
 - `Enter`: toggle the active detail section, or confirm a pending merge
 
@@ -234,7 +235,7 @@ Detail scrolling behavior:
 
 - changing the selected bead resets the detail panel scroll position to the top of the newly selected bead
 - the long `Acceptance Criteria`, `Files`, and `Handoff` blocks render as Textual `Collapsible` sections and start collapsed so the panel stays compact by default
-- `[` and `]` move the active section target, and `Enter` folds or unfolds that active section while the detail panel is focused
+- `n` and `N` move the active section target, and `Enter` folds or unfolds that active section while the detail panel is focused
 - scrolling inside the detail panel reuses the rendered detail body instead of rebuilding the metadata block on each step
 - detail scroll bounds follow the rendered `VerticalScroll` container, so expanded sections remain reachable and collapsed sections do not produce phantom scroll offsets
 - list-navigation no-ops at the first or last visible bead do not change the current detail scroll offset
@@ -265,20 +266,20 @@ Refresh, help, and operator-action behavior:
 - `Tab` and `Shift+Tab` move focus between the list and detail panels without changing the layout or selection
 - the focused panel keeps the stronger active chrome and `[ACTIVE]` border title while the inactive panel drops back to `[idle]`
 - the Beads panel border title includes the current filter label in title case and updates immediately as `f` or `Shift+f` cycle filters
-- panel subtitles also switch with focus: the active list panel shows `Enter/j/k move selection`, the active detail panel shows `j/k scroll | [/] section | Enter toggle`, and inactive panels fall back to `Tab to activate`
+- panel subtitles also switch with focus: the active list panel shows `Enter/j/k move selection`, the active detail panel shows `j/k scroll | n/N section | Enter toggle`, and inactive panels fall back to `Tab to activate`
 - keyboard focus changes and mouse clicks on either panel update the same active indicator, so it stays clear whether navigation keys will move the list selection or scroll the detail view without changing the layout
 - selecting a different bead from the list resets the detail view to the top of that bead's metadata so keyboard and wheel scrolling always starts from the new selection
 - `?` opens a modal shortcut reference without changing the current bead selection or filter state
 - while the help overlay is open, `?` and `Esc` close it and other keys are ignored by the overlay
 - `r` performs an immediate refresh, clears any pending action, and updates the status panel unless the status update flow is active, where it selects `ready`
-- retry is available only when the selected bead is `blocked`; `t` starts confirmation, `y` executes the retry, `n` cancels it, and invalid retry requests leave bead state unchanged and report the denial in the status panel
+- retry is available only when the selected bead is `blocked`; `t` starts confirmation, `y` executes the retry, `c` cancels it, and invalid retry requests leave bead state unchanged and report the denial in the status panel
 - `u` starts a short status flow for the selected bead, then `r`, `b`, or `d` chooses `ready`, `blocked`, or `done`, and `y` is required to execute the change
 - status updates always require confirmation after a target is chosen; disallowed status transitions are rejected in-place, leave bead state unchanged, and report the reason in the status panel
 - developer beads cannot be manually marked `done` via operator status update; complete them through scheduler execution so downstream tester/docs/review follow-up beads are created
 - merge is available only when the selected bead is `done`
 - `m` starts merge confirmation for the selected `done` bead, and `Enter` is required to execute the merge
 - actions without the required preconditions, including retry on a non-`blocked` bead, status updates without a valid target, or merge on a non-`done` bead, do not mutate bead state
-- `n` cancels a pending merge confirmation, retry confirmation, or status update flow
+- `c` cancels a pending merge confirmation, retry confirmation, or status update flow
 - a pending retry confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer blocked
 - a pending merge confirmation stays tied to the originally requested bead across timed refreshes and is cleared if that bead is no longer mergeable
 - merge failures stay inside the TUI and are reported in the status panel instead of closing the session
