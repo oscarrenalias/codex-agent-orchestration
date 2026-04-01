@@ -39,7 +39,7 @@ Out of scope:
 
 **Child IDs**: `B-a7bc3f91-test`, `B-a7bc3f91-docs`, `B-a7bc3f91-review`, `B-a7bc3f91-corrective`
 
-**Branch names**: `feature/B-a7bc3f91` (same pattern as today, just with new ID format)
+**Branch names**: `feature/b-a7bc3f91` (lowercased for Git convention compatibility). Worktrees use the non-lowercased ID directly: `.orchestrator/worktrees/B-a7bc3f91`.
 
 **Collision probability**: 8 hex chars = 32 bits = ~4.3 billion possible IDs. For a project with 10,000 beads, collision probability is approximately 1 in 430,000. Acceptable for any practical use.
 
@@ -69,9 +69,9 @@ The logic stays the same — append `-{suffix}` to the parent ID. No change in d
 ### 3. Branch Naming (`gitutils.py`)
 
 Currently: `feature/b0130` (lowercase).
-New: `feature/B-a7bc3f91` (preserving the `B-` prefix).
+New: `feature/b-a7bc3f91` (lowercased for Git convention compatibility, hyphens preserved).
 
-Verify `WorktreeManager.ensure_worktree()` and `merge_branch()` work with the new format. Git branch names allow hyphens so no issues expected.
+Verify `WorktreeManager.ensure_worktree()` and `merge_branch()` work with the new format. Git branch names allow hyphens so no issues expected. Lowercasing is implemented via `default_execution_branch_name()` which applies `.lower()` to the feature root ID.
 
 ### 4. File Naming
 
@@ -119,7 +119,7 @@ Prefix matching is the highest value improvement for usability. It should work a
 - New beads get UUID-based IDs in `B-xxxxxxxx` format
 - Existing sequential beads continue to load and function
 - Child beads use parent UUID + suffix (`B-a7bc3f91-test`)
-- Branch names use new format (`feature/B-a7bc3f91`)
+- Branch names use new format and are lowercased (`feature/b-a7bc3f91`) for Git convention compatibility
 - Partial ID prefix resolves to full ID when unambiguous
 - Ambiguous prefix produces a clear error listing matches
 - `bead list` sorts by creation time, not ID

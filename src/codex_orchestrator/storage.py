@@ -156,6 +156,19 @@ class RepositoryStorage:
         return f"B-{uuid.uuid4().hex[:8]}"
 
     def allocate_child_bead_id(self, parent_id: str, suffix: str) -> str:
+        """Allocate a child bead ID given a parent ID and suffix.
+
+        Generates an ID by appending the suffix to the parent ID with a hyphen.
+        If a bead with that ID already exists, appends a numeric index (e.g., -2, -3)
+        to ensure uniqueness.
+
+        Args:
+            parent_id: The parent bead ID (e.g., 'B-a7bc3f91').
+            suffix: A short suffix identifying the bead type (e.g., 'test', 'docs', 'review').
+
+        Returns:
+            A unique child bead ID (e.g., 'B-a7bc3f91-test' or 'B-a7bc3f91-test-2').
+        """
         candidate = f"{parent_id}-{suffix}"
         if not self.bead_path(candidate).exists():
             return candidate
@@ -371,9 +384,35 @@ class RepositoryStorage:
         self.save_bead(bead)
 
     def default_execution_branch_name(self, feature_root_id: str) -> str:
+        """Generate a Git branch name from a feature root ID.
+
+        Converts the feature root ID to lowercase to comply with Git branch naming
+        conventions while preserving the hyphenated UUID format.
+
+        Args:
+            feature_root_id: The bead ID serving as the feature root (e.g., 'B-a7bc3f91').
+
+        Returns:
+            A lowercased branch name (e.g., 'feature/b-a7bc3f91').
+        """
         return f"feature/{feature_root_id.lower()}"
 
     def feature_root_id_for(self, bead: Bead) -> str | None:
+        """Determine the feature root ID for a given bead.
+
+        Walks up the bead hierarchy to find the root bead that serves as the feature root.
+        - If the bead has an explicit feature_root_id, returns it.
+        - If the bead is a child of a non-epic bead, traverses to the root bead of that chain.
+        - If the bead is a child of an epic, returns the bead's own ID (it's the root).
+        - If the bead is itself an epic with no parent, returns None (epics have no feature root).
+
+        Args:
+            bead: The bead to find the feature root for.
+
+        Returns:
+            The feature root bead ID (which is used for branch naming and worktree paths),
+            or None if the bead is an epic.
+        """
         if bead.feature_root_id:
             return bead.feature_root_id
         current = bead

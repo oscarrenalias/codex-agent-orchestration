@@ -59,6 +59,23 @@ class WorktreeManager:
             return self._worktree_locks.setdefault(feature_root_id, Lock())
 
     def ensure_worktree(self, feature_root_id: str, branch_name: str) -> Path:
+        """Ensure a Git worktree exists for the given feature and branch.
+
+        Creates a worktree at .orchestrator/worktrees/{feature_root_id} if it doesn't exist.
+        If the branch already exists in the repository, checks out that branch in the worktree.
+        If the branch doesn't exist, creates a new branch from HEAD and checks it out.
+
+        Args:
+            feature_root_id: The bead ID serving as the feature root (e.g., 'B-a7bc3f91').
+            branch_name: The Git branch name to use/create (e.g., 'feature/b-a7bc3f91').
+                         Typically derived from feature_root_id via default_execution_branch_name().
+
+        Returns:
+            Path to the created or existing worktree directory.
+
+        Raises:
+            GitError: If any Git command fails.
+        """
         with self._lock_for(feature_root_id):
             self.ensure_repository()
             self.worktrees_dir.mkdir(parents=True, exist_ok=True)
