@@ -215,7 +215,9 @@ Both modes are thread-safe — `ConsoleReporter` serializes all output through a
 - Operator status updates are restricted: developer beads cannot be manually marked `done` (must go through scheduler to trigger followups).
 - File-scope conflicts are checked statically at schedule time. Overlapping `expected_files`/`expected_globs` between in-progress beads cause blocking.
 - Feature branches follow `feature/{feature_root_id}`. Worktrees live at `.orchestrator/worktrees/{feature_root_id}`.
-- Bead IDs are sequential (`B0001`, `B0002`, ...). Children use suffixes (`B0001-test`, `B0001-review`).
+- **Bead ID allocation**: Root beads use UUID format (`B-{first 8 hex chars}`). Child beads append suffixes (`B-abc12def-test`, `B-abc12def-review`).
+- **Bead sorting**: Beads are sorted by creation timestamp (first `execution_history` entry timestamp), falling back to bead ID on tie. This ensures consistent ordering independent of ID generation strategy.
+- **Prefix resolution**: Use `RepositoryStorage.resolve_bead_id(prefix)` to resolve ambiguous or partial bead ID matches. The method returns the full ID if exactly one match exists, raises `ValueError` on zero or multiple matches.
 
 ## Testing
 
