@@ -101,6 +101,7 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
         "expected_files": bead.expected_files,
         "expected_globs": bead.expected_globs,
         "touched_files": bead.touched_files,
+        "changed_files": bead.changed_files,
         "conflict_risks": bead.conflict_risks,
         "handoff_summary": bead.handoff_summary.__dict__,
     }

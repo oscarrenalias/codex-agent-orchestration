@@ -195,6 +195,7 @@ class RepositoryStorage:
         expected_files: list[str] | None = None,
         expected_globs: list[str] | None = None,
         touched_files: list[str] | None = None,
+        changed_files: list[str] | None = None,
         bead_id: str | None = None,
         metadata: dict | None = None,
         conflict_risks: str = "",
@@ -237,6 +238,7 @@ class RepositoryStorage:
             expected_files=list(expected_files or []),
             expected_globs=list(expected_globs or []),
             touched_files=list(touched_files or []),
+            changed_files=list(changed_files or []),
             metadata=dict(metadata or {}),
             conflict_risks=conflict_risks,
         )

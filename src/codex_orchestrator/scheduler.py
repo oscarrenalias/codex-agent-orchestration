@@ -297,6 +297,7 @@ class Scheduler:
             expected_files=bead.expected_files,
             expected_globs=bead.expected_globs,
             touched_files=bead.touched_files,
+            changed_files=bead.changed_files,
             conflict_risks=bead.conflict_risks,
             metadata={"auto_corrective_for": bead.bead_id},
         )
@@ -769,6 +770,9 @@ class Scheduler:
             followup is not None and followup.parent_id != bead.bead_id
             for followup in planner_owned_followups.values()
         ):
+            for followup in planner_owned_followups.values():
+                if followup is not None:
+                    self._sync_followup_scope(followup, bead)
             return created
         existing_followups = (
             planner_owned_followups
@@ -810,9 +814,12 @@ class Scheduler:
                 expected_files=bead.touched_files or bead.expected_files,
                 expected_globs=bead.expected_globs,
                 touched_files=bead.touched_files,
+                changed_files=bead.changed_files,
                 conflict_risks=bead.conflict_risks,
                 metadata=dict(followup_metadata) if followup_metadata else None,
             ))
+        else:
+            self._sync_followup_scope(test_bead, bead)
         if doc_bead is None:
             created.append(self.storage.create_bead(
                 bead_id=doc_id,
@@ -828,9 +835,12 @@ class Scheduler:
                 expected_files=bead.touched_files or bead.expected_files,
                 expected_globs=bead.expected_globs,
                 touched_files=bead.touched_files,
+                changed_files=bead.changed_files,
                 conflict_risks=bead.conflict_risks,
                 metadata=dict(followup_metadata) if followup_metadata else None,
             ))
+        else:
+            self._sync_followup_scope(doc_bead, bead)
         if review_bead is None:
             created.append(self.storage.create_bead(
                 bead_id=review_id,
@@ -846,10 +856,51 @@ class Scheduler:
                 expected_files=bead.touched_files or bead.expected_files,
                 expected_globs=bead.expected_globs,
                 touched_files=bead.touched_files,
+                changed_files=bead.changed_files,
                 conflict_risks=bead.conflict_risks,
                 metadata=dict(followup_metadata) if followup_metadata else None,
             ))
+        else:
+            self._sync_followup_scope(review_bead, bead)
         return created
+
+    @staticmethod
+    def _merge_unique_items(existing: list[str], incoming: list[str]) -> list[str]:
+        return sorted(dict.fromkeys([*existing, *incoming]))
+
+    @staticmethod
+    def _merge_conflict_risks(existing: str, incoming: str) -> str:
+        if not existing:
+            return incoming
+        if not incoming or incoming == existing:
+            return existing
+        return "\n".join(dict.fromkeys([existing, incoming]))
+
+    def _sync_followup_scope(self, followup: Bead, source: Bead) -> None:
+        expected_files = self._merge_unique_items(
+            followup.expected_files,
+            source.touched_files or source.expected_files,
+        )
+        expected_globs = self._merge_unique_items(followup.expected_globs, source.expected_globs)
+        touched_files = self._merge_unique_items(followup.touched_files, source.touched_files)
+        changed_files = self._merge_unique_items(followup.changed_files, source.changed_files)
+        conflict_risks = self._merge_conflict_risks(followup.conflict_risks, source.conflict_risks)
+
+        if (
+            expected_files == followup.expected_files
+            and expected_globs == followup.expected_globs
+            and touched_files == followup.touched_files
+            and changed_files == followup.changed_files
+            and conflict_risks == followup.conflict_risks
+        ):
+            return
+
+        followup.expected_files = expected_files
+        followup.expected_globs = expected_globs
+        followup.touched_files = touched_files
+        followup.changed_files = changed_files
+        followup.conflict_risks = conflict_risks
+        self.storage.save_bead(followup)
 
     def _existing_followups_for(
         self,
