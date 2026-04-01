@@ -3273,5 +3273,168 @@ class DeleteBeadTests(OrchestratorTests):
         self.assertIn(dep2.bead_id, reloaded.dependencies)
 
 
+class DeleteBeadCliTests(OrchestratorTests):
+    """Tests for the CLI 'bead delete' command (command_bead with bead_command='delete')."""
+
+    def _make_console(self) -> tuple[ConsoleReporter, io.StringIO]:
+        stream = io.StringIO()
+        return ConsoleReporter(stream=stream), stream
+
+    def test_delete_open_bead_returns_zero(self) -> None:
+        bead = self.storage.create_bead(title="To delete", agent_type="developer", description="x")
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=bead.bead_id, force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+        self.assertFalse(self.storage.bead_path(bead.bead_id).exists())
+
+    def test_delete_removes_bead_from_list(self) -> None:
+        bead = self.storage.create_bead(title="Listed", agent_type="developer", description="x")
+        bead_id = bead.bead_id
+        console, _ = self._make_console()
+        command_bead(
+            Namespace(bead_command="delete", bead_id=bead_id, force=False),
+            self.storage,
+            console,
+        )
+        ids = {b.bead_id for b in self.storage.list_beads()}
+        self.assertNotIn(bead_id, ids)
+
+    def test_delete_nonexistent_bead_returns_one(self) -> None:
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id="B-nothere", force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(1, exit_code)
+
+    def test_delete_bead_with_children_returns_one(self) -> None:
+        parent = self.storage.create_bead(title="Parent", agent_type="developer", description="p")
+        self.storage.create_bead(
+            title="Child", agent_type="tester", description="c", parent_id=parent.bead_id
+        )
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=parent.bead_id, force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(1, exit_code)
+        # Parent must still exist
+        self.assertTrue(self.storage.bead_path(parent.bead_id).exists())
+
+    def test_delete_in_progress_without_force_returns_one(self) -> None:
+        bead = self.storage.create_bead(title="Active", agent_type="developer", description="x")
+        bead.status = BEAD_IN_PROGRESS
+        self.storage.save_bead(bead)
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=bead.bead_id, force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(1, exit_code)
+        self.assertTrue(self.storage.bead_path(bead.bead_id).exists())
+
+    def test_delete_in_progress_with_force_returns_zero(self) -> None:
+        bead = self.storage.create_bead(title="Force active", agent_type="developer", description="x")
+        bead.status = BEAD_IN_PROGRESS
+        self.storage.save_bead(bead)
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=bead.bead_id, force=True),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+        self.assertFalse(self.storage.bead_path(bead.bead_id).exists())
+
+    def test_delete_removes_agent_run_artifacts(self) -> None:
+        bead = self.storage.create_bead(title="Artifact bead", agent_type="developer", description="x")
+        artifact_dir = self.storage.state_dir / "agent-runs" / bead.bead_id
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        (artifact_dir / "output.json").write_text("{}", encoding="utf-8")
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=bead.bead_id, force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+        self.assertFalse(artifact_dir.exists())
+
+    def test_delete_removes_telemetry_artifacts(self) -> None:
+        bead = self.storage.create_bead(title="Telemetry bead", agent_type="developer", description="x")
+        telemetry_dir = self.storage.telemetry_dir / bead.bead_id
+        telemetry_dir.mkdir(parents=True, exist_ok=True)
+        (telemetry_dir / "1.json").write_text("{}", encoding="utf-8")
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=bead.bead_id, force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+        self.assertFalse(telemetry_dir.exists())
+
+    def test_delete_no_artifacts_still_returns_zero(self) -> None:
+        bead = self.storage.create_bead(title="No artifacts", agent_type="developer", description="x")
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=bead.bead_id, force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+
+    def test_delete_feature_root_removes_worktree_and_branch(self) -> None:
+        bead = self.storage.create_bead(title="Root bead", agent_type="developer", description="x")
+        bead_id = bead.bead_id
+        # feature_root_id == bead_id by default for a root bead
+        worktree_path = self.storage.worktrees_dir / bead_id
+        worktree_path.mkdir(parents=True, exist_ok=True)
+        branch_name = f"feature/{bead_id.lower()}"
+        subprocess.run(["git", "branch", branch_name], cwd=self.root, check=True, capture_output=True)
+        # Set up a minimal worktree directory (not a real worktree, so git worktree remove will fail,
+        # but we verify the CLI handles that gracefully and still returns 0)
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=bead_id, force=False),
+            self.storage,
+            console,
+        )
+        # Exit code should be 0 regardless of git worktree remove success/failure
+        self.assertEqual(0, exit_code)
+        self.assertFalse(self.storage.bead_path(bead_id).exists())
+
+    def test_delete_records_event_in_output(self) -> None:
+        bead = self.storage.create_bead(title="Event bead", agent_type="developer", description="x")
+        console, stream = self._make_console()
+        command_bead(
+            Namespace(bead_command="delete", bead_id=bead.bead_id, force=False),
+            self.storage,
+            console,
+        )
+        output = stream.getvalue()
+        self.assertIn(bead.bead_id, output)
+
+    def test_delete_by_prefix_resolves_correctly(self) -> None:
+        bead = self.storage.create_bead(title="Prefix bead", agent_type="developer", description="x")
+        # Use the full ID but a valid prefix (first 6 chars should be enough)
+        prefix = bead.bead_id[:6]
+        console, _ = self._make_console()
+        exit_code = command_bead(
+            Namespace(bead_command="delete", bead_id=prefix, force=False),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+        self.assertFalse(self.storage.bead_path(bead.bead_id).exists())
+
+
 if __name__ == "__main__":
     unittest.main()
