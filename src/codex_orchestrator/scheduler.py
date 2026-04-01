@@ -30,6 +30,7 @@ from .storage import RepositoryStorage
 
 
 REVIEW_TEST_VERDICT_COMPAT_MODE = True
+FOLLOWUP_AGENT_TYPES = ("tester", "documentation", "review")
 
 
 class Scheduler:
@@ -210,19 +211,50 @@ class Scheduler:
         return sorted(children, key=lambda item: item.bead_id)
 
     def _can_plan_corrective(self, bead: Bead) -> bool:
-        if bead.metadata.get("auto_corrective_for"):
-            return False
-        if "-corrective" in bead.bead_id:
+        if self._is_corrective_bead(bead):
             return False
         current = bead
         while current.parent_id:
             parent = self.storage.load_bead(current.parent_id)
-            if parent.metadata.get("auto_corrective_for"):
-                return False
-            if "-corrective" in parent.bead_id:
+            if self._is_corrective_bead(parent):
                 return False
             current = parent
         return True
+
+    def _is_corrective_bead(self, bead: Bead) -> bool:
+        if bead.metadata.get("auto_corrective_for"):
+            return True
+        return f"-{self.corrective_suffix}" in bead.bead_id
+
+    def _requeue_parent_after_corrective_completion(
+        self,
+        bead: Bead,
+        *,
+        reporter: "SchedulerReporter | None" = None,
+    ) -> None:
+        # A corrective developer bead can unblock its blocked tester/review parent
+        # so the original verification pass reruns against the corrective commit.
+        if not self._is_corrective_bead(bead) or bead.agent_type != "developer" or not bead.parent_id:
+            return
+        parent = self.storage.load_bead(bead.parent_id)
+        if parent.status != BEAD_BLOCKED or parent.agent_type not in {"tester", "review"}:
+            return
+        if self._already_retried_after_corrective(parent, bead):
+            return
+        parent.status = BEAD_READY
+        parent.block_reason = ""
+        parent.metadata["last_corrective_retry_source"] = bead.bead_id
+        parent.metadata["last_corrective_retry_commit"] = str(bead.metadata.get("last_commit", ""))
+        self.storage.update_bead(
+            parent,
+            event="retried",
+            summary=f"Requeued blocked bead after corrective bead {bead.bead_id} completed",
+        )
+        if reporter:
+            reporter.bead_deferred(
+                parent,
+                f"Requeued after corrective bead {bead.bead_id} completed",
+            )
 
     def _repair_invalid_worker_agent_type(self, bead: Bead) -> bool:
         if bead.agent_type in self.runnable_reassign_agents:
@@ -269,6 +301,8 @@ class Scheduler:
     def _create_corrective_bead(self, bead: Bead, *, reporter: "SchedulerReporter | None" = None) -> Bead:
         next_agent = bead.handoff_summary.next_agent.strip()
         corrective_agent = next_agent if next_agent in MUTATING_AGENTS else "developer"
+        touched_files = list(bead.touched_files or bead.changed_files or bead.expected_files)
+        changed_files = list(bead.changed_files or touched_files)
         description_parts = []
         if bead.block_reason:
             description_parts.append(f"Blocked reason: {bead.block_reason}")
@@ -295,7 +329,8 @@ class Scheduler:
             execution_worktree_path=bead.execution_worktree_path,
             expected_files=bead.expected_files,
             expected_globs=bead.expected_globs,
-            touched_files=bead.touched_files,
+            touched_files=touched_files,
+            changed_files=changed_files,
             conflict_risks=bead.conflict_risks,
             metadata={"auto_corrective_for": bead.bead_id},
         )
@@ -332,6 +367,7 @@ class Scheduler:
         runner_workdir = Path(workdir)
         execution_env: dict[str, str] | None = None
         feature_root_id = self.storage.feature_root_id_for(bead)
+        self._populate_shared_followup_touched_files(bead)
         bead.status = BEAD_IN_PROGRESS
         bead.lease = Lease(owner=f"{bead.agent_type}:{bead.bead_id}", expires_at=(datetime.now(timezone.utc) + timedelta(minutes=self.lease_timeout_minutes)).isoformat())
         if feature_root_id:
@@ -541,6 +577,9 @@ class Scheduler:
         bead.status = BEAD_DONE
         self.storage.update_bead(bead, event="completed", summary=agent_result.summary)
         self.storage.record_event("bead_completed", {"bead_id": bead.bead_id, "agent_type": bead.agent_type})
+        # Requeue blocked verification parents before creating new followups so
+        # tester/review beads resume instead of spawning duplicate downstream work.
+        self._requeue_parent_after_corrective_completion(bead, reporter=reporter)
         created = self._create_followups(bead, agent_result)
         if reporter:
             reporter.bead_completed(bead, agent_result.summary, created)
@@ -722,7 +761,7 @@ class Scheduler:
         created: list[Bead] = []
         if bead.agent_type != "developer":
             return created
-        if bead.metadata.get("auto_corrective_for"):
+        if self._is_corrective_bead(bead):
             return created
 
         # Propagate model_override from parent to all followup children
@@ -750,15 +789,45 @@ class Scheduler:
                 metadata=child_metadata,
             ))
 
-        test_id = self._existing_or_new_child_id(bead.bead_id, self.followup_suffixes["tester"])
-        doc_id = self._existing_or_new_child_id(bead.bead_id, self.followup_suffixes["documentation"])
-        review_id = self._existing_or_new_child_id(bead.bead_id, self.followup_suffixes["review"])
+        # Planner/feature flows may pre-create shared tester/documentation/review beads
+        # that depend on multiple developer beads in the same feature tree. Reuse those
+        # followups first so the scheduler does not create duplicate auto-followups,
+        # while standalone/manual developer flows still fall back to the legacy
+        # per-developer child-bead creation path below.
+        uses_planner_owned = self._uses_planner_owned_followups(bead)
+        planner_owned_followups = (
+            self._planner_owned_followups_for(bead)
+            if uses_planner_owned
+            else {}
+        )
+        legacy_followups = self._existing_followups_for(bead, include_planner_owned=False)
+        # Reuse planner-owned followups per agent type, but still backfill any
+        # missing followups through the legacy child-bead path.
+        existing_followups = {
+            agent_type: planner_owned_followups.get(agent_type) or legacy_followups[agent_type]
+            for agent_type in FOLLOWUP_AGENT_TYPES
+        }
+        test_bead = existing_followups["tester"]
+        doc_bead = existing_followups["documentation"]
+        review_bead = existing_followups["review"]
+        test_id = test_bead.bead_id if test_bead else self._existing_or_new_child_id(
+            bead.bead_id,
+            self.followup_suffixes["tester"],
+        )
+        doc_id = doc_bead.bead_id if doc_bead else self._existing_or_new_child_id(
+            bead.bead_id,
+            self.followup_suffixes["documentation"],
+        )
+        review_id = review_bead.bead_id if review_bead else self._existing_or_new_child_id(
+            bead.bead_id,
+            self.followup_suffixes["review"],
+        )
 
         followup_metadata: dict = {}
         if parent_model_override:
             followup_metadata["model_override"] = parent_model_override
 
-        if not self.storage.bead_path(test_id).exists():
+        if test_bead is None:
             created.append(self.storage.create_bead(
                 bead_id=test_id,
                 title=f"Test {bead.title}",
@@ -773,10 +842,13 @@ class Scheduler:
                 expected_files=bead.touched_files or bead.expected_files,
                 expected_globs=bead.expected_globs,
                 touched_files=bead.touched_files,
+                changed_files=bead.changed_files,
                 conflict_risks=bead.conflict_risks,
                 metadata=dict(followup_metadata) if followup_metadata else None,
             ))
-        if not self.storage.bead_path(doc_id).exists():
+        else:
+            self._sync_followup_scope(test_bead, bead)
+        if doc_bead is None:
             created.append(self.storage.create_bead(
                 bead_id=doc_id,
                 title=f"Document {bead.title}",
@@ -791,10 +863,13 @@ class Scheduler:
                 expected_files=bead.touched_files or bead.expected_files,
                 expected_globs=bead.expected_globs,
                 touched_files=bead.touched_files,
+                changed_files=bead.changed_files,
                 conflict_risks=bead.conflict_risks,
                 metadata=dict(followup_metadata) if followup_metadata else None,
             ))
-        if not self.storage.bead_path(review_id).exists():
+        else:
+            self._sync_followup_scope(doc_bead, bead)
+        if review_bead is None:
             created.append(self.storage.create_bead(
                 bead_id=review_id,
                 title=f"Review {bead.title}",
@@ -809,10 +884,185 @@ class Scheduler:
                 expected_files=bead.touched_files or bead.expected_files,
                 expected_globs=bead.expected_globs,
                 touched_files=bead.touched_files,
+                changed_files=bead.changed_files,
                 conflict_risks=bead.conflict_risks,
                 metadata=dict(followup_metadata) if followup_metadata else None,
             ))
+        else:
+            self._sync_followup_scope(review_bead, bead)
+            self._sync_followup_dependencies(review_bead, [bead.bead_id, test_id, doc_id])
         return created
+
+    @staticmethod
+    def _merge_unique_items(existing: list[str], incoming: list[str]) -> list[str]:
+        return sorted(dict.fromkeys([*existing, *incoming]))
+
+    @staticmethod
+    def _merge_conflict_risks(existing: str, incoming: str) -> str:
+        if not existing:
+            return incoming
+        if not incoming or incoming == existing:
+            return existing
+        return "\n".join(dict.fromkeys([existing, incoming]))
+
+    def _sync_followup_scope(self, followup: Bead, source: Bead) -> None:
+        expected_files = self._merge_unique_items(
+            followup.expected_files,
+            source.touched_files or source.expected_files,
+        )
+        expected_globs = self._merge_unique_items(followup.expected_globs, source.expected_globs)
+        touched_files = self._merge_unique_items(followup.touched_files, source.touched_files)
+        changed_files = self._merge_unique_items(followup.changed_files, source.changed_files)
+        conflict_risks = self._merge_conflict_risks(followup.conflict_risks, source.conflict_risks)
+
+        if (
+            expected_files == followup.expected_files
+            and expected_globs == followup.expected_globs
+            and touched_files == followup.touched_files
+            and changed_files == followup.changed_files
+            and conflict_risks == followup.conflict_risks
+        ):
+            return
+
+        followup.expected_files = expected_files
+        followup.expected_globs = expected_globs
+        followup.touched_files = touched_files
+        followup.changed_files = changed_files
+        followup.conflict_risks = conflict_risks
+        self.storage.save_bead(followup)
+
+    def _sync_followup_dependencies(self, followup: Bead, dependencies: list[str]) -> None:
+        merged_dependencies = self._merge_unique_items(followup.dependencies, dependencies)
+        if merged_dependencies == followup.dependencies:
+            return
+        followup.dependencies = merged_dependencies
+        self.storage.save_bead(followup)
+
+    def _populate_shared_followup_touched_files(self, bead: Bead) -> None:
+        if bead.agent_type not in FOLLOWUP_AGENT_TYPES:
+            return
+
+        developer_dependencies: list[Bead] = []
+        for dependency_id in bead.dependencies:
+            dependency = self.storage.load_bead(dependency_id)
+            if dependency.agent_type == "developer":
+                developer_dependencies.append(dependency)
+
+        done_dependencies = [
+            dependency for dependency in developer_dependencies
+            if dependency.status == BEAD_DONE
+        ]
+        if len(done_dependencies) < 2:
+            return
+
+        aggregated_touched_files = sorted(
+            {
+                file_path
+                for dependency in done_dependencies
+                for file_path in (
+                    dependency.handoff_summary.touched_files
+                    + dependency.handoff_summary.changed_files
+                )
+                if file_path
+            }
+        )
+        if not aggregated_touched_files:
+            return
+
+        merged_touched_files = self._merge_unique_items(
+            bead.touched_files,
+            aggregated_touched_files,
+        )
+        merged_changed_files = self._merge_unique_items(
+            bead.changed_files,
+            aggregated_touched_files,
+        )
+        if (
+            merged_touched_files == bead.touched_files
+            and merged_changed_files == bead.changed_files
+        ):
+            return
+
+        bead.touched_files = merged_touched_files
+        bead.changed_files = merged_changed_files
+        self.storage.save_bead(bead)
+
+    def _existing_followups_for(
+        self,
+        bead: Bead,
+        *,
+        include_planner_owned: bool = True,
+    ) -> dict[str, Bead | None]:
+        return {
+            agent_type: self._existing_followup_for(
+                bead,
+                agent_type,
+                include_planner_owned=include_planner_owned,
+            )
+            for agent_type in FOLLOWUP_AGENT_TYPES
+        }
+
+    def _planner_owned_followups_for(self, bead: Bead) -> dict[str, Bead | None]:
+        return {
+            agent_type: self._planner_owned_followup(bead, agent_type)
+            for agent_type in FOLLOWUP_AGENT_TYPES
+        }
+
+    def _existing_followup_for(
+        self,
+        bead: Bead,
+        agent_type: str,
+        *,
+        include_planner_owned: bool = True,
+    ) -> Bead | None:
+        if include_planner_owned:
+            explicit = self._planner_owned_followup(bead, agent_type)
+            if explicit is not None:
+                return explicit
+        return self._legacy_followup_child(bead, agent_type)
+
+    def _uses_planner_owned_followups(self, bead: Bead) -> bool:
+        if bead.agent_type != "developer" or not bead.parent_id:
+            return False
+        parent = self.storage.load_bead(bead.parent_id)
+        # Only planner/feature-owned developer subtasks opt into shared followups.
+        # That includes children of an explicit feature bead and children that sit
+        # directly under the feature root in an epic-created feature tree, even if
+        # the root bead was materialized as a normal developer bead.
+        if parent.agent_type == "planner" or parent.bead_type == "feature":
+            return True
+        return self.storage.feature_root_id_for(bead) == parent.bead_id and parent.parent_id is not None
+
+    def _planner_owned_followup(self, bead: Bead, agent_type: str) -> Bead | None:
+        feature_root_id = self.storage.feature_root_id_for(bead)
+        if not feature_root_id:
+            return None
+        legacy_id = f"{bead.bead_id}-{self.followup_suffixes[agent_type]}"
+        # Reuse only feature-root-owned shared followups that already depend on this
+        # developer bead. That keeps scheduler reuse aligned with planner guidance and
+        # avoids treating unrelated nested followups as planner-owned candidates.
+        matches = [
+            candidate for candidate in self.storage.list_beads()
+            if candidate.bead_id != bead.bead_id
+            and candidate.agent_type == agent_type
+            and self.storage.feature_root_id_for(candidate) == feature_root_id
+            and candidate.parent_id == feature_root_id
+            and bead.bead_id in candidate.dependencies
+        ]
+        if not matches:
+            return None
+        matches.sort(key=lambda candidate: (candidate.bead_id == legacy_id, candidate.bead_id))
+        return matches[0]
+
+    def _legacy_followup_child(self, bead: Bead, agent_type: str) -> Bead | None:
+        suffix = self.followup_suffixes[agent_type]
+        expected_id = f"{bead.bead_id}-{suffix}"
+        for candidate in self.storage.list_beads():
+            if candidate.parent_id != bead.bead_id:
+                continue
+            if candidate.bead_id == expected_id and candidate.agent_type == agent_type:
+                return candidate
+        return None
 
     def _existing_or_new_child_id(self, parent_id: str, suffix: str) -> str:
         base = f"{parent_id}-{suffix}"

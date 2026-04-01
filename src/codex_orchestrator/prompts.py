@@ -101,6 +101,7 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
         "expected_files": bead.expected_files,
         "expected_globs": bead.expected_globs,
         "touched_files": bead.touched_files,
+        "changed_files": bead.changed_files,
         "conflict_risks": bead.conflict_risks,
         "handoff_summary": bead.handoff_summary.__dict__,
     }
@@ -140,6 +141,11 @@ def build_planner_prompt(spec_text: str) -> str:
         "Return JSON with keys epic_title, epic_description, linked_docs, and feature. "
         "The feature value must be one top-level non-runnable feature container bead representing the shared execution root for this spec. "
         "Concrete implementation, testing, documentation, and review work must be expressed under feature.children rather than as sibling top-level beads. "
+        "Keep developer implementation beads as small as practical: each developer bead should cover one focused change and fit within roughly 10 minutes of implementation work. "
+        "Split broader logical units into smaller dependent developer beads instead of assigning one bead to absorb multiple distinct changes. "
+        "If a change is likely to touch more than 2-3 functions, span multiple subsystems, or mix unrelated refactors with feature work, break it into smaller dependent beads with explicit ordering. "
+        "When a feature needs multiple related developer beads, coalesce tester, documentation, and review work into shared follow-up beads rather than duplicating that work in each implementation bead. "
+        "Those shared follow-up beads should depend on the full related implementation set they validate, document, or review so the follow-up happens after the combined change is ready. "
         "Every bead in the tree must include title, agent_type, description, acceptance_criteria, dependencies, linked_docs, "
         "expected_files, expected_globs, and children. Dependencies may reference other bead titles anywhere in the same feature tree. "
         "Infer file scope when the spec gives enough signal; otherwise return empty arrays.\n\n"
