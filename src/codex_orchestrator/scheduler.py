@@ -367,6 +367,7 @@ class Scheduler:
         runner_workdir = Path(workdir)
         execution_env: dict[str, str] | None = None
         feature_root_id = self.storage.feature_root_id_for(bead)
+        self._populate_shared_followup_touched_files(bead)
         bead.status = BEAD_IN_PROGRESS
         bead.lease = Lease(owner=f"{bead.agent_type}:{bead.bead_id}", expires_at=(datetime.now(timezone.utc) + timedelta(minutes=self.lease_timeout_minutes)).isoformat())
         if feature_root_id:
@@ -936,6 +937,55 @@ class Scheduler:
             return
         followup.dependencies = merged_dependencies
         self.storage.save_bead(followup)
+
+    def _populate_shared_followup_touched_files(self, bead: Bead) -> None:
+        if bead.agent_type not in FOLLOWUP_AGENT_TYPES:
+            return
+
+        developer_dependencies: list[Bead] = []
+        for dependency_id in bead.dependencies:
+            dependency = self.storage.load_bead(dependency_id)
+            if dependency.agent_type == "developer":
+                developer_dependencies.append(dependency)
+
+        done_dependencies = [
+            dependency for dependency in developer_dependencies
+            if dependency.status == BEAD_DONE
+        ]
+        if len(done_dependencies) < 2:
+            return
+
+        aggregated_touched_files = sorted(
+            {
+                file_path
+                for dependency in done_dependencies
+                for file_path in (
+                    dependency.handoff_summary.touched_files
+                    + dependency.handoff_summary.changed_files
+                )
+                if file_path
+            }
+        )
+        if not aggregated_touched_files:
+            return
+
+        merged_touched_files = self._merge_unique_items(
+            bead.touched_files,
+            aggregated_touched_files,
+        )
+        merged_changed_files = self._merge_unique_items(
+            bead.changed_files,
+            aggregated_touched_files,
+        )
+        if (
+            merged_touched_files == bead.touched_files
+            and merged_changed_files == bead.changed_files
+        ):
+            return
+
+        bead.touched_files = merged_touched_files
+        bead.changed_files = merged_changed_files
+        self.storage.save_bead(bead)
 
     def _existing_followups_for(
         self,
