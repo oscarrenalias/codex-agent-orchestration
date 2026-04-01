@@ -262,6 +262,6 @@ uv run orchestrator bead delete <id> --force  # delete regardless of status
 - The bead must have no children — beads whose `parent_id` matches the deleted bead (raises `ValueError` listing child IDs).
 - Without `--force`, only `open`, `ready`, and `blocked` beads can be deleted. Beads with status `in_progress`, `done`, or `handed_off` require `--force`.
 - Deleting a bead removes its ID from the `dependencies` list of all other beads automatically.
-- When deleting a **feature root** bead (where `feature_root_id == bead_id`), the CLI also removes the associated Git worktree and feature branch (`feature/<bead_id_lowercased>`).
+- When deleting a **feature root** bead (where `feature_root_id == bead_id`), the CLI also removes the associated Git worktree and feature branch (`feature/<bead_id_lowercased>`). If the worktree has uncommitted changes, a warning is printed but removal proceeds (`git worktree remove --force`). Worktree and branch deletion failures are non-fatal: a warning is emitted and the command still exits successfully.
 - The CLI removes artifact directories `.orchestrator/agent-runs/<bead_id>/` and `.orchestrator/telemetry/<bead_id>/` if they exist (non-fatal if absent).
 - After a successful deletion, a `bead_deleted` event (with `bead_id` and `title`) is appended to `.orchestrator/logs/events.jsonl` for audit purposes.
