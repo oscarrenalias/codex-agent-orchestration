@@ -1210,11 +1210,22 @@ class OrchestratorTests(unittest.TestCase):
 
     def test_build_planner_prompt_requires_small_developer_beads_and_shared_followups(self) -> None:
         prompt = build_planner_prompt("Ship the feature")
+        self.assertIn("single focused changes", prompt)
         self.assertIn("roughly 10 minutes of implementation work", prompt)
+        self.assertIn(
+            "Split broader logical units into dependent developer beads instead of assigning one bead to absorb multiple distinct changes.",
+            prompt,
+        )
         self.assertIn("touch more than 2-3 functions", prompt)
         self.assertIn("break it into smaller dependent beads with explicit ordering", prompt)
-        self.assertIn("create shared tester, documentation, and review follow-up beads", prompt)
-        self.assertIn("depend on the full related implementation set", prompt)
+        self.assertIn(
+            "create shared tester, documentation, and review follow-up beads rather than duplicating that work in each implementation bead.",
+            prompt,
+        )
+        self.assertIn(
+            "Those shared follow-up beads should depend on the full related implementation set they validate, document, or review.",
+            prompt,
+        )
 
     def test_worktree_manager_creates_branch_and_directory(self) -> None:
         manager = WorktreeManager(self.root, self.storage.worktrees_dir)
