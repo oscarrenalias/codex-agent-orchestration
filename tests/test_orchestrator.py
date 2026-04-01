@@ -49,6 +49,7 @@ from codex_orchestrator.models import (
 from codex_orchestrator.planner import PlanningService
 from codex_orchestrator.prompts import (
     BUILT_IN_AGENT_TYPES,
+    build_planner_prompt,
     build_worker_prompt,
     guardrail_template_path,
     load_guardrail_template,
@@ -189,6 +190,111 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(["src/app.py"], review_bead.touched_files)
         self.assertEqual("Review final changed files before merge.", review_bead.conflict_risks)
         self.assertTrue(bead.metadata.get("last_commit"))
+
+    def test_scheduler_uses_planner_owned_shared_followups_without_creating_legacy_children(self) -> None:
+        epic = self.storage.create_bead(
+            title="Epic",
+            agent_type="planner",
+            description="root",
+            status=BEAD_DONE,
+            bead_type="epic",
+        )
+        feature = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="feature",
+            parent_id=epic.bead_id,
+            status=BEAD_DONE,
+        )
+        implement_a = self.storage.create_bead(
+            title="Implement A",
+            agent_type="developer",
+            description="first change",
+            parent_id=feature.bead_id,
+            dependencies=[feature.bead_id],
+            expected_files=["src/a.py"],
+        )
+        implement_b = self.storage.create_bead(
+            title="Implement B",
+            agent_type="developer",
+            description="second change",
+            parent_id=feature.bead_id,
+            dependencies=[feature.bead_id],
+            expected_files=["src/b.py"],
+        )
+        shared_dependencies = [implement_a.bead_id, implement_b.bead_id]
+        shared_test = self.storage.create_bead(
+            title="Shared tester",
+            agent_type="tester",
+            description="validate combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=shared_dependencies,
+        )
+        shared_docs = self.storage.create_bead(
+            title="Shared docs",
+            agent_type="documentation",
+            description="document combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=shared_dependencies,
+        )
+        shared_review = self.storage.create_bead(
+            title="Shared review",
+            agent_type="review",
+            description="review combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=shared_dependencies,
+        )
+        runner = FakeRunner(
+            results={
+                implement_a.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="done",
+                    touched_files=["src/a.py"],
+                    changed_files=["src/a.py"],
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+
+        self.assertEqual([implement_a.bead_id], result.completed)
+        bead_ids = {bead.bead_id for bead in self.storage.list_beads()}
+        self.assertNotIn(f"{implement_a.bead_id}-test", bead_ids)
+        self.assertNotIn(f"{implement_a.bead_id}-docs", bead_ids)
+        self.assertNotIn(f"{implement_a.bead_id}-review", bead_ids)
+        self.assertEqual(feature.bead_id, self.storage.load_bead(shared_test.bead_id).parent_id)
+        self.assertEqual(feature.bead_id, self.storage.load_bead(shared_docs.bead_id).parent_id)
+        self.assertEqual(feature.bead_id, self.storage.load_bead(shared_review.bead_id).parent_id)
+
+    def test_scheduler_still_creates_auto_followups_for_standalone_developer_bead(self) -> None:
+        bead = self.storage.create_bead(
+            title="Standalone implement",
+            agent_type="developer",
+            description="single scoped change",
+            expected_files=["src/standalone.py"],
+        )
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="done",
+                    touched_files=["src/standalone.py"],
+                    changed_files=["src/standalone.py"],
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler.run_once()
+
+        test_bead = self.storage.load_bead(f"{bead.bead_id}-test")
+        docs_bead = self.storage.load_bead(f"{bead.bead_id}-docs")
+        review_bead = self.storage.load_bead(f"{bead.bead_id}-review")
+        self.assertEqual(bead.bead_id, test_bead.parent_id)
+        self.assertEqual([bead.bead_id], test_bead.dependencies)
+        self.assertEqual(bead.bead_id, docs_bead.parent_id)
+        self.assertEqual([bead.bead_id], docs_bead.dependencies)
+        self.assertEqual(bead.bead_id, review_bead.parent_id)
+        self.assertEqual([bead.bead_id, test_bead.bead_id, docs_bead.bead_id], review_bead.dependencies)
 
     def test_developer_new_beads_create_subtasks(self) -> None:
         bead = self.storage.create_bead(title="Implement with discovered work", agent_type="developer", description="do work")
@@ -1025,6 +1131,90 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual([implement.bead_id], review.dependencies)
         self.assertEqual(["src/codex_orchestrator/scheduler.py"], implement.expected_files)
         self.assertEqual(["src/codex_orchestrator/*.py"], review.expected_globs)
+
+    def test_planner_writes_shared_followups_at_feature_root_with_multi_bead_dependencies(self) -> None:
+        spec_path = self.root / "spec.md"
+        spec_path.write_text("Feature spec\n", encoding="utf-8")
+        proposal = PlanProposal(
+            epic_title="Epic",
+            epic_description="Parent task",
+            linked_docs=["spec.md"],
+            feature=PlanChild(
+                title="Feature root",
+                agent_type="developer",
+                description="shared execution root",
+                acceptance_criteria=["works"],
+                children=[
+                    PlanChild(
+                        title="Implement A",
+                        agent_type="developer",
+                        description="first focused change",
+                        acceptance_criteria=["works"],
+                        expected_files=["src/a.py"],
+                    ),
+                    PlanChild(
+                        title="Implement B",
+                        agent_type="developer",
+                        description="second focused change",
+                        acceptance_criteria=["works"],
+                        dependencies=["Implement A"],
+                        expected_files=["src/b.py"],
+                    ),
+                    PlanChild(
+                        title="Shared tester",
+                        agent_type="tester",
+                        description="validate combined changes",
+                        acceptance_criteria=["approved"],
+                        dependencies=["Implement A", "Implement B"],
+                    ),
+                    PlanChild(
+                        title="Shared docs",
+                        agent_type="documentation",
+                        description="document combined changes",
+                        acceptance_criteria=["docs updated"],
+                        dependencies=["Implement A", "Implement B"],
+                    ),
+                    PlanChild(
+                        title="Shared review",
+                        agent_type="review",
+                        description="review combined changes",
+                        acceptance_criteria=["approved"],
+                        dependencies=["Implement A", "Implement B", "Shared tester", "Shared docs"],
+                    ),
+                ],
+            ),
+        )
+
+        planner = PlanningService(self.storage, FakeRunner(proposal=proposal))
+        created = planner.write_plan(planner.propose(spec_path))
+
+        self.assertEqual(7, len(created))
+        feature = self.storage.load_bead(created[1])
+        implement_a = self.storage.load_bead(created[2])
+        implement_b = self.storage.load_bead(created[3])
+        shared_test = self.storage.load_bead(created[4])
+        shared_docs = self.storage.load_bead(created[5])
+        shared_review = self.storage.load_bead(created[6])
+        self.assertEqual(feature.bead_id, implement_a.parent_id)
+        self.assertEqual(feature.bead_id, implement_b.parent_id)
+        self.assertEqual(feature.bead_id, shared_test.parent_id)
+        self.assertEqual(feature.bead_id, shared_docs.parent_id)
+        self.assertEqual(feature.bead_id, shared_review.parent_id)
+        self.assertEqual([implement_a.bead_id], implement_b.dependencies)
+        self.assertEqual([implement_a.bead_id, implement_b.bead_id], shared_test.dependencies)
+        self.assertEqual([implement_a.bead_id, implement_b.bead_id], shared_docs.dependencies)
+        self.assertEqual(
+            [implement_a.bead_id, implement_b.bead_id, shared_test.bead_id, shared_docs.bead_id],
+            shared_review.dependencies,
+        )
+
+    def test_build_planner_prompt_requires_small_developer_beads_and_shared_followups(self) -> None:
+        prompt = build_planner_prompt("Ship the feature")
+        self.assertIn("roughly 10 minutes of implementation work", prompt)
+        self.assertIn("touch more than 2-3 functions", prompt)
+        self.assertIn("break it into smaller dependent beads with explicit ordering", prompt)
+        self.assertIn("create shared tester, documentation, and review follow-up beads", prompt)
+        self.assertIn("depend on the full related implementation set", prompt)
 
     def test_worktree_manager_creates_branch_and_directory(self) -> None:
         manager = WorktreeManager(self.root, self.storage.worktrees_dir)
