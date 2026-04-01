@@ -42,7 +42,10 @@ def _plain_value(value: object) -> str:
 
 
 def format_bead_list_plain(beads: list[Bead]) -> str:
-    ordered = sorted(beads, key=lambda bead: bead.bead_id)
+    ordered = sorted(
+        beads,
+        key=lambda bead: (bead.execution_history[0].timestamp if bead.execution_history else "", bead.bead_id),
+    )
     if not ordered:
         return "No beads found."
 
@@ -348,7 +351,7 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         return 0
 
     if args.bead_command == "show":
-        bead = storage.load_bead(args.bead_id)
+        bead = storage.load_bead(storage.resolve_bead_id(args.bead_id))
         console.dump_json(bead.to_dict())
         return 0
 
@@ -369,7 +372,7 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         return 0
 
     if args.bead_command == "update":
-        bead = storage.load_bead(args.bead_id)
+        bead = storage.load_bead(storage.resolve_bead_id(args.bead_id))
         if args.status:
             bead.status = args.status
         if args.description:
@@ -395,7 +398,7 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
 
 
 def command_handoff(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-    bead = storage.load_bead(args.bead_id)
+    bead = storage.load_bead(storage.resolve_bead_id(args.bead_id))
     child_id = storage.allocate_child_bead_id(bead.bead_id, args.to)
     handoff = storage.create_bead(
         bead_id=child_id,
@@ -415,7 +418,7 @@ def command_handoff(args: argparse.Namespace, storage: RepositoryStorage, consol
 
 
 def command_retry(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-    bead = storage.load_bead(args.bead_id)
+    bead = storage.load_bead(storage.resolve_bead_id(args.bead_id))
     bead.status = "ready"
     bead.block_reason = ""
     bead.lease = None
@@ -425,7 +428,7 @@ def command_retry(args: argparse.Namespace, storage: RepositoryStorage, console:
 
 
 def command_merge(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-    bead = storage.load_bead(args.bead_id)
+    bead = storage.load_bead(storage.resolve_bead_id(args.bead_id))
     feature_root = storage.feature_root_bead_for(bead) or bead
     branch_name = (
         feature_root.execution_branch_name
@@ -455,7 +458,14 @@ def _validated_feature_root_id(storage: RepositoryStorage, feature_root_id: str 
 
 
 def command_summary(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-    console.dump_json(storage.summary(feature_root_id=args.feature_root))
+    feature_root_id = None
+    if args.feature_root:
+        try:
+            feature_root_id = storage.resolve_bead_id(args.feature_root)
+        except ValueError as exc:
+            console.error(str(exc))
+            return 1
+    console.dump_json(storage.summary(feature_root_id=feature_root_id))
     return 0
 
 
@@ -480,13 +490,20 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
     reporter = CliSchedulerReporter(console, max_workers=args.max_workers)
     aggregate = {"started": [], "completed": [], "blocked": [], "deferred": [], "correctives_created": []}
     console.section("Scheduler")
-    scope = f", feature_root={args.feature_root}" if args.feature_root else ""
+    feature_root_id = None
+    if args.feature_root:
+        try:
+            feature_root_id = scheduler.storage.resolve_bead_id(args.feature_root)
+        except ValueError as exc:
+            console.error(str(exc))
+            return 1
+    scope = f", feature_root={feature_root_id}" if feature_root_id else ""
     console.info(f"Starting scheduler loop with max_workers={args.max_workers}{scope}")
     try:
         while True:
             result = scheduler.run_once(
                 max_workers=args.max_workers,
-                feature_root_id=args.feature_root,
+                feature_root_id=feature_root_id,
                 reporter=reporter,
             )
             aggregate["started"].extend(result.started)

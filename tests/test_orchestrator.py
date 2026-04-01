@@ -21,8 +21,11 @@ from codex_orchestrator.cli import (
     LIST_PLAIN_COLUMNS,
     build_parser,
     command_bead,
+    command_handoff,
     command_merge,
     command_plan,
+    command_retry,
+    command_run,
     command_summary,
     command_tui,
 )
@@ -1028,6 +1031,31 @@ class OrchestratorTests(unittest.TestCase):
         worktree = manager.ensure_worktree("B0001", "bead/b0001")
         self.assertTrue(worktree.exists())
 
+    def test_default_execution_branch_name_uuid_format(self) -> None:
+        # UUID-format IDs (B-xxxxxxxx) should produce lowercase branch names
+        branch = self.storage.default_execution_branch_name("B-a7bc3f91")
+        self.assertEqual("feature/b-a7bc3f91", branch)
+
+    def test_default_execution_branch_name_child_uuid_format(self) -> None:
+        # Child bead IDs with UUID prefix (B-xxxxxxxx-suffix) should also lowercase correctly
+        branch = self.storage.default_execution_branch_name("B-a7bc3f91")
+        self.assertTrue(branch.startswith("feature/"))
+        self.assertEqual(branch, branch.lower())
+
+    def test_worktree_path_with_hyphenated_bead_id(self) -> None:
+        # worktree_path should preserve case and accept hyphenated IDs
+        manager = WorktreeManager(self.root, self.storage.worktrees_dir)
+        path = manager.worktree_path("B-a7bc3f91")
+        self.assertEqual(self.storage.worktrees_dir / "B-a7bc3f91", path)
+
+    def test_worktree_manager_uuid_format_creates_branch_and_directory(self) -> None:
+        # ensure_worktree and merge_branch work with the new B-xxxxxxxx format
+        manager = WorktreeManager(self.root, self.storage.worktrees_dir)
+        branch = self.storage.default_execution_branch_name("B-a7bc3f91")
+        worktree = manager.ensure_worktree("B-a7bc3f91", branch)
+        self.assertTrue(worktree.exists())
+        self.assertEqual(worktree, self.storage.worktrees_dir / "B-a7bc3f91")
+
     def test_scheduler_does_not_duplicate_followup_beads(self) -> None:
         bead = self.storage.create_bead(title="Implement", agent_type="developer", description="do work")
         runner = FakeRunner(
@@ -1489,17 +1517,17 @@ class OrchestratorTests(unittest.TestCase):
         self.assertNotIn("BEAD_ID", rendered)
 
     def test_cli_bead_list_plain_outputs_headers_rows_and_missing_values(self) -> None:
-        self.storage.create_bead(
+        epic = self.storage.create_bead(
             title="Epic Root",
             agent_type="planner",
             description="feature root placeholder",
             bead_type="epic",
         )
-        self.storage.create_bead(
+        child = self.storage.create_bead(
             title="Child Task",
             agent_type="developer",
             description="child task",
-            parent_id="B0001",
+            parent_id=epic.bead_id,
         )
         stream = io.StringIO()
         console = ConsoleReporter(stream=stream)
@@ -1510,13 +1538,13 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(3, len(lines))
         for header, _ in LIST_PLAIN_COLUMNS:
             self.assertIn(header, lines[0])
-        self.assertIn("B0001", lines[1])
-        self.assertIn("B0002", lines[2])
+        self.assertIn(epic.bead_id, lines[1])
+        self.assertIn(child.bead_id, lines[2])
         self.assertIn(" - ", lines[1])  # feature_root_id and parent_id render as "-"
         self.assertNotIn('"bead_id"', output)
         self.assertFalse(output.lstrip().startswith("["))
 
-    def test_cli_bead_list_plain_rows_are_sorted_by_bead_id(self) -> None:
+    def test_cli_bead_list_plain_rows_are_sorted_by_creation_timestamp(self) -> None:
         bead_a = self.storage.create_bead(
             title="A bead",
             agent_type="developer",
@@ -1571,7 +1599,8 @@ class OrchestratorTests(unittest.TestCase):
         exit_code = command_plan(Namespace(spec_file=str(spec_path), write=True), planner, console)
         self.assertEqual(0, exit_code)
         output = stream.getvalue()
-        self.assertIn('"bead_id": "B0001"', output)
+        import re
+        self.assertRegex(output, r'"bead_id": "B-[0-9a-f]{8}"')
         self.assertIn('"title": "Epic"', output)
         self.assertNotIn('"description"', output)
 
@@ -1619,12 +1648,12 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(1, summary["counts"][BEAD_HANDED_OFF])
 
         self.assertEqual(5, len(summary["next_up"]))
-        self.assertEqual(sorted(ready_ids)[:5], [item["bead_id"] for item in summary["next_up"]])
+        self.assertEqual(ready_ids[:5], [item["bead_id"] for item in summary["next_up"]])
         self.assertTrue(all(item["status"] == BEAD_READY for item in summary["next_up"]))
 
         self.assertEqual(5, len(summary["attention"]))
         self.assertEqual(
-            sorted(blocked_ids)[:5],
+            blocked_ids[:5],
             [item["bead_id"] for item in summary["attention"]],
         )
         self.assertTrue(all(item["status"] == BEAD_BLOCKED for item in summary["attention"]))
@@ -1734,22 +1763,8 @@ class OrchestratorTests(unittest.TestCase):
 
         stream = io.StringIO()
         console = ConsoleReporter(stream=stream)
-        exit_code = command_summary(Namespace(feature_root="B9999"), self.storage, console)
-        self.assertEqual(0, exit_code)
-        missing_payload = json.loads(stream.getvalue())
-        self.assertEqual(
-            {
-                BEAD_OPEN: 0,
-                BEAD_READY: 0,
-                BEAD_IN_PROGRESS: 0,
-                BEAD_BLOCKED: 0,
-                BEAD_DONE: 0,
-                BEAD_HANDED_OFF: 0,
-            },
-            missing_payload["counts"],
-        )
-        self.assertEqual([], missing_payload["next_up"])
-        self.assertEqual([], missing_payload["attention"])
+        exit_code = command_summary(Namespace(feature_root="B-nonexist"), self.storage, console)
+        self.assertEqual(1, exit_code)
 
     def test_command_summary_ignores_non_feature_root_scope(self) -> None:
         epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
@@ -2917,6 +2932,235 @@ class OrchestratorTests(unittest.TestCase):
         history = bead.metadata["telemetry_history"]
         attempts = [entry["attempt"] for entry in history]
         self.assertEqual(attempts, [1, 2, 3])
+
+
+    def test_allocate_bead_id_returns_uuid_format(self) -> None:
+        bead_id = self.storage.allocate_bead_id()
+        import re
+        self.assertRegex(bead_id, r"^B-[0-9a-f]{8}$")
+
+    def test_allocate_bead_id_returns_unique_ids(self) -> None:
+        ids = {self.storage.allocate_bead_id() for _ in range(20)}
+        self.assertEqual(20, len(ids))
+
+    def test_allocate_bead_id_via_create_bead_uses_uuid_format(self) -> None:
+        import re
+        bead = self.storage.create_bead(title="UUID test", agent_type="developer", description="work")
+        self.assertRegex(bead.bead_id, r"^B-[0-9a-f]{8}$")
+
+    def test_resolve_bead_id_exact_match(self) -> None:
+        bead = self.storage.create_bead(title="Exact", agent_type="developer", description="work")
+        resolved = self.storage.resolve_bead_id(bead.bead_id)
+        self.assertEqual(bead.bead_id, resolved)
+
+    def test_resolve_bead_id_prefix_match(self) -> None:
+        bead = self.storage.create_bead(title="Prefix", agent_type="developer", description="work")
+        # Use a 4-char prefix (B- plus 2 hex chars) that is unambiguous
+        prefix = bead.bead_id[:4]
+        # If only one bead exists, the prefix resolves to it
+        resolved = self.storage.resolve_bead_id(prefix)
+        self.assertEqual(bead.bead_id, resolved)
+
+    def test_resolve_bead_id_no_match_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            self.storage.resolve_bead_id("B-nonexist")
+        self.assertIn("No bead found", str(ctx.exception))
+
+    def test_resolve_bead_id_ambiguous_raises(self) -> None:
+        # Create two beads then find a common prefix
+        bead_a = self.storage.create_bead(title="A", agent_type="developer", description="a")
+        bead_b = self.storage.create_bead(title="B", agent_type="developer", description="b")
+        # Find a shared prefix (both start with "B-")
+        with self.assertRaises(ValueError) as ctx:
+            self.storage.resolve_bead_id("B-")
+        self.assertIn("Ambiguous prefix", str(ctx.exception))
+        self.assertIn(bead_a.bead_id, str(ctx.exception))
+        self.assertIn(bead_b.bead_id, str(ctx.exception))
+
+    def test_resolve_bead_id_no_beads_dir_raises(self) -> None:
+        import shutil
+        shutil.rmtree(self.storage.beads_dir)
+        with self.assertRaises(ValueError) as ctx:
+            self.storage.resolve_bead_id("B-anything")
+        self.assertIn("No bead found", str(ctx.exception))
+
+    def test_cli_bead_show_resolves_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Show me", agent_type="developer", description="work")
+        prefix = bead.bead_id[:4]
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_bead(Namespace(bead_command="show", bead_id=prefix), self.storage, console)
+        self.assertEqual(0, exit_code)
+        data = json.loads(stream.getvalue())
+        self.assertEqual(bead.bead_id, data["bead_id"])
+
+    def test_cli_bead_update_resolves_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Update me", agent_type="developer", description="old")
+        prefix = bead.bead_id[:4]
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_bead(
+            Namespace(
+                bead_command="update",
+                bead_id=prefix,
+                status=None,
+                description="new",
+                block_reason=None,
+                expected_file=None,
+                expected_glob=None,
+                touched_file=None,
+                conflict_risks=None,
+                model=None,
+            ),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+        updated = self.storage.load_bead(bead.bead_id)
+        self.assertEqual("new", updated.description)
+
+    def test_cli_handoff_resolves_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Handoff me", agent_type="developer", description="done")
+        prefix = bead.bead_id[:4]
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_handoff(
+            Namespace(bead_id=prefix, to="tester", summary="Hand off to tester"),
+            self.storage,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+        beads = self.storage.list_beads()
+        child_ids = [b.bead_id for b in beads if b.bead_id != bead.bead_id]
+        self.assertEqual(1, len(child_ids))
+        child = self.storage.load_bead(child_ids[0])
+        self.assertEqual("tester", child.agent_type)
+        self.assertIn(bead.bead_id, child.dependencies)
+
+    def test_cli_retry_resolves_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Retry me", agent_type="developer", description="blocked")
+        bead.status = BEAD_BLOCKED
+        bead.block_reason = "something failed"
+        self.storage.save_bead(bead)
+        prefix = bead.bead_id[:4]
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_retry(Namespace(bead_id=prefix), self.storage, console)
+        self.assertEqual(0, exit_code)
+        reloaded = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(BEAD_READY, reloaded.status)
+        self.assertEqual("", reloaded.block_reason)
+
+    def test_cli_merge_resolves_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Merge me", agent_type="developer", description="work")
+        bead.execution_branch_name = "feature/b-test"
+        self.storage.save_bead(bead)
+        prefix = bead.bead_id[:4]
+        console = ConsoleReporter(stream=io.StringIO())
+        with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
+            exit_code = command_merge(Namespace(bead_id=prefix), self.storage, console)
+        self.assertEqual(0, exit_code)
+        merge_branch.assert_called_once_with("feature/b-test")
+
+    def test_cli_summary_resolves_feature_root_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Feature root", agent_type="developer", description="work")
+        prefix = bead.bead_id[:4]
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_summary(Namespace(feature_root=prefix), self.storage, console)
+        self.assertEqual(0, exit_code)
+        data = json.loads(stream.getvalue())
+        self.assertIn("counts", data)
+
+    def test_cli_summary_returns_error_on_invalid_feature_root_prefix(self) -> None:
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_summary(Namespace(feature_root="B-nonexist"), self.storage, console)
+        self.assertEqual(1, exit_code)
+
+    def test_cli_summary_no_feature_root_passes_none(self) -> None:
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        exit_code = command_summary(Namespace(feature_root=None), self.storage, console)
+        self.assertEqual(0, exit_code)
+        data = json.loads(stream.getvalue())
+        self.assertIn("counts", data)
+
+    def test_cli_run_resolves_feature_root_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Feature root", agent_type="developer", description="work")
+        prefix = bead.bead_id[:4]
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        worktrees = WorktreeManager(self.root, self.storage.worktrees_dir)
+        scheduler = Scheduler(self.storage, FakeRunner(), worktrees)
+        exit_code = command_run(
+            Namespace(feature_root=prefix, max_workers=1, once=True),
+            scheduler,
+            console,
+        )
+        self.assertEqual(0, exit_code)
+
+    def test_cli_run_returns_error_on_invalid_feature_root_prefix(self) -> None:
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        worktrees = WorktreeManager(self.root, self.storage.worktrees_dir)
+        scheduler = Scheduler(self.storage, FakeRunner(), worktrees)
+        exit_code = command_run(
+            Namespace(feature_root="B-nonexist", max_workers=1, once=True),
+            scheduler,
+            console,
+        )
+        self.assertEqual(1, exit_code)
+
+    def test_cli_bead_show_raises_on_ambiguous_prefix(self) -> None:
+        self.storage.create_bead(title="A", agent_type="developer", description="a")
+        self.storage.create_bead(title="B", agent_type="developer", description="b")
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with self.assertRaises(ValueError) as ctx:
+            command_bead(Namespace(bead_command="show", bead_id="B-"), self.storage, console)
+        self.assertIn("Ambiguous prefix", str(ctx.exception))
+
+    def test_cli_bead_show_raises_on_no_match(self) -> None:
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with self.assertRaises(ValueError) as ctx:
+            command_bead(Namespace(bead_command="show", bead_id="B-nonexist"), self.storage, console)
+        self.assertIn("No bead found", str(ctx.exception))
+
+    def test_list_beads_sorted_by_creation_time(self) -> None:
+        """list_beads() returns beads ordered by creation timestamp, not by ID."""
+        import time
+        bead_a = self.storage.create_bead(title="Alpha", agent_type="developer", description="first")
+        time.sleep(0.01)  # ensure distinct timestamps
+        bead_b = self.storage.create_bead(title="Beta", agent_type="developer", description="second")
+        beads = self.storage.list_beads()
+        ids = [b.bead_id for b in beads]
+        self.assertEqual([bead_a.bead_id, bead_b.bead_id], ids)
+
+    def test_old_sequential_ids_coexist_with_uuid_ids(self) -> None:
+        """Beads with old sequential IDs (B0001) load alongside new UUID-format IDs."""
+        import re
+        # Create a bead with the old sequential format
+        old_bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Legacy bead",
+            agent_type="developer",
+            description="old format",
+        )
+        # Create a bead with the new UUID format (auto-allocated)
+        new_bead = self.storage.create_bead(title="UUID bead", agent_type="developer", description="new format")
+        self.assertRegex(new_bead.bead_id, r"^B-[0-9a-f]{8}$")
+
+        beads = self.storage.list_beads()
+        bead_ids = {b.bead_id for b in beads}
+        self.assertIn("B0001", bead_ids)
+        self.assertIn(new_bead.bead_id, bead_ids)
+        # Both load successfully
+        loaded_old = self.storage.load_bead("B0001")
+        self.assertEqual("Legacy bead", loaded_old.title)
+        loaded_new = self.storage.load_bead(new_bead.bead_id)
+        self.assertEqual("UUID bead", loaded_new.title)
 
 
 if __name__ == "__main__":

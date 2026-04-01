@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -94,7 +95,13 @@ class RepositoryStorage:
 
     def load_bead(self, bead_id: str) -> Bead:
         path = self.bead_path(bead_id)
+
+        # check if the file exists and was loaded
+        if not path.exists():
+            raise ValueError(f"Bead not found: {bead_id}")
+
         raw = path.read_text(encoding="utf-8")
+
         if not raw.strip():
             raise ValueError(f"Bead file is empty: {path}")
         try:
@@ -103,22 +110,65 @@ class RepositoryStorage:
             raise ValueError(f"Invalid bead JSON in {path}: {exc}") from exc
         return Bead.from_dict(payload)
 
+    def resolve_bead_id(self, prefix: str) -> str:
+        """Resolve a bead ID prefix to a full bead ID.
+
+        Returns the full bead ID if exactly one bead matches the prefix.
+        Raises ValueError on no match or ambiguous (multiple) matches.
+        """
+        if self.bead_path(prefix).exists():
+            return prefix
+        if not self.beads_dir.exists():
+            raise ValueError(f"No bead found matching prefix '{prefix}'")
+        matches = [
+            path.stem for path in self.beads_dir.glob("*.json")
+            if path.stem.startswith(prefix)
+        ]
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) == 0:
+            raise ValueError(f"No bead found matching prefix '{prefix}'")
+        matches.sort()
+        match_list = ", ".join(matches)
+        raise ValueError(
+            f"Ambiguous prefix '{prefix}' matches {len(matches)} beads: {match_list}"
+        )
+
+    @staticmethod
+    def _bead_sort_key(bead: Bead) -> tuple[str, str]:
+        """Sort by creation timestamp (first execution_history entry), falling back to bead_id."""
+        if bead.execution_history:
+            return (bead.execution_history[0].timestamp, bead.bead_id)
+        return ("", bead.bead_id)
+
     def list_beads(self) -> list[Bead]:
         if not self.beads_dir.exists():
             return []
         beads = [self.load_bead(path.stem) for path in sorted(self.beads_dir.glob("*.json"))]
-        return sorted(beads, key=lambda bead: bead.bead_id)
+        return sorted(beads, key=self._bead_sort_key)
 
     def allocate_bead_id(self) -> str:
+        """Allocate a new bead ID using UUID format.
+
+        Returns a bead ID of the form B-{first 8 hex chars of UUID}.
+        """
         self.initialize()
-        numbers: list[int] = []
-        for path in self.beads_dir.glob("B*.json"):
-            stem = path.stem
-            if stem.startswith("B") and stem[1:].isdigit():
-                numbers.append(int(stem[1:]))
-        return f"B{(max(numbers) + 1) if numbers else 1:04d}"
+        return f"B-{uuid.uuid4().hex[:8]}"
 
     def allocate_child_bead_id(self, parent_id: str, suffix: str) -> str:
+        """Allocate a child bead ID given a parent ID and suffix.
+
+        Generates an ID by appending the suffix to the parent ID with a hyphen.
+        If a bead with that ID already exists, appends a numeric index (e.g., -2, -3)
+        to ensure uniqueness.
+
+        Args:
+            parent_id: The parent bead ID (e.g., 'B-a7bc3f91').
+            suffix: A short suffix identifying the bead type (e.g., 'test', 'docs', 'review').
+
+        Returns:
+            A unique child bead ID (e.g., 'B-a7bc3f91-test' or 'B-a7bc3f91-test-2').
+        """
         candidate = f"{parent_id}-{suffix}"
         if not self.bead_path(candidate).exists():
             return candidate
@@ -247,7 +297,7 @@ class RepositoryStorage:
                 continue
             if self.dependency_satisfied(bead):
                 ready.append(bead)
-        return sorted(ready, key=lambda item: item.bead_id)
+        return sorted(ready, key=self._bead_sort_key)
 
     def record_event(self, event_type: str, payload: dict) -> None:
         self.initialize()
@@ -334,9 +384,35 @@ class RepositoryStorage:
         self.save_bead(bead)
 
     def default_execution_branch_name(self, feature_root_id: str) -> str:
+        """Generate a Git branch name from a feature root ID.
+
+        Converts the feature root ID to lowercase to comply with Git branch naming
+        conventions while preserving the hyphenated UUID format.
+
+        Args:
+            feature_root_id: The bead ID serving as the feature root (e.g., 'B-a7bc3f91').
+
+        Returns:
+            A lowercased branch name (e.g., 'feature/b-a7bc3f91').
+        """
         return f"feature/{feature_root_id.lower()}"
 
     def feature_root_id_for(self, bead: Bead) -> str | None:
+        """Determine the feature root ID for a given bead.
+
+        Walks up the bead hierarchy to find the root bead that serves as the feature root.
+        - If the bead has an explicit feature_root_id, returns it.
+        - If the bead is a child of a non-epic bead, traverses to the root bead of that chain.
+        - If the bead is a child of an epic, returns the bead's own ID (it's the root).
+        - If the bead is itself an epic with no parent, returns None (epics have no feature root).
+
+        Args:
+            bead: The bead to find the feature root for.
+
+        Returns:
+            The feature root bead ID (which is used for branch naming and worktree paths),
+            or None if the bead is an epic.
+        """
         if bead.feature_root_id:
             return bead.feature_root_id
         current = bead
@@ -381,8 +457,8 @@ class RepositoryStorage:
 
         return {
             "counts": counts,
-            "next_up": [self._summary_item(bead) for bead in sorted(ready, key=lambda item: item.bead_id)[:5]],
-            "attention": [self._summary_item(bead, include_block_reason=True) for bead in sorted(blocked, key=lambda item: item.bead_id)[:5]],
+            "next_up": [self._summary_item(bead) for bead in sorted(ready, key=self._bead_sort_key)[:5]],
+            "attention": [self._summary_item(bead, include_block_reason=True) for bead in sorted(blocked, key=self._bead_sort_key)[:5]],
         }
 
     def _summary_item(self, bead: Bead, *, include_block_reason: bool = False) -> dict:

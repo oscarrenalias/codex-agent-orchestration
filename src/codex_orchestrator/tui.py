@@ -137,6 +137,12 @@ def load_beads(
     filter_mode: str = FILTER_DEFAULT,
     feature_root_id: str | None = None,
 ) -> list[Bead]:
+    """Load and filter beads, sorted by creation timestamp.
+
+    Beads are sorted by the timestamp of their first execution_history entry,
+    falling back to bead_id on tie. This ensures consistent ordering independent
+    of ID generation strategy (e.g., UUID-based IDs that don't sort chronologically).
+    """
     beads = storage.list_beads()
     feature_root_bead: Bead | None = None
     if feature_root_id:
@@ -149,7 +155,7 @@ def load_beads(
         bead for bead in beads
         if bead_matches_filter(bead, filter_mode) or (feature_root_bead is not None and bead.bead_id == feature_root_id)
     ]
-    return sorted(filtered, key=lambda bead: bead.bead_id)
+    return sorted(filtered, key=lambda bead: (bead.execution_history[0].timestamp if bead.execution_history else "", bead.bead_id))
 
 
 def collect_tree_rows(
@@ -162,7 +168,13 @@ def collect_tree_rows(
 
 
 def build_tree_rows(beads: Iterable[Bead]) -> list[TreeRow]:
-    bead_list = sorted(beads, key=lambda bead: bead.bead_id)
+    """Build tree rows from beads, sorted by creation timestamp within each level.
+
+    Beads are sorted by the timestamp of their first execution_history entry,
+    falling back to bead_id on tie. Parent-child relationships are preserved,
+    and siblings within each level are also sorted by creation timestamp.
+    """
+    bead_list = sorted(beads, key=lambda bead: (bead.execution_history[0].timestamp if bead.execution_history else "", bead.bead_id))
     bead_map = {bead.bead_id: bead for bead in bead_list}
     children_by_parent: dict[str | None, list[Bead]] = {}
     for bead in bead_list:
@@ -171,7 +183,7 @@ def build_tree_rows(beads: Iterable[Bead]) -> list[TreeRow]:
 
     rows: list[TreeRow] = []
     for siblings in children_by_parent.values():
-        siblings.sort(key=lambda bead: bead.bead_id)
+        siblings.sort(key=lambda bead: (bead.execution_history[0].timestamp if bead.execution_history else "", bead.bead_id))
 
     def visit(parent_id: str | None, depth: int) -> None:
         for bead in children_by_parent.get(parent_id, []):
