@@ -378,8 +378,8 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         return 0
 
     if args.bead_command == "delete":
-        bead_id = storage.resolve_bead_id(args.bead_id)
         try:
+            bead_id = storage.resolve_bead_id(args.bead_id)
             bead = storage.delete_bead(bead_id, force=args.force)
         except ValueError as exc:
             console.error(str(exc))
