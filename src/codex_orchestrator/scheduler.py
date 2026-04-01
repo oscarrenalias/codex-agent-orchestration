@@ -885,6 +885,7 @@ class Scheduler:
             ))
         else:
             self._sync_followup_scope(review_bead, bead)
+            self._sync_followup_dependencies(review_bead, [bead.bead_id, test_id, doc_id])
         return created
 
     @staticmethod
@@ -923,6 +924,13 @@ class Scheduler:
         followup.touched_files = touched_files
         followup.changed_files = changed_files
         followup.conflict_risks = conflict_risks
+        self.storage.save_bead(followup)
+
+    def _sync_followup_dependencies(self, followup: Bead, dependencies: list[str]) -> None:
+        merged_dependencies = self._merge_unique_items(followup.dependencies, dependencies)
+        if merged_dependencies == followup.dependencies:
+            return
+        followup.dependencies = merged_dependencies
         self.storage.save_bead(followup)
 
     def _existing_followups_for(
