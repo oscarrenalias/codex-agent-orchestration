@@ -757,15 +757,24 @@ class Scheduler:
         # while standalone/manual developer flows still fall back to the legacy
         # per-developer child-bead creation path below.
         uses_planner_owned = self._uses_planner_owned_followups(bead)
-        existing_followups = self._existing_followups_for(
-            bead,
-            include_planner_owned=uses_planner_owned,
+        planner_owned_followups = (
+            self._existing_followups_for(bead, include_planner_owned=True)
+            if uses_planner_owned
+            else {}
         )
+        # Planner-created feature trees may pre-seed shared followups at the
+        # feature root. Once any of those shared followups exist for this
+        # developer bead, do not backfill legacy per-developer children.
         if uses_planner_owned and any(
             followup is not None and followup.parent_id != bead.bead_id
-            for followup in existing_followups.values()
+            for followup in planner_owned_followups.values()
         ):
             return created
+        existing_followups = (
+            planner_owned_followups
+            if planner_owned_followups
+            else self._existing_followups_for(bead, include_planner_owned=False)
+        )
         test_bead = existing_followups["tester"]
         doc_bead = existing_followups["documentation"]
         review_bead = existing_followups["review"]
