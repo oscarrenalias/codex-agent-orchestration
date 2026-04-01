@@ -264,3 +264,4 @@ uv run orchestrator bead delete <id> --force  # delete regardless of status
 - Deleting a bead removes its ID from the `dependencies` list of all other beads automatically.
 - When deleting a **feature root** bead (where `feature_root_id == bead_id`), the CLI also removes the associated Git worktree and feature branch (`feature/<bead_id_lowercased>`).
 - The CLI removes artifact directories `.orchestrator/agent-runs/<bead_id>/` and `.orchestrator/telemetry/<bead_id>/` if they exist (non-fatal if absent).
+- After a successful deletion, a `bead_deleted` event (with `bead_id` and `title`) is appended to `.orchestrator/logs/events.jsonl` for audit purposes.
