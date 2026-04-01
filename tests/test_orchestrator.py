@@ -266,6 +266,82 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(feature.bead_id, self.storage.load_bead(shared_docs.bead_id).parent_id)
         self.assertEqual(feature.bead_id, self.storage.load_bead(shared_review.bead_id).parent_id)
 
+    def test_scheduler_prefers_planner_owned_shared_followups_over_legacy_child_ids(self) -> None:
+        epic = self.storage.create_bead(
+            title="Epic",
+            agent_type="planner",
+            description="root",
+            status=BEAD_DONE,
+            bead_type="epic",
+        )
+        feature = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="feature",
+            parent_id=epic.bead_id,
+            status=BEAD_DONE,
+        )
+        implement = self.storage.create_bead(
+            title="Implement A",
+            agent_type="developer",
+            description="first change",
+            parent_id=feature.bead_id,
+            dependencies=[feature.bead_id],
+            expected_files=["src/a.py"],
+        )
+        shared_test = self.storage.create_bead(
+            title="Shared tester",
+            agent_type="tester",
+            description="validate combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=[implement.bead_id],
+        )
+        shared_docs = self.storage.create_bead(
+            title="Shared docs",
+            agent_type="documentation",
+            description="document combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=[implement.bead_id],
+        )
+        shared_review = self.storage.create_bead(
+            title="Shared review",
+            agent_type="review",
+            description="review combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=[implement.bead_id, shared_test.bead_id, shared_docs.bead_id],
+        )
+        self.storage.create_bead(
+            bead_id=f"{implement.bead_id}-test",
+            title="Legacy tester",
+            agent_type="tester",
+            description="legacy followup",
+            parent_id=implement.bead_id,
+            dependencies=[implement.bead_id],
+        )
+        self.storage.create_bead(
+            bead_id=f"{implement.bead_id}-docs",
+            title="Legacy docs",
+            agent_type="documentation",
+            description="legacy followup",
+            parent_id=implement.bead_id,
+            dependencies=[implement.bead_id],
+        )
+        self.storage.create_bead(
+            bead_id=f"{implement.bead_id}-review",
+            title="Legacy review",
+            agent_type="review",
+            description="legacy followup",
+            parent_id=implement.bead_id,
+            dependencies=[implement.bead_id],
+        )
+
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        followups = scheduler._existing_followups_for(implement, include_planner_owned=True)
+
+        self.assertEqual(shared_test.bead_id, followups["tester"].bead_id)
+        self.assertEqual(shared_docs.bead_id, followups["documentation"].bead_id)
+        self.assertEqual(shared_review.bead_id, followups["review"].bead_id)
+
     def test_scheduler_still_creates_auto_followups_for_standalone_developer_bead(self) -> None:
         bead = self.storage.create_bead(
             title="Standalone implement",
