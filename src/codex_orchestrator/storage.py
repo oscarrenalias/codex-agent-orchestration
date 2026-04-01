@@ -270,6 +270,12 @@ class RepositoryStorage:
             )
 
         self.bead_path(bead_id).unlink()
+
+        for other in self.list_beads():
+            if bead_id in other.dependencies:
+                other.dependencies = [d for d in other.dependencies if d != bead_id]
+                self.save_bead(other)
+
         return bead
 
     def update_bead(self, bead: Bead, *, event: str | None = None, summary: str = "") -> None:

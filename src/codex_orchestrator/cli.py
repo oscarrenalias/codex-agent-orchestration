@@ -180,6 +180,10 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument("--conflict-risks")
     update_parser.add_argument("--model", help="Set per-bead model override (metadata.model_override)")
 
+    delete_parser = bead_subparsers.add_parser("delete")
+    delete_parser.add_argument("bead_id")
+    delete_parser.add_argument("--force", action="store_true", help="Bypass status check")
+
     list_parser = bead_subparsers.add_parser("list")
     list_parser.add_argument("--plain", action="store_true")
     claims_parser = bead_subparsers.add_parser("claims")
@@ -369,6 +373,17 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
             console.emit(format_claims_plain(claims))
         else:
             console.dump_json(claims)
+        return 0
+
+    if args.bead_command == "delete":
+        bead_id = storage.resolve_bead_id(args.bead_id)
+        try:
+            bead = storage.delete_bead(bead_id, force=args.force)
+        except ValueError as exc:
+            console.error(str(exc))
+            return 1
+        storage.record_event("bead_deleted", {"bead_id": bead.bead_id, "title": bead.title})
+        console.success(f"Deleted bead {bead.bead_id}")
         return 0
 
     if args.bead_command == "update":
