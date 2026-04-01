@@ -751,7 +751,10 @@ class Scheduler:
                 metadata=child_metadata,
             ))
 
-        existing_followups = self._existing_followups_for(bead)
+        existing_followups = self._existing_followups_for(
+            bead,
+            include_planner_owned=self._uses_planner_owned_followups(bead),
+        )
         test_bead = existing_followups["tester"]
         doc_bead = existing_followups["documentation"]
         review_bead = existing_followups["review"]
@@ -828,17 +831,39 @@ class Scheduler:
             ))
         return created
 
-    def _existing_followups_for(self, bead: Bead) -> dict[str, Bead | None]:
+    def _existing_followups_for(
+        self,
+        bead: Bead,
+        *,
+        include_planner_owned: bool = True,
+    ) -> dict[str, Bead | None]:
         return {
-            agent_type: self._existing_followup_for(bead, agent_type)
+            agent_type: self._existing_followup_for(
+                bead,
+                agent_type,
+                include_planner_owned=include_planner_owned,
+            )
             for agent_type in FOLLOWUP_AGENT_TYPES
         }
 
-    def _existing_followup_for(self, bead: Bead, agent_type: str) -> Bead | None:
-        explicit = self._planner_owned_followup(bead, agent_type)
-        if explicit is not None:
-            return explicit
+    def _existing_followup_for(
+        self,
+        bead: Bead,
+        agent_type: str,
+        *,
+        include_planner_owned: bool = True,
+    ) -> Bead | None:
+        if include_planner_owned:
+            explicit = self._planner_owned_followup(bead, agent_type)
+            if explicit is not None:
+                return explicit
         return self._legacy_followup_child(bead, agent_type)
+
+    def _uses_planner_owned_followups(self, bead: Bead) -> bool:
+        if bead.agent_type != "developer" or not bead.parent_id:
+            return False
+        parent = self.storage.load_bead(bead.parent_id)
+        return parent.agent_type == "planner" or parent.bead_type == "feature"
 
     def _planner_owned_followup(self, bead: Bead, agent_type: str) -> Bead | None:
         feature_root_id = self.storage.feature_root_id_for(bead)
