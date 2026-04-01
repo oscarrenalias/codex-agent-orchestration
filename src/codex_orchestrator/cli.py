@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 from dataclasses import asdict
 from pathlib import Path
@@ -385,6 +386,15 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
             return 1
         storage.record_event("bead_deleted", {"bead_id": bead.bead_id, "title": bead.title})
         console.success(f"Deleted bead {bead.bead_id}")
+        for artifact_dir in (
+            storage.state_dir / "agent-runs" / bead.bead_id,
+            storage.telemetry_dir / bead.bead_id,
+        ):
+            if artifact_dir.exists():
+                shutil.rmtree(artifact_dir)
+                console.detail(f"Removed {artifact_dir}")
+            else:
+                console.detail(f"No artifact directory at {artifact_dir}")
         if bead.feature_root_id == bead.bead_id:
             worktree_path = storage.worktrees_dir / bead.bead_id
             if worktree_path.exists():

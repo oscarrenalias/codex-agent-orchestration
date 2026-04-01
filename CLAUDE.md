@@ -252,4 +252,14 @@ uv run orchestrator bead show <id>          # single bead details (JSON)
 uv run orchestrator bead list --plain       # all beads as table
 uv run orchestrator summary                 # counts + next actionable beads
 uv run orchestrator summary --feature-root <id>  # scoped to a feature
+uv run orchestrator bead delete <id>        # delete a bead (open/ready/blocked only)
+uv run orchestrator bead delete <id> --force  # delete regardless of status
 ```
+
+**Deleting beads**: `bead delete` removes a bead and its JSON file. Safety rules enforced by `RepositoryStorage.delete_bead()`:
+
+- The bead must exist (raises `ValueError` otherwise).
+- The bead must have no children — beads whose `parent_id` matches the deleted bead (raises `ValueError` listing child IDs).
+- Without `--force`, only `open`, `ready`, and `blocked` beads can be deleted. Beads with status `in_progress`, `done`, or `handed_off` require `--force`.
+- Deleting a bead removes its ID from the `dependencies` list of all other beads automatically.
+- When deleting a **feature root** bead (where `feature_root_id == bead_id`), the CLI also removes the associated Git worktree and feature branch (`feature/<bead_id_lowercased>`).
