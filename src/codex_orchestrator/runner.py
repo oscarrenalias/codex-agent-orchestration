@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -11,6 +12,15 @@ from pathlib import Path
 from .config import BackendConfig, OrchestratorConfig, default_config
 from .models import AgentRunResult, Bead, PlanChild, PlanProposal
 from .prompts import build_planner_prompt, build_worker_prompt
+
+
+_MARKDOWN_CODE_FENCE = re.compile(r'^\s*```(?:json)?\s*\n?(.*?)\n?\s*```\s*$', re.DOTALL)
+
+
+def _strip_code_fence(text: str) -> str:
+    """Strip a single markdown code fence (```json ... ```) if present."""
+    m = _MARKDOWN_CODE_FENCE.match(text.strip())
+    return m.group(1) if m else text
 
 
 AGENT_OUTPUT_SCHEMA = {
@@ -332,7 +342,7 @@ class ClaudeCodeAgentRunner(AgentRunner):
         result_text = response.get("result", "")
         if result_text:
             try:
-                return json.loads(result_text), response
+                return json.loads(_strip_code_fence(result_text)), response
             except json.JSONDecodeError:
                 pass
         # Schema enforcement can fail on long agentic runs where the agent produces
@@ -422,7 +432,7 @@ class ClaudeCodeAgentRunner(AgentRunner):
         result_text = response.get("result", "")
         if result_text:
             try:
-                return json.loads(result_text), response
+                return json.loads(_strip_code_fence(result_text)), response
             except json.JSONDecodeError:
                 pass
         return None, None
