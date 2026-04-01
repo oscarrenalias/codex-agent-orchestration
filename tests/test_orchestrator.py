@@ -2393,6 +2393,31 @@ class OrchestratorTests(unittest.TestCase):
             corrective.changed_files,
         )
 
+    def test_corrective_bead_backfills_scope_from_expected_files_when_review_scope_is_empty(self) -> None:
+        bead = self.storage.create_bead(
+            title="Review work",
+            agent_type="review",
+            description="inspect",
+            expected_files=[
+                "templates/agents/planner.md",
+                "src/codex_orchestrator/prompts.py",
+                "src/codex_orchestrator/scheduler.py",
+                "tests/test_orchestrator.py",
+            ],
+        )
+        bead.status = BEAD_BLOCKED
+        bead.block_reason = "Needs a bounded corrective fix."
+        bead.handoff_summary.next_agent = "developer"
+        self.storage.save_bead(bead)
+
+        scheduler = Scheduler(self.storage, FakeRunner(results={}), WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler.run_once(max_workers=0)
+
+        bead = self.storage.load_bead(bead.bead_id)
+        corrective = self.storage.load_bead(bead.metadata["auto_corrective_bead_id"])
+        self.assertEqual(bead.expected_files, corrective.touched_files)
+        self.assertEqual(bead.expected_files, corrective.changed_files)
+
     def test_load_guardrail_template_returns_path_and_trimmed_contents_for_each_builtin_agent(self) -> None:
         for agent_type in BUILT_IN_AGENT_TYPES:
             with self.subTest(agent_type=agent_type):

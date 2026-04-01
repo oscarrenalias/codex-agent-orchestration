@@ -299,6 +299,8 @@ class Scheduler:
     def _create_corrective_bead(self, bead: Bead, *, reporter: "SchedulerReporter | None" = None) -> Bead:
         next_agent = bead.handoff_summary.next_agent.strip()
         corrective_agent = next_agent if next_agent in MUTATING_AGENTS else "developer"
+        touched_files = list(bead.touched_files or bead.changed_files or bead.expected_files)
+        changed_files = list(bead.changed_files or touched_files)
         description_parts = []
         if bead.block_reason:
             description_parts.append(f"Blocked reason: {bead.block_reason}")
@@ -325,8 +327,8 @@ class Scheduler:
             execution_worktree_path=bead.execution_worktree_path,
             expected_files=bead.expected_files,
             expected_globs=bead.expected_globs,
-            touched_files=bead.touched_files,
-            changed_files=bead.changed_files,
+            touched_files=touched_files,
+            changed_files=changed_files,
             conflict_risks=bead.conflict_risks,
             metadata={"auto_corrective_for": bead.bead_id},
         )
