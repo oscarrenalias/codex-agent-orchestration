@@ -342,6 +342,56 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(shared_docs.bead_id, followups["documentation"].bead_id)
         self.assertEqual(shared_review.bead_id, followups["review"].bead_id)
 
+    def test_scheduler_does_not_backfill_legacy_children_when_shared_followups_exist(self) -> None:
+        epic = self.storage.create_bead(
+            title="Epic",
+            agent_type="planner",
+            description="root",
+            status=BEAD_DONE,
+            bead_type="epic",
+        )
+        feature = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="feature",
+            parent_id=epic.bead_id,
+            status=BEAD_DONE,
+        )
+        implement = self.storage.create_bead(
+            title="Implement A",
+            agent_type="developer",
+            description="first change",
+            parent_id=feature.bead_id,
+            dependencies=[feature.bead_id],
+            expected_files=["src/a.py"],
+        )
+        shared_test = self.storage.create_bead(
+            title="Shared tester",
+            agent_type="tester",
+            description="validate combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=[implement.bead_id],
+        )
+        runner = FakeRunner(
+            results={
+                implement.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="done",
+                    touched_files=["src/a.py"],
+                    changed_files=["src/a.py"],
+                )
+            }
+        )
+
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler.run_once()
+
+        bead_ids = {bead.bead_id for bead in self.storage.list_beads()}
+        self.assertIn(shared_test.bead_id, bead_ids)
+        self.assertNotIn(f"{implement.bead_id}-test", bead_ids)
+        self.assertNotIn(f"{implement.bead_id}-docs", bead_ids)
+        self.assertNotIn(f"{implement.bead_id}-review", bead_ids)
+
     def test_scheduler_ignores_nested_feature_followups_when_shared_root_followups_exist(self) -> None:
         epic = self.storage.create_bead(
             title="Epic",

@@ -756,10 +756,16 @@ class Scheduler:
         # followups first so the scheduler does not create duplicate auto-followups,
         # while standalone/manual developer flows still fall back to the legacy
         # per-developer child-bead creation path below.
+        uses_planner_owned = self._uses_planner_owned_followups(bead)
         existing_followups = self._existing_followups_for(
             bead,
-            include_planner_owned=self._uses_planner_owned_followups(bead),
+            include_planner_owned=uses_planner_owned,
         )
+        if uses_planner_owned and any(
+            followup is not None and followup.parent_id != bead.bead_id
+            for followup in existing_followups.values()
+        ):
+            return created
         test_bead = existing_followups["tester"]
         doc_bead = existing_followups["documentation"]
         review_bead = existing_followups["review"]
