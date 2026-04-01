@@ -3064,6 +3064,17 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(BEAD_READY, reloaded.status)
         self.assertEqual("", reloaded.block_reason)
 
+    def test_cli_merge_resolves_prefix(self) -> None:
+        bead = self.storage.create_bead(title="Merge me", agent_type="developer", description="work")
+        bead.execution_branch_name = "feature/b-test"
+        self.storage.save_bead(bead)
+        prefix = bead.bead_id[:4]
+        console = ConsoleReporter(stream=io.StringIO())
+        with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
+            exit_code = command_merge(Namespace(bead_id=prefix), self.storage, console)
+        self.assertEqual(0, exit_code)
+        merge_branch.assert_called_once_with("feature/b-test")
+
     def test_cli_bead_show_raises_on_ambiguous_prefix(self) -> None:
         self.storage.create_bead(title="A", agent_type="developer", description="a")
         self.storage.create_bead(title="B", agent_type="developer", description="b")
