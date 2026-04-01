@@ -51,21 +51,82 @@ def _truncate_title(title: str, max_width: int) -> str:
     return title[: max_width - 3] + "..."
 
 
-def _telemetry_badge(bead: Bead) -> str:
-    """Return compact telemetry badge like '[$0.32, 2:55]' or empty string."""
+def _telemetry_badge(bead: Bead, subtree_telemetry: dict | None = None) -> str:
+    """Return compact telemetry badge.
+
+    Without subtree: '[$0.32, 2:55]' (own cost + duration).
+    With subtree (parent bead): '[$0.32 / $1.85]' (own cost / subtree total cost).
+    """
     telemetry = bead.metadata.get("telemetry")
+    own_cost = (telemetry or {}).get("cost_usd")
+
+    if subtree_telemetry is not None:
+        subtree_cost = subtree_telemetry.get("cost_usd")
+        own_str = f"${own_cost:.2f}" if own_cost is not None else "-"
+        sub_str = f"${subtree_cost:.2f}" if subtree_cost is not None else "-"
+        if own_cost is not None or subtree_cost is not None:
+            return f" [{own_str} / {sub_str}]"
+        return ""
+
     if not telemetry:
         return ""
-    cost = telemetry.get("cost_usd")
     duration = telemetry.get("duration_ms") or telemetry.get("duration_api_ms")
     parts: list[str] = []
-    if cost is not None:
-        parts.append(f"${cost:.2f}")
+    if own_cost is not None:
+        parts.append(f"${own_cost:.2f}")
     if duration is not None:
         parts.append(_format_duration_ms(duration))
     if not parts:
         return ""
     return f" [{', '.join(parts)}]"
+
+
+def _compute_subtree_telemetry(bead_id: str, all_beads: list[Bead]) -> dict | None:
+    """Aggregate telemetry for all descendants of bead_id (children, grandchildren, etc.).
+
+    Returns None if the bead has no children. The aggregated dict contains:
+    cost_usd, duration_ms, input_tokens, output_tokens, bead_count.
+    """
+    children_by_parent: dict[str, list[str]] = {}
+    bead_map: dict[str, Bead] = {}
+    for b in all_beads:
+        bead_map[b.bead_id] = b
+        if b.parent_id:
+            children_by_parent.setdefault(b.parent_id, []).append(b.bead_id)
+
+    if bead_id not in children_by_parent:
+        return None
+
+    total_cost = 0.0
+    total_duration = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
+    bead_count = 0
+
+    def _collect(bid: str) -> None:
+        nonlocal total_cost, total_duration, total_input_tokens, total_output_tokens, bead_count
+        for child_id in children_by_parent.get(bid, []):
+            child = bead_map.get(child_id)
+            if child is None:
+                continue
+            bead_count += 1
+            tel = child.metadata.get("telemetry")
+            if tel:
+                total_cost += tel.get("cost_usd") or 0
+                total_duration += tel.get("duration_ms") or tel.get("duration_api_ms") or 0
+                total_input_tokens += tel.get("input_tokens") or 0
+                total_output_tokens += tel.get("output_tokens") or 0
+            _collect(child_id)
+
+    _collect(bead_id)
+
+    return {
+        "cost_usd": total_cost,
+        "duration_ms": total_duration,
+        "input_tokens": total_input_tokens,
+        "output_tokens": total_output_tokens,
+        "bead_count": bead_count,
+    }
 
 
 FILTER_DEFAULT = "default"
@@ -273,7 +334,7 @@ def _focus_status_hint(focused_panel: str) -> str:
     return "list navigation"
 
 
-def format_detail_panel(bead: Bead | None) -> str:
+def format_detail_panel(bead: Bead | None, subtree_telemetry: dict | None = None) -> str:
     if bead is None:
         return "No bead selected."
 
@@ -325,6 +386,11 @@ def format_detail_panel(bead: Bead | None) -> str:
         if history and len(history) > 1:
             total_cost = sum(h.get("cost_usd", 0) or 0 for h in history)
             lines.append(f"  attempts: {len(history)} (total cost: ${total_cost:.2f})")
+        if subtree_telemetry is not None:
+            sub_cost = subtree_telemetry.get("cost_usd", 0)
+            sub_duration = subtree_telemetry.get("duration_ms", 0)
+            sub_count = subtree_telemetry.get("bead_count", 0)
+            lines.append(f"  Subtree: ${sub_cost:.2f} total, {_format_duration_ms(sub_duration)} duration, {sub_count} beads")
     return "\n".join(lines)
 
 
@@ -345,7 +411,7 @@ def _detail_summary_lines(bead: Bead | None) -> list[str]:
     ]
 
 
-def _detail_section_body(bead: Bead | None, section: str) -> str:
+def _detail_section_body(bead: Bead | None, section: str, subtree_telemetry: dict | None = None) -> str:
     if bead is None:
         return "-"
     handoff = bead.handoff_summary
@@ -396,6 +462,11 @@ def _detail_section_body(bead: Bead | None, section: str) -> str:
         if history and len(history) > 1:
             total_cost = sum(h.get("cost_usd", 0) or 0 for h in history)
             lines.append(f"attempts: {len(history)} (total cost: ${total_cost:.2f})")
+        if subtree_telemetry is not None:
+            sub_cost = subtree_telemetry.get("cost_usd", 0)
+            sub_duration = subtree_telemetry.get("duration_ms", 0)
+            sub_count = subtree_telemetry.get("bead_count", 0)
+            lines.append(f"Subtree: ${sub_cost:.2f} total, {_format_duration_ms(sub_duration)} duration, {sub_count} beads")
         return "\n".join(lines)
     raise ValueError(f"Unknown detail section: {section}")
 
@@ -496,7 +567,8 @@ class TuiRuntimeState:
     last_action_at: str = "-"
     _rows_cache: list[TreeRow] = field(default_factory=list, init=False, repr=False)
     _beads_cache: list[Bead] = field(default_factory=list, init=False, repr=False)
-    _detail_cache: dict[str, tuple[Bead, str]] = field(default_factory=dict, init=False, repr=False)
+    _detail_cache: dict[str, tuple[Bead, dict | None, str]] = field(default_factory=dict, init=False, repr=False)
+    _subtree_cache: dict[str, dict | None] = field(default_factory=dict, init=False, repr=False)
     _rendered_detail_content_height: int | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -546,6 +618,11 @@ class TuiRuntimeState:
             return
         self._beads_cache = beads
         self._rows_cache = rows
+        parent_ids = {b.parent_id for b in beads if b.parent_id}
+        self._subtree_cache = {
+            b.bead_id: _compute_subtree_telemetry(b.bead_id, beads) if b.bead_id in parent_ids else None
+            for b in beads
+        }
         previous_index = self.selected_index
         self.selected_index = resolve_selected_index(
             rows,
@@ -734,15 +811,20 @@ class TuiRuntimeState:
             return f"timed scheduler every {self.refresh_seconds}s | focus={self.focused_panel}"
         return f"timed refresh every {self.refresh_seconds}s | scheduler=manual | focus={self.focused_panel}"
 
+    def subtree_telemetry_for(self, bead_id: str) -> dict | None:
+        """Return precomputed subtree telemetry for bead_id, or None if no children."""
+        return self._subtree_cache.get(bead_id)
+
     def detail_panel_body(self, bead: Bead | None = None) -> str:
         target = bead if bead is not None else self.selected_bead()
         if target is None:
             return "No bead selected."
+        subtree_tel = self.subtree_telemetry_for(target.bead_id)
         cached = self._detail_cache.get(target.bead_id)
-        if cached is not None and cached[0] == target:
-            return cached[1]
-        detail = format_detail_panel(target)
-        self._detail_cache[target.bead_id] = (target, detail)
+        if cached is not None and cached[0] == target and cached[1] == subtree_tel:
+            return cached[2]
+        detail = format_detail_panel(target, subtree_telemetry=subtree_tel)
+        self._detail_cache[target.bead_id] = (target, subtree_tel, detail)
         return detail
 
     def open_help_overlay(self) -> None:
@@ -1210,8 +1292,9 @@ def render_detail_panel(
     focused: bool = False,
     scroll_offset: int = 0,
     viewport_height: int | None = None,
+    subtree_telemetry: dict | None = None,
 ) -> str:
-    lines = format_detail_panel(bead).splitlines()
+    lines = format_detail_panel(bead, subtree_telemetry=subtree_telemetry).splitlines()
     if viewport_height is not None:
         visible_height = max(0, viewport_height - 1)
         lines = lines[scroll_offset:scroll_offset + visible_height]
@@ -1253,8 +1336,8 @@ def build_tui_app(
 
         show_root = False
 
-        def _node_label(self, bead: Bead, width: int | None = None) -> str:
-            badge = _telemetry_badge(bead)
+        def _node_label(self, bead: Bead, width: int | None = None, subtree_telemetry: dict | None = None) -> str:
+            badge = _telemetry_badge(bead, subtree_telemetry=subtree_telemetry)
             prefix = f"{bead.bead_id} · "
             suffix = f" [{bead.status}]{badge}"
             avail = (width if width is not None else _DEFAULT_PANEL_WIDTH)
@@ -1717,7 +1800,8 @@ def build_tui_app(
                 parent_node = node_map.get(bead.parent_id) if bead.parent_id else None
                 target = parent_node if parent_node is not None else bead_tree.root
                 tree_width = bead_tree.size.width if bead_tree.size.width > 0 else None
-                label = bead_tree._node_label(bead, width=tree_width)
+                subtree_tel = self.runtime_state.subtree_telemetry_for(bead.bead_id)
+                label = bead_tree._node_label(bead, width=tree_width, subtree_telemetry=subtree_tel)
                 if row.has_children:
                     node = target.add(label, data=bead)
                 else:
@@ -1762,7 +1846,8 @@ def build_tui_app(
                 self._reset_detail_sections()
                 self.runtime_state.jump_detail_to_start()
             bead = self.runtime_state.selected_bead()
-            detail_render = render_detail_panel(bead, focused=self.runtime_state.focused_panel == PANEL_DETAIL)
+            subtree_tel = self.runtime_state.subtree_telemetry_for(bead.bead_id) if bead else None
+            detail_render = render_detail_panel(bead, focused=self.runtime_state.focused_panel == PANEL_DETAIL, subtree_telemetry=subtree_tel)
             if force or detail_render != self._last_detail_render:
                 detail_summary.update("\n".join(_detail_summary_lines(bead)))
                 self._refresh_detail_sections(bead)
@@ -1808,9 +1893,10 @@ def build_tui_app(
             self._detail_collapsed = {section: True for section in DETAIL_SECTION_ORDER}
 
         def _refresh_detail_sections(self, bead: Bead | None) -> None:
+            subtree_tel = self.runtime_state.subtree_telemetry_for(bead.bead_id) if bead else None
             for section in DETAIL_SECTION_ORDER:
                 body = self.query_one(f"#detail-{section}-body", Static)
-                body.update(_detail_section_body(bead, section))
+                body.update(_detail_section_body(bead, section, subtree_telemetry=subtree_tel))
                 collapsible = self.query_one(f"#detail-{section}", Collapsible)
                 collapsible.collapsed = self._detail_collapsed[section]
                 collapsible.set_class(section == DETAIL_SECTION_ORDER[self._active_detail_section_index], "-active")

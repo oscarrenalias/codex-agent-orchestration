@@ -70,6 +70,36 @@ When `--feature-root` is set, the root bead stays visible regardless of filter.
 
 All actions require confirmation and report results in the status panel. Failed merges stay inside the TUI without closing the session.
 
+## Telemetry Display
+
+### Bead list badges
+
+Each bead row shows a compact telemetry badge after the status tag:
+
+- **Leaf beads** (no children): `[$0.32, 2:55]` — own cost and wall-clock duration.
+- **Parent beads** (have children): `[$0.32 / $1.85]` — own cost / subtree total cost. The subtree total aggregates cost across all descendants recursively (children, grandchildren, etc.).
+
+The badge is omitted when no telemetry is available for the bead.
+
+### Detail panel — Telemetry section
+
+The **Telemetry** collapsible section (`n`/`N` to navigate) shows per-field metrics for the selected bead:
+
+```
+cost_usd, duration, num_turns, input_tokens, output_tokens,
+cache_read_tokens, prompt_chars, session_id
+```
+
+For beads with multiple execution attempts, a summary line shows the attempt count and cumulative cost: `attempts: 3 (total cost: $0.96)`.
+
+For parent beads, an additional **Subtree** line aggregates across all descendants:
+
+```
+Subtree: $1.85 total, 12:30 duration, 4 beads
+```
+
+Fields are aggregated as sums. A bead contributes to the subtree totals only if it has telemetry recorded in its metadata.
+
 ## Mouse Behavior
 
 - Clicking a bead row focuses the list and selects that bead.
