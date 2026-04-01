@@ -109,10 +109,10 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
         "Your role-specific guardrails come from a required local template. "
         "Follow them exactly. If the bead requires work outside that scope, return a blocked result with block_reason and next_agent.\n\n"
         + (
-            "IMPORTANT: Do not run any test suite. Do not use `unittest discover`, "
-            "`unittest tests.<module>`, or any other test runner. "
-            "Verify your changes compile with `uv run python -m py_compile <file>` only. "
-            "Test execution is exclusively the tester agent's responsibility.\n\n"
+            "IMPORTANT: Do not run any test suite or test runner. "
+            "Test execution is exclusively the tester agent's responsibility. "
+            "At most, verify your changes do not break the build (e.g. syntax check or compile step). "
+            "Do not run tests as a validation step.\n\n"
             if bead.agent_type == "developer" else ""
         )
         "Agent guardrails:\n"
