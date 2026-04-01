@@ -115,7 +115,7 @@ def build_worker_prompt(bead: Bead, context_paths: list[Path], root: Path) -> st
             "Do not run tests as a validation step.\n\n"
             if bead.agent_type == "developer" else ""
         )
-        "Agent guardrails:\n"
+        + "Agent guardrails:\n"
         f"Template: {guardrail_path}\n"
         f"{guardrail_text}\n\n"
         "Execution context:\n"
