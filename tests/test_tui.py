@@ -3544,6 +3544,86 @@ class TuiLayoutAndMaximizeTests(unittest.TestCase):
         self.assertTrue(result["list_hidden"])
         self.assertTrue(result["detail_hidden"])
 
+    def test_maximize_scheduler_log_also_hides_top_row(self) -> None:
+        """Maximizing the scheduler-log panel should also hide the #top-row container so the log expands to fill screen."""
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                await pilot.press("tab")  # list -> detail
+                await pilot.press("tab")  # detail -> scheduler-log
+                await pilot.pause()
+                self.assertEqual(PANEL_SCHEDULER_LOG, app.runtime_state.focused_panel)
+                await pilot.press("m")
+                await pilot.pause()
+                result["top_row_hidden"] = app.query_one("#top-row").has_class("hidden")
+
+        asyncio.run(exercise_app())
+        self.assertTrue(result["top_row_hidden"])
+
+    def test_maximize_list_panel_does_not_hide_top_row(self) -> None:
+        """Maximizing the list panel should NOT hide #top-row (only scheduler-log maximize hides it)."""
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                self.assertEqual(PANEL_LIST, app.runtime_state.focused_panel)
+                await pilot.press("m")
+                await pilot.pause()
+                result["top_row_hidden"] = app.query_one("#top-row").has_class("hidden")
+
+        asyncio.run(exercise_app())
+        self.assertFalse(result["top_row_hidden"])
+
+    def test_maximize_detail_panel_does_not_hide_top_row(self) -> None:
+        """Maximizing the detail panel should NOT hide #top-row (only scheduler-log maximize hides it)."""
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                await pilot.press("tab")  # list -> detail
+                await pilot.pause()
+                self.assertEqual(PANEL_DETAIL, app.runtime_state.focused_panel)
+                await pilot.press("m")
+                await pilot.pause()
+                result["top_row_hidden"] = app.query_one("#top-row").has_class("hidden")
+
+        asyncio.run(exercise_app())
+        self.assertFalse(result["top_row_hidden"])
+
+    def test_restore_from_scheduler_log_maximize_shows_top_row(self) -> None:
+        """Pressing 'm' again after scheduler-log maximize should restore top-row visibility."""
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                await pilot.press("tab")  # list -> detail
+                await pilot.press("tab")  # detail -> scheduler-log
+                await pilot.pause()
+                self.assertEqual(PANEL_SCHEDULER_LOG, app.runtime_state.focused_panel)
+                await pilot.press("m")  # maximize scheduler-log
+                await pilot.pause()
+                await pilot.press("m")  # restore
+                await pilot.pause()
+                result["top_row_hidden"] = app.query_one("#top-row").has_class("hidden")
+                result["maximized"] = app.runtime_state.maximized_panel
+
+        asyncio.run(exercise_app())
+        self.assertIsNone(result["maximized"])
+        self.assertFalse(result["top_row_hidden"])
+
     def test_pressing_m_again_restores_three_panel_layout(self) -> None:
         """Pressing 'm' twice should toggle back to normal three-panel layout."""
         app = self._make_app()
