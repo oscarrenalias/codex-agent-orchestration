@@ -38,6 +38,8 @@ The **Scheduler Log** panel supports the same scroll keys as the detail panel wh
 
 Press `m` to expand the currently focused panel. The other two panels are hidden, and the maximized panel fills the available area. Press `m` again to restore the default layout. Focus does not change when toggling maximize.
 
+When the **Scheduler Log** panel is maximized, the entire top row (Beads + Details) is also hidden, so the log expands to fill the full screen height below the status bar. Maximizing the **Beads** or **Details** panel only hides the sibling panel within the top row; the top row container itself remains visible.
+
 The status bar remains visible at all times — it is never hidden by maximize.
 
 ## Keyboard Bindings
