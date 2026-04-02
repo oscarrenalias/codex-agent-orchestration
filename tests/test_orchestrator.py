@@ -56,7 +56,7 @@ from codex_orchestrator.prompts import (
     render_agent_output_requirements,
     render_context_snippets,
 )
-from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA
+from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA, PLANNER_OUTPUT_SCHEMA
 from codex_orchestrator.scheduler import Scheduler
 from codex_orchestrator.storage import RepositoryStorage
 from codex_orchestrator.tui import (
@@ -2805,6 +2805,22 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(
             list(AGENT_OUTPUT_SCHEMA["properties"].keys()),
             AGENT_OUTPUT_SCHEMA["required"],
+        )
+
+    def test_agent_output_schema_new_beads_agent_type_has_valid_enum(self) -> None:
+        agent_type_schema = AGENT_OUTPUT_SCHEMA["properties"]["new_beads"]["items"]["properties"]["agent_type"]
+        self.assertIn("enum", agent_type_schema)
+        self.assertEqual(
+            sorted(agent_type_schema["enum"]),
+            ["developer", "documentation", "planner", "review", "tester"],
+        )
+
+    def test_planner_output_schema_plan_child_agent_type_has_valid_enum(self) -> None:
+        agent_type_schema = PLANNER_OUTPUT_SCHEMA["$defs"]["plan_child"]["properties"]["agent_type"]
+        self.assertIn("enum", agent_type_schema)
+        self.assertEqual(
+            sorted(agent_type_schema["enum"]),
+            ["developer", "documentation", "planner", "review", "tester"],
         )
 
     def test_tui_supports_default_grouped_and_terminal_filters(self) -> None:
