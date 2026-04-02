@@ -1545,6 +1545,11 @@ def build_tui_app(
                 if not self.runtime_state.scroll_detail(1, self._detail_viewport_height()):
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
+            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
+                try:
+                    self.query_one("#scheduler-log", RichLog).scroll_down()
+                except NoMatches:
+                    pass
             else:
                 try:
                     bead_tree = self.query_one("#bead-tree", BeadTree)
@@ -1558,6 +1563,11 @@ def build_tui_app(
                 if not self.runtime_state.scroll_detail(-1, self._detail_viewport_height()):
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
+            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
+                try:
+                    self.query_one("#scheduler-log", RichLog).scroll_up()
+                except NoMatches:
+                    pass
             else:
                 try:
                     bead_tree = self.query_one("#bead-tree", BeadTree)
@@ -1571,6 +1581,11 @@ def build_tui_app(
                 if not self.runtime_state.page_detail(-1, self._detail_viewport_height()):
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
+            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
+                try:
+                    self.query_one("#scheduler-log", RichLog).scroll_page_up()
+                except NoMatches:
+                    pass
             else:
                 try:
                     bead_tree = self.query_one("#bead-tree", BeadTree)
@@ -1584,6 +1599,11 @@ def build_tui_app(
                 if not self.runtime_state.page_detail(1, self._detail_viewport_height()):
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
+            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
+                try:
+                    self.query_one("#scheduler-log", RichLog).scroll_page_down()
+                except NoMatches:
+                    pass
             else:
                 try:
                     bead_tree = self.query_one("#bead-tree", BeadTree)
@@ -1597,6 +1617,11 @@ def build_tui_app(
                 if not self.runtime_state.jump_detail_to_start():
                     self.runtime_state.status_message = "Detail view already at the top."
                 self._sync_detail_scroll()
+            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
+                try:
+                    self.query_one("#scheduler-log", RichLog).scroll_home()
+                except NoMatches:
+                    pass
             else:
                 try:
                     bead_tree = self.query_one("#bead-tree", BeadTree)
@@ -1610,6 +1635,11 @@ def build_tui_app(
                 if not self.runtime_state.jump_detail_to_end(self._detail_viewport_height()):
                     self.runtime_state.status_message = "Detail view already at the bottom."
                 self._sync_detail_scroll()
+            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
+                try:
+                    self.query_one("#scheduler-log", RichLog).scroll_end()
+                except NoMatches:
+                    pass
             else:
                 try:
                     bead_tree = self.query_one("#bead-tree", BeadTree)
@@ -1804,6 +1834,11 @@ def build_tui_app(
                 else "Tab to activate"
             )
             log_panel.border_title = Text(_panel_badge("Scheduler Log", focused=self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG))
+            log_panel.border_subtitle = (
+                "j/k scroll | g/G top/bottom"
+                if self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG
+                else "Tab to activate"
+            )
 
         def _sync_panel_focus(self) -> None:
             try:
