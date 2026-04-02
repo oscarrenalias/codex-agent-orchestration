@@ -3601,6 +3601,78 @@ class TuiLayoutAndMaximizeTests(unittest.TestCase):
         self.assertEqual(PANEL_DETAIL, result["after_maximize"])
         self.assertEqual(PANEL_DETAIL, result["after_restore"])
 
+    def test_compose_main_row_is_vertical_container(self) -> None:
+        """#main-row must be a Vertical container so top-row and scheduler-log stack vertically."""
+        from textual.containers import Vertical
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                main_row = app.query_one("#main-row")
+                result["type"] = type(main_row).__name__
+
+        asyncio.run(exercise_app())
+        self.assertEqual("Vertical", result["type"])
+
+    def test_compose_top_row_is_horizontal_child_of_main_row(self) -> None:
+        """#top-row must be a Horizontal container that is a direct child of #main-row."""
+        from textual.containers import Horizontal
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                top_row = app.query_one("#top-row")
+                result["type"] = type(top_row).__name__
+                result["parent_id"] = top_row.parent.id
+
+        asyncio.run(exercise_app())
+        self.assertEqual("Horizontal", result["type"])
+        self.assertEqual("main-row", result["parent_id"])
+
+    def test_compose_list_and_detail_panels_are_inside_top_row(self) -> None:
+        """#list-panel and #detail-panel must be children of #top-row, not directly of #main-row."""
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                list_panel = app.query_one("#list-panel")
+                detail_panel = app.query_one("#detail-panel")
+                result["list_parent"] = list_panel.parent.id
+                result["detail_parent"] = detail_panel.parent.id
+
+        asyncio.run(exercise_app())
+        self.assertEqual("top-row", result["list_parent"])
+        self.assertEqual("top-row", result["detail_parent"])
+
+    def test_compose_scheduler_log_is_sibling_of_top_row_not_inside_it(self) -> None:
+        """#scheduler-log must be a sibling of #top-row (both children of #main-row), not inside top-row."""
+        from textual.widgets import RichLog
+        app = self._make_app()
+        result: dict = {}
+
+        async def exercise_app() -> None:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(120, 30)
+                await pilot.pause()
+                log_panel = app.query_one("#scheduler-log", RichLog)
+                top_row = app.query_one("#top-row")
+                result["log_parent_id"] = log_panel.parent.id
+                result["top_row_parent_id"] = top_row.parent.id
+
+        asyncio.run(exercise_app())
+        # Both #scheduler-log and #top-row must share the same parent (#main-row)
+        self.assertEqual("main-row", result["log_parent_id"])
+        self.assertEqual("main-row", result["top_row_parent_id"])
+
 
 if __name__ == "__main__":
     unittest.main()
