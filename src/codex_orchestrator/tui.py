@@ -1742,6 +1742,9 @@ def build_tui_app(
                         panel.add_class("hidden")
                 self.runtime_state.status_message = f"Maximized {focused} panel."
             self._update_status_panel()
+            # Force bead tree to rebuild with the new panel width after layout settles.
+            self._last_list_render = ()
+            self.call_after_refresh(self._populate_bead_tree)
 
         def action_request_merge(self) -> None:
             self.runtime_state.request_merge()
