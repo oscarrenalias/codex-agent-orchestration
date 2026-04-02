@@ -56,7 +56,7 @@ from codex_orchestrator.prompts import (
     render_agent_output_requirements,
     render_context_snippets,
 )
-from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA
+from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA, PLANNER_OUTPUT_SCHEMA
 from codex_orchestrator.scheduler import Scheduler
 from codex_orchestrator.storage import RepositoryStorage
 from codex_orchestrator.tui import (
@@ -1578,6 +1578,33 @@ class OrchestratorTests(unittest.TestCase):
             shared_review.dependencies,
         )
 
+    def test_write_plan_rejects_invalid_agent_type(self) -> None:
+        spec_path = self.root / "spec.md"
+        spec_path.write_text("Feature spec\n", encoding="utf-8")
+        proposal = PlanProposal(
+            epic_title="Epic",
+            epic_description="Parent task",
+            feature=PlanChild(
+                title="Feature root",
+                agent_type="developer",
+                description="shared execution root",
+                acceptance_criteria=[],
+                children=[
+                    PlanChild(
+                        title="Bad bead",
+                        agent_type="docs",
+                        description="invalid agent type",
+                        acceptance_criteria=[],
+                    )
+                ],
+            ),
+        )
+        planner = PlanningService(self.storage, FakeRunner(proposal=proposal))
+        with self.assertRaises(ValueError) as ctx:
+            planner.write_plan(planner.propose(spec_path))
+        self.assertIn("docs", str(ctx.exception))
+        self.assertIn("Bad bead", str(ctx.exception))
+
     def test_build_planner_prompt_requires_small_developer_beads_and_shared_followups(self) -> None:
         prompt = build_planner_prompt("Ship the feature")
         self.assertIn("one focused change", prompt)
@@ -2778,6 +2805,22 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(
             list(AGENT_OUTPUT_SCHEMA["properties"].keys()),
             AGENT_OUTPUT_SCHEMA["required"],
+        )
+
+    def test_agent_output_schema_new_beads_agent_type_has_valid_enum(self) -> None:
+        agent_type_schema = AGENT_OUTPUT_SCHEMA["properties"]["new_beads"]["items"]["properties"]["agent_type"]
+        self.assertIn("enum", agent_type_schema)
+        self.assertEqual(
+            sorted(agent_type_schema["enum"]),
+            ["developer", "documentation", "planner", "review", "tester"],
+        )
+
+    def test_planner_output_schema_plan_child_agent_type_has_valid_enum(self) -> None:
+        agent_type_schema = PLANNER_OUTPUT_SCHEMA["$defs"]["plan_child"]["properties"]["agent_type"]
+        self.assertIn("enum", agent_type_schema)
+        self.assertEqual(
+            sorted(agent_type_schema["enum"]),
+            ["developer", "documentation", "planner", "review", "tester"],
         )
 
     def test_tui_supports_default_grouped_and_terminal_filters(self) -> None:
