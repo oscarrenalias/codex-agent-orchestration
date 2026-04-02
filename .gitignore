@@ -5,7 +5,6 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .coverage
-.agents/
 .logs/
 .orchestrator/*
 !.orchestrator/beads/
