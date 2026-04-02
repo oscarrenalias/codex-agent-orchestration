@@ -17,10 +17,12 @@ from unittest.mock import MagicMock, patch
 REPO_ROOT = Path(__file__).resolve().parents[1]
 # The main repo root (for skills that only exist in the primary checkout)
 MAIN_REPO_ROOT = Path(__file__).resolve().parents[1]
-# Walk up to find the actual repo root with .agents/skills if we're in a worktree
+# Walk up to find the actual repo root with the full .agents/skills catalog (requires core/).
+# A worktree may have a partial .agents/skills (e.g. only "memory") so we require core/ as
+# a proxy for the full catalog before stopping.
 _candidate = MAIN_REPO_ROOT
 while _candidate != _candidate.parent:
-    if (_candidate / ".agents" / "skills").is_dir():
+    if (_candidate / ".agents" / "skills" / "core").is_dir():
         MAIN_REPO_ROOT = _candidate
         break
     _candidate = _candidate.parent
@@ -93,6 +95,18 @@ def _make_git_repo(root: Path) -> None:
     if source_skills.is_dir():
         target_skills = root / ".agents" / "skills"
         shutil.copytree(source_skills, target_skills)
+    # Also overlay any additional skills that only exist in the worktree (e.g. "memory"
+    # added in a feature branch before the skill merges into the main checkout).
+    if REPO_ROOT != MAIN_REPO_ROOT:
+        worktree_skills = REPO_ROOT / ".agents" / "skills"
+        if worktree_skills.is_dir():
+            target_skills = root / ".agents" / "skills"
+            target_skills.mkdir(parents=True, exist_ok=True)
+            for skill_dir in worktree_skills.iterdir():
+                if skill_dir.is_dir():
+                    target = target_skills / skill_dir.name
+                    if not target.exists():
+                        shutil.copytree(skill_dir, target)
     subprocess.run(["git", "add", "."], cwd=root, check=True, capture_output=True)
     subprocess.run(["git", "commit", "-m", "init"], cwd=root, check=True, capture_output=True)
 
