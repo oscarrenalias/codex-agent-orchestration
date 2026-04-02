@@ -136,6 +136,7 @@ FILTER_DEFERRED = "deferred"
 FILTER_DONE = "done"
 PANEL_LIST = "list"
 PANEL_DETAIL = "detail"
+PANEL_SCHEDULER_LOG = "scheduler-log"
 STATUS_ACTION_TARGETS = (BEAD_READY, BEAD_BLOCKED, BEAD_DONE)
 DETAIL_SECTION_ACCEPTANCE = "acceptance"
 DETAIL_SECTION_FILES = "files"
@@ -331,6 +332,8 @@ def _beads_panel_title(filter_mode: str, *, focused: bool) -> str:
 def _focus_status_hint(focused_panel: str) -> str:
     if focused_panel == PANEL_DETAIL:
         return "detail scroll"
+    if focused_panel == PANEL_SCHEDULER_LOG:
+        return "scheduler log scroll"
     return "list navigation"
 
 
@@ -559,6 +562,7 @@ class TuiRuntimeState:
     help_overlay_visible: bool = False
     timed_refresh_enabled: bool = False
     continuous_run_enabled: bool = False
+    maximized_panel: str | None = None
     scheduler_running: bool = False
     scheduler_log: list[str] = field(default_factory=list)
     max_workers: int = 1
@@ -678,7 +682,7 @@ class TuiRuntimeState:
         self.status_message = f"Selected {self.selected_bead_id}."
 
     def set_focused_panel(self, panel: str, *, announce: bool = True) -> None:
-        if panel not in {PANEL_LIST, PANEL_DETAIL}:
+        if panel not in {PANEL_LIST, PANEL_DETAIL, PANEL_SCHEDULER_LOG}:
             return
         if self.focused_panel == panel:
             return
@@ -687,8 +691,8 @@ class TuiRuntimeState:
             self.status_message = f"Focused {panel} panel."
 
     def cycle_focus(self, step: int = 1) -> None:
-        panels = (PANEL_LIST, PANEL_DETAIL)
-        index = panels.index(self.focused_panel)
+        panels = (PANEL_LIST, PANEL_DETAIL, PANEL_SCHEDULER_LOG)
+        index = panels.index(self.focused_panel) if self.focused_panel in panels else 0
         self.set_focused_panel(panels[(index + step) % len(panels)])
 
     def select_index(self, index: int) -> bool:
