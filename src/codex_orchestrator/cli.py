@@ -12,7 +12,7 @@ from pathlib import Path
 from .config import load_config
 from .console import ConsoleReporter, SpinnerPool
 from .graph import render_bead_graph
-from .gitutils import WorktreeManager
+from .gitutils import GitError, WorktreeManager
 from .models import Bead
 from .planner import PlanningService
 from .runner import ClaudeCodeAgentRunner, CodexAgentRunner
