@@ -2193,6 +2193,15 @@ class OrchestratorTests(unittest.TestCase):
             status=BEAD_DONE,
             bead_id="B-graph-dep",
         )
+        # Create B-missing so dependency validation passes, but exclude it from
+        # the list passed to render_bead_graph to test that missing-node edges
+        # are not rendered.
+        self.storage.create_bead(
+            title="Missing bead",
+            agent_type="developer",
+            description="bead that will be omitted from graph input",
+            bead_id="B-missing",
+        )
         main = self.storage.create_bead(
             title="X" * (MAX_TITLE_LENGTH + 8),
             agent_type="developer",
