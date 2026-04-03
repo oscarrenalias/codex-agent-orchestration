@@ -2884,7 +2884,7 @@ class OrchestratorTests(unittest.TestCase):
         self.storage.save_bead(root)
         console = ConsoleReporter(stream=io.StringIO())
         with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
-            exit_code = command_merge(Namespace(bead_id=child.bead_id), self.storage, console)
+            exit_code = command_merge(Namespace(bead_id=child.bead_id, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b0001")
 
@@ -3131,71 +3131,52 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("Filter set to all.", state.status_panel_text())
         self.assertIn("done=1", state.status_panel_text())
 
-    def test_tui_runtime_merge_rejects_non_done_beads(self) -> None:
-        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="one", status=BEAD_READY)
+    def test_tui_runtime_merge_shows_cli_redirect_for_any_bead(self) -> None:
+        # TUI no longer performs merges inline; it shows the CLI command regardless of bead status
+        bead = self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="one", status=BEAD_READY)
         state = TuiRuntimeState(self.storage)
 
         state.request_merge()
 
         self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertIn("only done beads can be merged", state.status_message)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
-    def test_tui_runtime_merge_uses_existing_merge_path_and_survives_failure(self) -> None:
+    def test_tui_runtime_merge_shows_cli_redirect_for_done_bead(self) -> None:
+        # TUI redirects to CLI instead of executing merge inline
         bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
 
         state.request_merge()
-        self.assertTrue(state.awaiting_merge_confirmation)
 
-        merge_calls: list[str] = []
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
-        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            merge_calls.append(args.bead_id)
-            raise RuntimeError("merge conflict")
+    def test_tui_runtime_confirm_merge_no_op_when_no_pending_state(self) -> None:
+        # confirm_merge returns False gracefully when awaiting_merge_confirmation is False
+        self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
 
-        merged = state.confirm_merge(fake_merge)
+        # request_merge no longer sets awaiting_merge_confirmation
+        state.request_merge()
+        self.assertFalse(state.awaiting_merge_confirmation)
+
+        merged = state.confirm_merge()
 
         self.assertFalse(merged)
-        self.assertEqual([bead.bead_id], merge_calls)
-        self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertIn("Merge failed for B0001", state.status_message)
+        self.assertEqual("No merge pending confirmation.", state.status_message)
 
-    def test_tui_runtime_merge_handles_system_exit_without_terminating_runtime(self) -> None:
+    def test_tui_runtime_merge_clears_other_pending_states(self) -> None:
+        # request_merge clears pending retry/status flows
         bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
 
         state.request_merge()
-        self.assertTrue(state.awaiting_merge_confirmation)
 
-        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            raise SystemExit(f"{args.bead_id} has no feature branch to merge")
-
-        merged = state.confirm_merge(fake_merge)
-
-        self.assertFalse(merged)
-        self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertEqual(f"Merge failed for {bead.bead_id}.", state.status_message)
-        self.assertIn("has no feature branch to merge", state.activity_message)
-
-    def test_tui_runtime_merge_confirms_success_and_refreshes_messages(self) -> None:
-        bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        state.request_merge()
-        self.assertTrue(state.awaiting_merge_confirmation)
-
-        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            self.assertEqual(bead.bead_id, args.bead_id)
-            console.info("merge ok")
-            return 0
-
-        merged = state.confirm_merge(fake_merge)
-
-        self.assertTrue(merged)
-        self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertEqual(f"Merged {bead.bead_id}.", state.status_message)
-        self.assertIn("merge ok", state.activity_message)
-        self.assertEqual(bead.bead_id, state.selected_bead_id)
+        self.assertFalse(state.awaiting_retry_confirmation)
+        self.assertFalse(state.status_flow_active)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
     def test_tui_render_tree_panel_marks_selected_row(self) -> None:
         rows = build_tree_rows([
@@ -3875,7 +3856,7 @@ class OrchestratorTests(unittest.TestCase):
         prefix = bead.bead_id[:4]
         console = ConsoleReporter(stream=io.StringIO())
         with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
-            exit_code = command_merge(Namespace(bead_id=prefix), self.storage, console)
+            exit_code = command_merge(Namespace(bead_id=prefix, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b-test")
 
