@@ -7,6 +7,12 @@ import yaml
 
 
 @dataclass(frozen=True)
+class CommonConfig:
+    test_command: str | None = None
+    test_timeout_seconds: int = 120
+
+
+@dataclass(frozen=True)
 class SchedulerConfig:
     lease_timeout_minutes: int = 30
     max_corrective_attempts: int = 2
@@ -52,6 +58,7 @@ class OrchestratorConfig:
     ])
     scheduler: SchedulerConfig = field(default_factory=SchedulerConfig)
     backends: dict[str, BackendConfig] = field(default_factory=dict)
+    common: CommonConfig = field(default_factory=CommonConfig)
 
     def backend(self, name: str) -> BackendConfig:
         try:
