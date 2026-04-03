@@ -1362,7 +1362,13 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("Exceeded corrective attempt budget", bead.metadata.get("escalation_reason", ""))
 
     def test_review_needs_changes_creates_corrective_immediately(self) -> None:
-        bead = self.storage.create_bead(title="Review work", agent_type="review", description="inspect")
+        bead = self.storage.create_bead(
+            title="Review work",
+            agent_type="review",
+            description="inspect",
+            touched_files=["src/codex_orchestrator/skills.py"],
+            changed_files=["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+        )
         runner = FakeRunner(
             results={
                 bead.bead_id: AgentRunResult(
@@ -1384,8 +1390,18 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(BEAD_READY, corrective.status)
         self.assertEqual(bead.bead_id, corrective.parent_id)
         self.assertEqual(bead.bead_id, corrective.metadata.get("auto_corrective_for"))
+        self.assertEqual(["src/codex_orchestrator/skills.py"], corrective.touched_files)
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+            corrective.changed_files,
+        )
         bead = self.storage.load_bead(bead.bead_id)
         self.assertEqual(corrective_id, bead.metadata.get("auto_corrective_bead_id"))
+        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.touched_files)
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+            bead.handoff_summary.changed_files,
+        )
 
     def test_tester_needs_changes_creates_corrective_immediately(self) -> None:
         bead = self.storage.create_bead(title="Test work", agent_type="tester", description="validate")
@@ -1877,7 +1893,14 @@ class OrchestratorTests(unittest.TestCase):
         self.assertTrue(guardrail_records[0].details["template_path"].endswith("templates/agents/developer.md"))
 
     def test_scheduler_preserves_blocked_role_scope_handoff_details(self) -> None:
-        bead = self.storage.create_bead(title="Review implementation work", agent_type="review", description="inspect")
+        bead = self.storage.create_bead(
+            title="Review implementation work",
+            agent_type="review",
+            description="inspect",
+            touched_files=["src/codex_orchestrator/skills.py"],
+            changed_files=["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            conflict_risks="Review is scoped to the rewritten skill rollout files.",
+        )
         runner = FakeRunner(
             results={
                 bead.bead_id: AgentRunResult(
@@ -1907,6 +1930,20 @@ class OrchestratorTests(unittest.TestCase):
             bead.handoff_summary.remaining,
         )
         self.assertEqual("Review signoff is blocked until implementation is complete.", bead.handoff_summary.risks)
+        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.touched_files)
+        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.handoff_summary.touched_files)
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            bead.changed_files,
+        )
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            bead.handoff_summary.changed_files,
+        )
+        self.assertEqual(
+            "Review is scoped to the rewritten skill rollout files.",
+            bead.handoff_summary.conflict_risks,
+        )
         self.assertEqual("Hand off to a developer to implement the requested changes.", bead.handoff_summary.next_action)
         self.assertEqual("developer", bead.handoff_summary.next_agent)
         self.assertEqual("The bead requires implementation work outside review scope.", bead.handoff_summary.block_reason)
