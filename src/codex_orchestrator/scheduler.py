@@ -483,6 +483,9 @@ class Scheduler:
 
     def _finalize(self, bead: Bead, agent_result: AgentRunResult, result: SchedulerResult, *, reporter: "SchedulerReporter | None" = None) -> None:
         bead.lease = None
+        existing_touched_files = list(bead.touched_files)
+        existing_changed_files = list(bead.changed_files)
+        existing_conflict_risks = bead.conflict_risks
         bead.expected_files = list(agent_result.expected_files or bead.expected_files)
         bead.expected_globs = list(agent_result.expected_globs or bead.expected_globs)
         bead.touched_files = list(agent_result.touched_files)
@@ -490,6 +493,14 @@ class Scheduler:
 
         self._apply_review_test_verdict(bead, agent_result)
         bead.block_reason = agent_result.block_reason
+
+        if agent_result.outcome == "blocked":
+            if not bead.touched_files:
+                bead.touched_files = existing_touched_files
+            if not agent_result.changed_files:
+                agent_result.changed_files = existing_changed_files
+            if not bead.conflict_risks:
+                bead.conflict_risks = existing_conflict_risks
 
         handoff = HandoffSummary(
             completed=agent_result.completed,
@@ -956,7 +967,7 @@ class Scheduler:
             dependency for dependency in developer_dependencies
             if dependency.status == BEAD_DONE
         ]
-        if len(done_dependencies) < 2:
+        if not done_dependencies:
             return
 
         aggregated_touched_files = sorted(
