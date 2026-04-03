@@ -489,8 +489,8 @@ class OrchestratorTests(unittest.TestCase):
             sorted(shared_review.changed_files),
         )
 
-    def test_populate_shared_followup_touched_files_uses_single_done_developer_dep(self) -> None:
-        # A shared followup can still need scope from a single completed developer dependency.
+    def test_populate_shared_followup_touched_files_aggregates_single_done_dependency(self) -> None:
+        # A single done dependency with touched_files should populate the shared followup.
         dev_a = self.storage.create_bead(
             title="Implement A",
             agent_type="developer",
@@ -523,29 +523,72 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(["src/a.py"], shared_test.touched_files)
         self.assertEqual(["src/a.py"], shared_test.changed_files)
 
-    def test_populate_shared_followup_touched_files_skips_when_no_done_developer_deps(self) -> None:
-        dev_a = self.storage.create_bead(
+    def test_populate_shared_followup_touched_files_includes_tester_dependency_files(self) -> None:
+        dev = self.storage.create_bead(
             title="Implement A",
             agent_type="developer",
             description="first change",
         )
-        dev_a.handoff_summary.touched_files = ["src/a.py"]
-        dev_a.handoff_summary.changed_files = ["src/a.py"]
-        self.storage.save_bead(dev_a)
+        dev.status = BEAD_DONE
+        dev.handoff_summary.touched_files = ["src/a.py"]
+        dev.handoff_summary.changed_files = ["src/a.py"]
+        self.storage.save_bead(dev)
 
-        shared_test = self.storage.create_bead(
+        tester = self.storage.create_bead(
             title="Shared tester",
             agent_type="tester",
-            description="validate combined implementation",
-            dependencies=[dev_a.bead_id],
+            description="validate implementation",
+            dependencies=[dev.bead_id],
+        )
+        tester.status = BEAD_DONE
+        tester.handoff_summary.touched_files = ["tests/test_a.py"]
+        tester.handoff_summary.changed_files = ["tests/test_a.py", "src/a.py"]
+        self.storage.save_bead(tester)
+
+        shared_review = self.storage.create_bead(
+            title="Shared review",
+            agent_type="review",
+            description="review combined implementation",
+            dependencies=[dev.bead_id, tester.bead_id],
         )
 
         scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
-        scheduler._populate_shared_followup_touched_files(shared_test)
+        scheduler._populate_shared_followup_touched_files(shared_review)
 
-        shared_test = self.storage.load_bead(shared_test.bead_id)
-        self.assertEqual([], shared_test.touched_files)
-        self.assertEqual([], shared_test.changed_files)
+        shared_review = self.storage.load_bead(shared_review.bead_id)
+        self.assertEqual(
+            sorted(["src/a.py", "tests/test_a.py"]),
+            sorted(shared_review.touched_files),
+        )
+        self.assertEqual(
+            sorted(["src/a.py", "tests/test_a.py"]),
+            sorted(shared_review.changed_files),
+        )
+
+    def test_populate_shared_followup_touched_files_skips_when_done_deps_have_no_touched_files(self) -> None:
+        # Done dependencies with only changed_files should not populate shared scope.
+        tester = self.storage.create_bead(
+            title="Shared tester",
+            agent_type="tester",
+            description="validate implementation",
+        )
+        tester.status = BEAD_DONE
+        tester.handoff_summary.changed_files = ["tests/test_a.py"]
+        self.storage.save_bead(tester)
+
+        shared_review = self.storage.create_bead(
+            title="Shared review",
+            agent_type="review",
+            description="review combined implementation",
+            dependencies=[tester.bead_id],
+        )
+
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler._populate_shared_followup_touched_files(shared_review)
+
+        shared_review = self.storage.load_bead(shared_review.bead_id)
+        self.assertEqual([], shared_review.touched_files)
+        self.assertEqual([], shared_review.changed_files)
 
     def test_scheduler_ignores_nested_feature_followups_when_shared_root_followups_exist(self) -> None:
         epic = self.storage.create_bead(
