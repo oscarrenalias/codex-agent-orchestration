@@ -386,7 +386,7 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         beads = storage.list_beads()
         if args.feature_root:
             try:
-                resolved_feature_root_id = storage.resolve_bead_id(args.feature_root)
+                resolved_feature_root_id = _resolve_feature_root_id(storage, args.feature_root)
             except ValueError as exc:
                 console.error(str(exc))
                 return 1
@@ -555,6 +555,32 @@ def _validated_feature_root_id(storage: RepositoryStorage, feature_root_id: str 
     if storage.feature_root_id_for(target) != feature_root_id:
         return None
     return feature_root_id
+
+
+def _resolve_feature_root_id(storage: RepositoryStorage, prefix: str) -> str | None:
+    validated = _validated_feature_root_id(storage, prefix)
+    if validated is not None:
+        return validated
+
+    matches = [
+        bead.bead_id
+        for bead in storage.list_beads()
+        if bead.bead_id.startswith(prefix) and storage.feature_root_id_for(bead) == bead.bead_id
+    ]
+    if not matches:
+        try:
+            resolved_bead_id = storage.resolve_bead_id(prefix)
+        except ValueError:
+            raise
+        return _validated_feature_root_id(storage, resolved_bead_id)
+    if len(matches) == 1:
+        return matches[0]
+
+    matches.sort()
+    match_list = ", ".join(matches)
+    raise ValueError(
+        f"Ambiguous feature root prefix '{prefix}' matches {len(matches)} beads: {match_list}"
+    )
 
 
 def command_summary(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
