@@ -2196,8 +2196,9 @@ class OrchestratorTests(unittest.TestCase):
         stream = io.StringIO()
         console = ConsoleReporter(stream=stream)
 
+        prefix = "B-graph-f"
         exit_code = command_bead(
-            Namespace(bead_command="graph", feature_root=feature.bead_id[:8], output=None),
+            Namespace(bead_command="graph", feature_root=prefix, output=None),
             self.storage,
             console,
         )
