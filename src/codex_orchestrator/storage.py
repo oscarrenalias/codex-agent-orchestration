@@ -92,6 +92,14 @@ class RepositoryStorage:
         self._validate_dependencies(bead.dependencies)
         self._write_bead(bead)
 
+    def _cleanup_deleted_dependency_references(self, bead_id: str) -> None:
+        """Remove a deleted bead from dependents, tolerating legacy on-disk corruption."""
+        for other in self.list_beads():
+            if bead_id not in other.dependencies:
+                continue
+            other.dependencies = [dependency for dependency in other.dependencies if dependency != bead_id]
+            self._write_bead(other)
+
     def write_telemetry_artifact(
         self,
         *,
@@ -313,10 +321,7 @@ class RepositoryStorage:
 
         self.bead_path(bead_id).unlink()
 
-        for other in self.list_beads():
-            if bead_id in other.dependencies:
-                other.dependencies = [d for d in other.dependencies if d != bead_id]
-                self.save_bead(other)
+        self._cleanup_deleted_dependency_references(bead_id)
 
         return bead
 

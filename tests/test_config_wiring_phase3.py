@@ -410,6 +410,43 @@ class TestDependencyValidationAndRuntimeResilience(unittest.TestCase):
         self.assertEqual(len(warning_events), 1)
         self.assertEqual(warning_events[0].summary, "dependency_missing: B-missing-4 not found")
 
+    def test_delete_bead_cleans_corrupt_dependent_without_partial_delete(self):
+        """Deleting a bead still cleans references when a dependent has other stale IDs."""
+        target = self.storage.create_bead(
+            bead_id="B0001",
+            title="Target",
+            agent_type="developer",
+            description="d",
+            status=BEAD_READY,
+        )
+        corrupt = Bead(
+            bead_id="B0002",
+            title="Corrupt dependent",
+            agent_type="developer",
+            description="d",
+            status=BEAD_READY,
+            dependencies=[target.bead_id, "B-missing-5"],
+        )
+        corrupt.execution_history.append(
+            ExecutionRecord(
+                timestamp=utc_now(),
+                event="created",
+                agent_type="scheduler",
+                summary="Bead created",
+            )
+        )
+        self.storage.bead_path(corrupt.bead_id).write_text(
+            json.dumps(corrupt.to_dict(), indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        deleted = self.storage.delete_bead(target.bead_id)
+
+        self.assertEqual(deleted.bead_id, target.bead_id)
+        self.assertFalse(self.storage.bead_path(target.bead_id).exists())
+        reloaded = self.storage.load_bead(corrupt.bead_id)
+        self.assertEqual(reloaded.dependencies, ["B-missing-5"])
+
 
 # ---------------------------------------------------------------------------
 # 2. Skills: prepare_isolated_execution_root uses config
