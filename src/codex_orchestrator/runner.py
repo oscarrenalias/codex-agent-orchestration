@@ -394,17 +394,17 @@ class ClaudeCodeAgentRunner(AgentRunner):
             "or additional work — just reformat the information.\n\n"
             f"Agent result:\n{agent_result_text}\n"
         )
-        tools = self.config.allowed_tools_for("claude", agent_type or "developer")
         if model is ...:
             model = self.config.model_for("claude", agent_type or "developer")
+        # The retry is a pure text-reformatting step: no tools, single turn.
+        # Omit backend flags (e.g. --dangerously-skip-permissions) and --allowedTools
+        # so Claude cannot invoke tools and is forced to produce the JSON directly.
         cmd = [
             self.backend.binary,
             "-p",
-            *self.backend.flags,
-            "--allowedTools", ",".join(tools),
             "--output-format", "json",
             "--json-schema", json.dumps(schema),
-            "--max-turns", "2",
+            "--max-turns", "1",
         ]
         if model is not None:
             cmd.extend(["--model", model])
