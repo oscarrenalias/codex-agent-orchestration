@@ -45,12 +45,50 @@ class RepositoryStorage:
     def bead_path(self, bead_id: str) -> Path:
         return self.beads_dir / f"{bead_id}.json"
 
-    def save_bead(self, bead: Bead) -> None:
+    def _write_bead(self, bead: Bead) -> None:
         self.initialize()
         path = self.bead_path(bead.bead_id)
         tmp_path = path.with_suffix(f"{path.suffix}.tmp")
         tmp_path.write_text(json.dumps(bead.to_dict(), indent=2) + "\n", encoding="utf-8")
         tmp_path.replace(path)
+
+    def _missing_dependency_ids(self, dependencies: list[str]) -> list[str]:
+        missing: list[str] = []
+        for dependency_id in dependencies:
+            if self.bead_path(dependency_id).exists():
+                continue
+            if dependency_id not in missing:
+                missing.append(dependency_id)
+        return missing
+
+    def _validate_dependencies(self, dependencies: list[str]) -> None:
+        missing = self._missing_dependency_ids(dependencies)
+        if not missing:
+            return
+        missing_list = ", ".join(missing)
+        raise ValueError(f"Missing dependency beads: {missing_list}")
+
+    def _record_missing_dependency_warning(self, bead: Bead, dependency_id: str, error: ValueError) -> None:
+        summary = f"dependency_missing: {dependency_id} not found"
+        for record in reversed(bead.execution_history):
+            if record.event != "dependency_missing":
+                continue
+            if record.summary == summary:
+                return
+        bead.execution_history.append(
+            ExecutionRecord(
+                timestamp=utc_now(),
+                event="dependency_missing",
+                agent_type="scheduler",
+                summary=summary,
+                details={"dependency_id": dependency_id, "error": str(error)},
+            )
+        )
+        self._write_bead(bead)
+
+    def save_bead(self, bead: Bead) -> None:
+        self._validate_dependencies(bead.dependencies)
+        self._write_bead(bead)
 
     def write_telemetry_artifact(
         self,
@@ -320,7 +358,15 @@ class RepositoryStorage:
         self.save_bead(bead)
 
     def dependency_satisfied(self, bead: Bead) -> bool:
-        return all(self.load_bead(dep).status == BEAD_DONE for dep in bead.dependencies)
+        for dependency_id in bead.dependencies:
+            try:
+                dependency = self.load_bead(dependency_id)
+            except ValueError as exc:
+                self._record_missing_dependency_warning(bead, dependency_id, exc)
+                return False
+            if dependency.status != BEAD_DONE:
+                return False
+        return True
 
     def ready_beads(self) -> list[Bead]:
         ready: list[Bead] = []

@@ -5,6 +5,7 @@ parameters from OrchestratorConfig instead of hardcoded module-level constants.
 """
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -43,8 +44,10 @@ from codex_orchestrator.models import (
     BEAD_IN_PROGRESS,
     BEAD_READY,
     Bead,
+    ExecutionRecord,
     HandoffSummary,
     Lease,
+    utc_now,
 )
 from codex_orchestrator.prompts import (
     BUILT_IN_AGENT_TYPES,
@@ -316,6 +319,91 @@ class TestSchedulerTransientBlockPatterns(unittest.TestCase):
         reloaded = self.storage.load_bead(bead.bead_id)
         # "timeout" is not in custom patterns, so bead stays blocked
         self.assertEqual(reloaded.status, BEAD_BLOCKED)
+
+
+class TestDependencyValidationAndRuntimeResilience(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        _make_git_repo(self.root)
+        self.storage = RepositoryStorage(self.root)
+        self.storage.initialize()
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_create_bead_rejects_missing_dependencies(self):
+        with self.assertRaisesRegex(ValueError, "Missing dependency beads: B-missing-1, B-missing-2"):
+            self.storage.create_bead(
+                bead_id="B0001",
+                title="Invalid",
+                agent_type="developer",
+                description="d",
+                dependencies=["B-missing-1", "B-missing-2", "B-missing-1"],
+            )
+
+    def test_save_bead_rejects_missing_dependencies(self):
+        dependency = self.storage.create_bead(
+            bead_id="B0001",
+            title="Done dependency",
+            agent_type="developer",
+            description="d",
+            status=BEAD_DONE,
+        )
+        bead = self.storage.create_bead(
+            bead_id="B0002",
+            title="Candidate",
+            agent_type="developer",
+            description="d",
+            dependencies=[dependency.bead_id],
+            status=BEAD_READY,
+        )
+
+        bead.dependencies.append("B-missing-3")
+
+        with self.assertRaisesRegex(ValueError, "Missing dependency beads: B-missing-3"):
+            self.storage.save_bead(bead)
+
+    def test_scheduler_skips_corrupt_ready_bead_with_missing_dependency(self):
+        valid = self.storage.create_bead(
+            bead_id="B0001",
+            title="Valid",
+            agent_type="developer",
+            description="d",
+            status=BEAD_READY,
+        )
+        corrupt = Bead(
+            bead_id="B0002",
+            title="Corrupt",
+            agent_type="developer",
+            description="d",
+            status=BEAD_READY,
+            dependencies=["B-missing-4"],
+        )
+        corrupt.execution_history.append(
+            ExecutionRecord(
+                timestamp=utc_now(),
+                event="created",
+                agent_type="scheduler",
+                summary="Bead created",
+            )
+        )
+        self.storage.bead_path(corrupt.bead_id).write_text(
+            json.dumps(corrupt.to_dict(), indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        sched = Scheduler(self.storage, FakeRunner(), MagicMock(), config=default_config())
+        with patch.object(sched, "_process") as process:
+            result = sched.run_once()
+
+        process.assert_called_once()
+        self.assertEqual(process.call_args.args[0].bead_id, valid.bead_id)
+        self.assertEqual(result.started, [valid.bead_id])
+        reloaded = self.storage.load_bead(corrupt.bead_id)
+        warning_events = [record for record in reloaded.execution_history if record.event == "dependency_missing"]
+        self.assertEqual(len(warning_events), 1)
+        self.assertEqual(warning_events[0].summary, "dependency_missing: B-missing-4 not found")
 
 
 # ---------------------------------------------------------------------------
