@@ -14,7 +14,7 @@ common:
     - review
   scheduler:
     lease_timeout_minutes: 30
-    max_corrective_attempts: 2
+    max_corrective_attempts: 4
     followup_suffixes:
       tester: test
       documentation: docs
@@ -46,6 +46,7 @@ claude:
   skills_dir: .claude
   flags:
     - "--dangerously-skip-permissions"
+  timeout_seconds: 900
   model_default: claude-sonnet-4-6
   model_by_agent:
     developer: claude-sonnet-4-6

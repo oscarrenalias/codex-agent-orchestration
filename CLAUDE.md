@@ -42,7 +42,7 @@ templates/agents/   Guardrail templates per agent type (mandatory)
 
 **Verdicts**: Review and tester beads produce `verdict: approved | needs_changes`. Verdict is the control-flow signal; narrative fields are context only.
 
-**Followup beads**: When a developer bead completes, the scheduler auto-creates `-test`, `-docs`, `-review` children. For planner-owned feature trees, shared followup beads are used instead — legacy per-developer children are suppressed. Scope syncing (`_sync_followup_scope`) still runs when a matching planner-owned bead exists. Standalone developer flows use legacy per-developer creation unchanged.
+**Followup beads**: When a developer bead completes, the scheduler auto-creates `-test`, `-docs`, `-review` children, unless the bead is a corrective bead or has `bead_type == "merge-conflict"`. For planner-owned feature trees, shared followup beads are used instead — legacy per-developer children are suppressed. Scope syncing (`_sync_followup_scope`) still runs when a matching planner-owned bead exists. Standalone developer flows use legacy per-developer creation unchanged.
 
 **Shared followup scope population** (`_populate_shared_followup_touched_files`): Before a `tester`, `documentation`, or `review` bead starts, the scheduler aggregates `touched_files` and `changed_files` from all **done** dependency beads — including tester and documentation dependencies, not just developer beads — and merges them into the followup bead's scope. This ensures review beads see test files written by the tester and doc files written by the docs agent. Duplicates are deduplicated; the bead is only persisted if the merged scope differs from the existing one.
 
