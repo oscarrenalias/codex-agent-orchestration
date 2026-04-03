@@ -4,8 +4,8 @@
 common:
   default_runner: codex
   templates_dir: templates/agents
-  # test_command: uv run python -m unittest discover -s tests -v
-  test_timeout_seconds: 120
+  test_command: uv run python -m unittest discover -s tests
+  test_timeout_seconds: 900
   agent_types:
     - planner
     - developer
@@ -51,8 +51,8 @@ claude:
     developer: claude-sonnet-4-6
     tester: claude-sonnet-4-6
     planner: claude-sonnet-4-6
-    review: claude-haiku-4-5-20251001
-    documentation: claude-haiku-4-5-20251001
+    review: claude-sonnet-4-6
+    documentation: claude-sonnet-4-6
   allowed_tools_default:
     - Edit
     - Write

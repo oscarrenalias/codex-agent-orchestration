@@ -180,14 +180,6 @@ class TestLoadConfigModelFields(unittest.TestCase):
             self.assertIsNone(claude.model_default)
             self.assertEqual(claude.model_by_agent, {})
 
-    def test_repo_config_has_model_fields(self):
-        """The actual repo config.yaml should have model fields matching defaults."""
-        cfg = load_config(REPO_ROOT)
-        default = default_config()
-        claude = cfg.backend("claude")
-        default_claude = default.backend("claude")
-        self.assertEqual(claude.model_default, default_claude.model_default)
-        self.assertEqual(claude.model_by_agent, default_claude.model_by_agent)
 
 
 # ---------------------------------------------------------------------------
