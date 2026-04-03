@@ -322,6 +322,8 @@ class TestSchedulerTransientBlockPatterns(unittest.TestCase):
 
 
 class TestDependencyValidationAndRuntimeResilience(unittest.TestCase):
+    """Document create/save validation and scheduler handling of stale bad data."""
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
@@ -333,6 +335,7 @@ class TestDependencyValidationAndRuntimeResilience(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_create_bead_rejects_missing_dependencies(self):
+        """New beads fail fast when dependency IDs do not resolve."""
         with self.assertRaisesRegex(ValueError, "Missing dependency beads: B-missing-1, B-missing-2"):
             self.storage.create_bead(
                 bead_id="B0001",
@@ -343,6 +346,7 @@ class TestDependencyValidationAndRuntimeResilience(unittest.TestCase):
             )
 
     def test_save_bead_rejects_missing_dependencies(self):
+        """Edits cannot persist a dependency list that now points at missing beads."""
         dependency = self.storage.create_bead(
             bead_id="B0001",
             title="Done dependency",
@@ -365,6 +369,7 @@ class TestDependencyValidationAndRuntimeResilience(unittest.TestCase):
             self.storage.save_bead(bead)
 
     def test_scheduler_skips_corrupt_ready_bead_with_missing_dependency(self):
+        """Scheduler skips legacy/corrupt beads and records a dependency_missing warning."""
         valid = self.storage.create_bead(
             bead_id="B0001",
             title="Valid",

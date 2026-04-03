@@ -62,6 +62,7 @@ class RepositoryStorage:
         return missing
 
     def _validate_dependencies(self, dependencies: list[str]) -> None:
+        """Reject dependency lists that reference beads not present in storage."""
         missing = self._missing_dependency_ids(dependencies)
         if not missing:
             return
@@ -87,6 +88,7 @@ class RepositoryStorage:
         self._write_bead(bead)
 
     def save_bead(self, bead: Bead) -> None:
+        """Persist a bead after enforcing that all declared dependencies exist."""
         self._validate_dependencies(bead.dependencies)
         self._write_bead(bead)
 
@@ -358,6 +360,11 @@ class RepositoryStorage:
         self.save_bead(bead)
 
     def dependency_satisfied(self, bead: Bead) -> bool:
+        """Return whether all dependencies are done, recording corrupt references once.
+
+        This keeps scheduler startup resilient if an on-disk bead predates
+        dependency validation or was edited outside normal storage APIs.
+        """
         for dependency_id in bead.dependencies:
             try:
                 dependency = self.load_bead(dependency_id)
@@ -369,6 +376,7 @@ class RepositoryStorage:
         return True
 
     def ready_beads(self) -> list[Bead]:
+        """List runnable beads, excluding leased beads and corrupt dependency graphs."""
         ready: list[Bead] = []
         for bead in self.list_beads():
             if bead.status != BEAD_READY:
