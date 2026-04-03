@@ -26,12 +26,15 @@ from codex_orchestrator.models import (
     BEAD_OPEN,
     BEAD_READY,
     Bead,
+    ExecutionRecord,
     HandoffSummary,
     SchedulerResult,
 )
 from codex_orchestrator.storage import RepositoryStorage
 from codex_orchestrator.tui import (
+    DETAIL_SECTION_HISTORY,
     DETAIL_SECTION_TELEMETRY,
+    EXECUTION_HISTORY_DISPLAY_LIMIT,
     FILTER_ACTIONABLE,
     FILTER_ALL,
     FILTER_DEFAULT,
@@ -233,9 +236,9 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertIn("q           Quit", overlay)
         self.assertIn("Shift+f     Previous filter", overlay)
         self.assertIn("t           Request blocked-bead retry", overlay)
-        self.assertIn("Enter       Toggle detail section / confirm merge", overlay)
+        self.assertIn("Enter       Toggle detail section", overlay)
         self.assertIn("y           Confirm retry/status update", overlay)
-        self.assertIn("c           Cancel pending merge/retry/status", overlay)
+        self.assertIn("c           Cancel pending retry/status", overlay)
         self.assertIn("? / Esc     Close help", overlay)
 
     def test_runtime_help_overlay_toggle_preserves_selection_and_filter(self) -> None:
@@ -322,37 +325,30 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual("Loaded bead state.", blocked_activity)
         self.assertEqual("Refreshed bead state.", refreshed_status)
 
-    def test_help_overlay_close_preserves_pending_merge_until_confirmed_after_close(self) -> None:
+    def test_pressing_m_shows_cli_redirect_message_in_tui(self) -> None:
+        # TUI no longer performs merges inline; M key shows the CLI command
         self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="done", status=BEAD_DONE)
         app = build_tui_app(self.storage, refresh_seconds=60)
+        app.runtime_state.filter_mode = FILTER_ALL
+        app.runtime_state.refresh()
 
-        async def exercise_app() -> tuple[bool, bool, str]:
+        async def exercise_app() -> tuple[str, bool]:
             async with app.run_test() as pilot:
                 await pilot.resize_terminal(80, 18)
                 await pilot.pause()
 
-                # Press M (Shift+M) to initiate merge
+                # Press M (Shift+M) — should show CLI redirect, not set pending state
                 await pilot.press("M")
                 await pilot.pause()
-                pending_before = app.runtime_state.awaiting_merge_confirmation
+                status_after_m = app.runtime_state.status_message
+                pending_after_m = app.runtime_state.awaiting_merge_confirmation
 
-                # Open help overlay — should NOT clear pending merge
-                await pilot.press("?")
-                await pilot.pause()
-                pending_during = app.runtime_state.awaiting_merge_confirmation
+                return status_after_m, pending_after_m
 
-                # Close help overlay — pending merge should still be set
-                await pilot.press("?")
-                await pilot.pause()
-                pending_after = app.runtime_state.awaiting_merge_confirmation
+        status_after_m, pending_after_m = asyncio.run(exercise_app())
 
-                return pending_before, pending_during, pending_after
-
-        pending_before, pending_during, pending_after = asyncio.run(exercise_app())
-
-        self.assertTrue(pending_before, "Merge should be pending after pressing M")
-        self.assertTrue(pending_during, "Merge pending state should survive help overlay open")
-        self.assertTrue(pending_after, "Merge pending state should survive help overlay close")
+        self.assertIn("orchestrator merge B0001", status_after_m, "M key should show CLI redirect")
+        self.assertFalse(pending_after_m, "M key should not set awaiting_merge_confirmation")
 
     def test_runtime_refresh_falls_back_to_previous_index_when_selected_bead_disappears(self) -> None:
         first = self.storage.create_bead(bead_id="B0001", title="First", agent_type="developer", description="first", status=BEAD_READY)
@@ -396,23 +392,20 @@ class TuiRegressionTests(unittest.TestCase):
             app._render_panels()
 
     def test_runtime_merge_returns_failure_for_nonzero_exit_without_crashing(self) -> None:
-        bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="done", status=BEAD_DONE)
+        # TUI no longer executes merges inline; request_merge shows CLI redirect.
+        # confirm_merge is a no-op when there is no pending confirmation state.
+        self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="done", status=BEAD_DONE)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
         state.request_merge()
 
-        def fake_merge(args: SimpleNamespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            self.assertEqual(bead.bead_id, args.bead_id)
-            console.error("merge returned 3")
-            return 3
-
-        merged = state.confirm_merge(fake_merge)
+        merged = state.confirm_merge()
 
         self.assertFalse(merged)
         self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertEqual(f"Merge failed for {bead.bead_id}.", state.status_message)
-        self.assertIn("merge returned 3", state.activity_message)
+        self.assertEqual("No merge pending confirmation.", state.status_message)
 
-    def test_runtime_request_merge_on_non_done_bead_is_denied_without_state_mutation(self) -> None:
+    def test_runtime_request_merge_on_non_done_bead_shows_cli_redirect(self) -> None:
+        # TUI shows CLI redirect for any bead regardless of status; the CLI enforces constraints
         blocked = self.storage.create_bead(
             bead_id="B0001",
             title="Blocked",
@@ -426,10 +419,7 @@ class TuiRegressionTests(unittest.TestCase):
 
         self.assertFalse(state.awaiting_merge_confirmation)
         self.assertIsNone(state.pending_merge_bead_id)
-        self.assertEqual(
-            f"{blocked.bead_id} is {blocked.status}; only done beads can be merged.",
-            state.status_message,
-        )
+        self.assertIn(f"orchestrator merge {blocked.bead_id}", state.status_message)
 
     def test_runtime_confirm_merge_without_pending_confirmation_is_denied_without_state_mutation(self) -> None:
         done = self.storage.create_bead(
@@ -449,7 +439,9 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual("No merge pending confirmation.", state.status_message)
         self.assertEqual(done.bead_id, state.selected_bead_id)
 
-    def test_runtime_refresh_clears_pending_merge_when_target_leaves_done_view(self) -> None:
+    def test_runtime_refresh_shows_cli_redirect_for_selected_bead(self) -> None:
+        # request_merge shows CLI redirect for the currently selected bead;
+        # no pending merge state is stored, so refresh does not need to clear it.
         self.storage.create_bead(bead_id="B0001", title="Other done", agent_type="developer", description="other", status=BEAD_DONE)
         target = self.storage.create_bead(
             bead_id="B0002",
@@ -463,18 +455,14 @@ class TuiRegressionTests(unittest.TestCase):
         state.selected_index = 1
         state.request_merge()
 
-        target.status = BEAD_BLOCKED
-        self.storage.save_bead(target)
-        state.refresh()
-
+        # CLI redirect is shown for the selected bead
+        self.assertIn(f"orchestrator merge {target.bead_id}", state.status_message)
         self.assertFalse(state.awaiting_merge_confirmation)
         self.assertIsNone(state.pending_merge_bead_id)
-        self.assertEqual(
-            "Merge confirmation cleared because the requested bead is no longer mergeable.",
-            state.status_message,
-        )
 
-    def test_runtime_confirm_merge_keeps_original_target_across_refresh(self) -> None:
+    def test_runtime_request_merge_shows_cli_redirect_for_selected_bead(self) -> None:
+        # request_merge always shows the CLI redirect for the currently selected bead.
+        # After a refresh that reorders beads, a new request_merge reflects the current selection.
         self.storage.create_bead(bead_id="B0002", title="Later", agent_type="developer", description="later", status=BEAD_DONE)
         target = self.storage.create_bead(
             bead_id="B0004",
@@ -488,19 +476,7 @@ class TuiRegressionTests(unittest.TestCase):
         state.selected_index = 1
         state.request_merge()
 
-        self.storage.create_bead(bead_id="B0001", title="Earlier", agent_type="developer", description="earlier", status=BEAD_DONE)
-        state.refresh()
-
-        merged_ids: list[str] = []
-
-        def fake_merge(args: SimpleNamespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            merged_ids.append(args.bead_id)
-            return 0
-
-        merged = state.confirm_merge(fake_merge)
-
-        self.assertTrue(merged)
-        self.assertEqual([target.bead_id], merged_ids)
+        self.assertIn(f"orchestrator merge {target.bead_id}", state.status_message)
         self.assertFalse(state.awaiting_merge_confirmation)
         self.assertIsNone(state.pending_merge_bead_id)
 
@@ -1602,6 +1578,8 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(f"Cancelled status update for {bead.bead_id}.", state.status_message)
 
     def test_runtime_merge_and_status_actions_clear_each_others_pending_state(self) -> None:
+        # TUI no longer sets awaiting_merge_confirmation; request_merge shows a CLI redirect.
+        # Verify that request_merge still clears a pending status flow.
         bead = self.storage.create_bead(
             bead_id="B0001",
             title="Done",
@@ -1611,25 +1589,32 @@ class TuiRegressionTests(unittest.TestCase):
         )
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
 
+        # request_merge shows CLI redirect without setting pending merge state
         state.request_merge()
-        self.assertTrue(state.awaiting_merge_confirmation)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
+        # opening status flow clears any merge-related UI state
         state.open_status_update_flow()
         self.assertFalse(state.awaiting_merge_confirmation)
         self.assertTrue(state.status_flow_active)
         self.assertEqual(bead.bead_id, state.pending_status_bead_id)
 
+        # request_merge clears the status flow and shows CLI redirect
         state.choose_status_target(BEAD_BLOCKED)
         state.request_merge()
 
-        self.assertTrue(state.awaiting_merge_confirmation)
-        self.assertEqual(bead.bead_id, state.pending_merge_bead_id)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
         self.assertFalse(state.status_flow_active)
         self.assertIsNone(state.pending_status_bead_id)
         self.assertIsNone(state.pending_status_target)
-        self.assertEqual(f"Confirm merge for {bead.bead_id} with Enter.", state.status_message)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
     def test_runtime_retry_merge_and_status_actions_clear_each_others_pending_state(self) -> None:
+        # TUI no longer sets awaiting_merge_confirmation; request_merge shows a CLI redirect.
+        # Verify that request_merge clears a pending retry flow.
         bead = self.storage.create_bead(
             bead_id="B0001",
             title="Blocked",
@@ -1653,9 +1638,11 @@ class TuiRegressionTests(unittest.TestCase):
         state.refresh()
         state.request_merge()
 
+        # request_merge clears retry state and shows CLI redirect; does not set pending merge
         self.assertFalse(state.awaiting_retry_confirmation)
-        self.assertTrue(state.awaiting_merge_confirmation)
-        self.assertEqual(bead.bead_id, state.pending_merge_bead_id)
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
     def test_app_status_update_flow_uses_keyboard_confirmation(self) -> None:
         bead = self.storage.create_bead(
@@ -2871,7 +2858,8 @@ class TuiTelemetryDisplayTests(unittest.TestCase):
     def test_detail_section_order_includes_telemetry(self) -> None:
         from codex_orchestrator.tui import DETAIL_SECTION_ORDER
         self.assertIn(DETAIL_SECTION_TELEMETRY, DETAIL_SECTION_ORDER)
-        self.assertEqual(DETAIL_SECTION_TELEMETRY, DETAIL_SECTION_ORDER[-1])
+        self.assertIn(DETAIL_SECTION_HISTORY, DETAIL_SECTION_ORDER)
+        self.assertEqual(DETAIL_SECTION_HISTORY, DETAIL_SECTION_ORDER[-1])
 
 
 class TuiTitleTruncationTests(unittest.TestCase):
@@ -2988,6 +2976,97 @@ class TuiTitleTruncationTests(unittest.TestCase):
         # Line should respect width
         self.assertLessEqual(len(lines[0]), 80)
 
+
+class TuiExecutionHistoryTruncationTests(unittest.TestCase):
+    """Tests for B-d793bd9f: Truncate execution_history display in TUI detail panel."""
+
+    def _make_record(self, i: int) -> ExecutionRecord:
+        return ExecutionRecord(
+            timestamp=f"2026-01-01T00:00:{i:02d}+00:00",
+            event="started",
+            agent_type="developer",
+            summary=f"Event {i}",
+        )
+
+    def _make_bead(self, num_records: int) -> Bead:
+        bead = Bead(bead_id="B0001", title="T", agent_type="developer", description="d")
+        bead.execution_history = [self._make_record(i) for i in range(num_records)]
+        return bead
+
+    # -- EXECUTION_HISTORY_DISPLAY_LIMIT constant -----------------------------
+
+    def test_display_limit_is_five(self) -> None:
+        self.assertEqual(5, EXECUTION_HISTORY_DISPLAY_LIMIT)
+
+    # -- _detail_section_body DETAIL_SECTION_HISTORY --------------------------
+
+    def test_detail_section_history_no_records(self) -> None:
+        bead = self._make_bead(0)
+        result = _detail_section_body(bead, DETAIL_SECTION_HISTORY)
+        self.assertEqual("No execution history.", result)
+
+    def test_detail_section_history_fewer_than_limit(self) -> None:
+        bead = self._make_bead(3)
+        result = _detail_section_body(bead, DETAIL_SECTION_HISTORY)
+        self.assertNotIn("omitted", result)
+        self.assertIn("Event 0", result)
+        self.assertIn("Event 2", result)
+
+    def test_detail_section_history_exactly_at_limit(self) -> None:
+        bead = self._make_bead(EXECUTION_HISTORY_DISPLAY_LIMIT)
+        result = _detail_section_body(bead, DETAIL_SECTION_HISTORY)
+        self.assertNotIn("omitted", result)
+        self.assertIn("Event 0", result)
+        self.assertIn(f"Event {EXECUTION_HISTORY_DISPLAY_LIMIT - 1}", result)
+
+    def test_detail_section_history_above_limit_shows_omitted_count(self) -> None:
+        total = EXECUTION_HISTORY_DISPLAY_LIMIT + 3
+        bead = self._make_bead(total)
+        result = _detail_section_body(bead, DETAIL_SECTION_HISTORY)
+        self.assertIn("3 earlier entries omitted", result)
+
+    def test_detail_section_history_above_limit_shows_only_last_entries(self) -> None:
+        total = EXECUTION_HISTORY_DISPLAY_LIMIT + 2
+        bead = self._make_bead(total)
+        result = _detail_section_body(bead, DETAIL_SECTION_HISTORY)
+        # First two events should be omitted
+        self.assertNotIn("Event 0", result)
+        self.assertNotIn("Event 1", result)
+        # Last EXECUTION_HISTORY_DISPLAY_LIMIT events should appear
+        for i in range(2, total):
+            self.assertIn(f"Event {i}", result)
+
+    def test_detail_section_history_none_bead_returns_dash(self) -> None:
+        result = _detail_section_body(None, DETAIL_SECTION_HISTORY)
+        self.assertEqual("-", result)
+
+    # -- format_detail_panel execution history --------------------------------
+
+    def test_format_detail_panel_no_history_omits_section(self) -> None:
+        bead = self._make_bead(0)
+        result = format_detail_panel(bead)
+        self.assertNotIn("Execution History:", result)
+
+    def test_format_detail_panel_with_history_includes_header(self) -> None:
+        bead = self._make_bead(2)
+        result = format_detail_panel(bead)
+        self.assertIn("Execution History:", result)
+
+    def test_format_detail_panel_truncates_long_history(self) -> None:
+        total = EXECUTION_HISTORY_DISPLAY_LIMIT + 4
+        bead = self._make_bead(total)
+        result = format_detail_panel(bead)
+        self.assertIn("4 earlier entries omitted", result)
+        # Early events should not appear
+        self.assertNotIn("Event 0", result)
+        # Last events should appear
+        self.assertIn(f"Event {total - 1}", result)
+
+    def test_format_detail_panel_exactly_at_limit_no_omission(self) -> None:
+        bead = self._make_bead(EXECUTION_HISTORY_DISPLAY_LIMIT)
+        result = format_detail_panel(bead)
+        self.assertNotIn("omitted", result)
+        self.assertIn("Event 0", result)
 
 
 class TuiMarkupRenderingTests(unittest.TestCase):

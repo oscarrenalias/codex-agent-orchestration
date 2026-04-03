@@ -24,14 +24,14 @@ src/codex_orchestrator/
   models.py       Bead, Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
   prompts.py      Worker/planner prompt construction + guardrail loading (config-overridable)
-  skills.py       Skill allowlists and isolated execution root setup (config-driven)
+  skills.py       Per-agent skill catalog allowlists and isolated execution root setup (config-driven)
   gitutils.py     Worktree creation, commits, merges
   planner.py      Spec-to-bead-graph planning service
   tui.py          Textual-based interactive UI
   console.py      CLI output helpers (spinners, spinner pool, colours)
 
 templates/agents/   Guardrail templates per agent type (mandatory)
-.agents/skills/     Skill definitions (SKILL.md + agents/openai.yaml)
+.agents/skills/     Shared skill catalog (`core/`, `role/`, `capability/`, `task/`, `memory/`)
 .orchestrator/      Runtime state: beads/, logs/, worktrees/, telemetry/, agent-runs/, config.yaml
 ```
 
@@ -43,7 +43,9 @@ templates/agents/   Guardrail templates per agent type (mandatory)
 
 **Verdicts**: Review and tester beads produce `verdict: approved | needs_changes`. Verdict is the control-flow signal; narrative fields are context only.
 
-**Followup beads**: When a developer bead completes, the scheduler auto-creates `-test`, `-docs`, `-review` children. For planner-owned feature trees, shared followup beads are used instead — legacy per-developer children are suppressed. Scope syncing (`_sync_followup_scope`) still runs when a matching planner-owned bead exists. Standalone developer flows use legacy per-developer creation unchanged.
+**Followup beads**: When a developer bead completes, the scheduler auto-creates `-test`, `-docs`, `-review` children, unless the bead is a corrective bead or has `bead_type == "merge-conflict"`. For planner-owned feature trees, shared followup beads are used instead — legacy per-developer children are suppressed. Scope syncing (`_sync_followup_scope`) still runs when a matching planner-owned bead exists. Standalone developer flows use legacy per-developer creation unchanged.
+
+**Shared followup scope population** (`_populate_shared_followup_touched_files`): Before a `tester`, `documentation`, or `review` bead starts, the scheduler aggregates `touched_files` and `changed_files` from all **done** dependency beads — including tester and documentation dependencies, not just developer beads — and merges them into the followup bead's scope. This ensures review beads see test files written by the tester and doc files written by the docs agent. Duplicates are deduplicated; the bead is only persisted if the merged scope differs from the existing one.
 
 **Corrective beads**: Transient failures matching `config.scheduler.transient_block_patterns` get up to `config.scheduler.max_corrective_attempts` (default 2) automatic `-corrective` retries.
 
@@ -56,6 +58,8 @@ Select backend via `--runner` flag, `ORCHESTRATOR_RUNNER` env var, or `config.de
 | Skills directory | `exec_root/.agents/skills/` | `exec_root/.claude/skills/` |
 | Agent steering | Embedded in prompt | `exec_root/CLAUDE.md` (auto-loaded) |
 | CLI invocation | `codex exec --full-auto` | `claude -p --dangerously-skip-permissions` |
+
+The skill catalog is role-scoped rather than global. `skills.py` keeps a fixed `AGENT_SKILL_ALLOWLIST` that bundles `core/base-orchestrator`, one role skill, and `memory` for every worker agent type. Most types also receive capability and task skills; the `planner` is an exception — it gets `task/spec-intake` and `task/dependency-graphing` but no `capability/` skill. The `scheduler` backend uses only scheduler-specific skills and does not receive `memory`.
 
 Beads are backend-agnostic. A bead started with Codex can be retried with Claude Code via `orchestrator --runner claude retry <bead_id>`.
 

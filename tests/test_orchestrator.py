@@ -491,8 +491,8 @@ class OrchestratorTests(unittest.TestCase):
             sorted(shared_review.changed_files),
         )
 
-    def test_populate_shared_followup_touched_files_skips_when_fewer_than_two_done_deps(self) -> None:
-        # Only one done developer dependency — method should be a no-op.
+    def test_populate_shared_followup_touched_files_aggregates_single_done_dependency(self) -> None:
+        # A single done dependency with touched_files should populate the shared followup.
         dev_a = self.storage.create_bead(
             title="Implement A",
             agent_type="developer",
@@ -522,9 +522,75 @@ class OrchestratorTests(unittest.TestCase):
         scheduler._populate_shared_followup_touched_files(shared_test)
 
         shared_test = self.storage.load_bead(shared_test.bead_id)
-        # Fewer than 2 done deps — touched_files must remain empty.
-        self.assertEqual([], shared_test.touched_files)
-        self.assertEqual([], shared_test.changed_files)
+        self.assertEqual(["src/a.py"], shared_test.touched_files)
+        self.assertEqual(["src/a.py"], shared_test.changed_files)
+
+    def test_populate_shared_followup_touched_files_includes_tester_dependency_files(self) -> None:
+        dev = self.storage.create_bead(
+            title="Implement A",
+            agent_type="developer",
+            description="first change",
+        )
+        dev.status = BEAD_DONE
+        dev.handoff_summary.touched_files = ["src/a.py"]
+        dev.handoff_summary.changed_files = ["src/a.py"]
+        self.storage.save_bead(dev)
+
+        tester = self.storage.create_bead(
+            title="Shared tester",
+            agent_type="tester",
+            description="validate implementation",
+            dependencies=[dev.bead_id],
+        )
+        tester.status = BEAD_DONE
+        tester.handoff_summary.touched_files = ["tests/test_a.py"]
+        tester.handoff_summary.changed_files = ["tests/test_a.py", "src/a.py"]
+        self.storage.save_bead(tester)
+
+        shared_review = self.storage.create_bead(
+            title="Shared review",
+            agent_type="review",
+            description="review combined implementation",
+            dependencies=[dev.bead_id, tester.bead_id],
+        )
+
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler._populate_shared_followup_touched_files(shared_review)
+
+        shared_review = self.storage.load_bead(shared_review.bead_id)
+        self.assertEqual(
+            sorted(["src/a.py", "tests/test_a.py"]),
+            sorted(shared_review.touched_files),
+        )
+        self.assertEqual(
+            sorted(["src/a.py", "tests/test_a.py"]),
+            sorted(shared_review.changed_files),
+        )
+
+    def test_populate_shared_followup_touched_files_skips_when_done_deps_have_no_touched_files(self) -> None:
+        # Done dependencies with only changed_files should not populate shared scope.
+        tester = self.storage.create_bead(
+            title="Shared tester",
+            agent_type="tester",
+            description="validate implementation",
+        )
+        tester.status = BEAD_DONE
+        tester.handoff_summary.changed_files = ["tests/test_a.py"]
+        self.storage.save_bead(tester)
+
+        shared_review = self.storage.create_bead(
+            title="Shared review",
+            agent_type="review",
+            description="review combined implementation",
+            dependencies=[tester.bead_id],
+        )
+
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        scheduler._populate_shared_followup_touched_files(shared_review)
+
+        shared_review = self.storage.load_bead(shared_review.bead_id)
+        self.assertEqual([], shared_review.touched_files)
+        self.assertEqual([], shared_review.changed_files)
 
     def test_scheduler_ignores_nested_feature_followups_when_shared_root_followups_exist(self) -> None:
         epic = self.storage.create_bead(
@@ -1341,7 +1407,13 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("Exceeded corrective attempt budget", bead.metadata.get("escalation_reason", ""))
 
     def test_review_needs_changes_creates_corrective_immediately(self) -> None:
-        bead = self.storage.create_bead(title="Review work", agent_type="review", description="inspect")
+        bead = self.storage.create_bead(
+            title="Review work",
+            agent_type="review",
+            description="inspect",
+            touched_files=["src/codex_orchestrator/skills.py"],
+            changed_files=["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+        )
         runner = FakeRunner(
             results={
                 bead.bead_id: AgentRunResult(
@@ -1363,8 +1435,18 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(BEAD_READY, corrective.status)
         self.assertEqual(bead.bead_id, corrective.parent_id)
         self.assertEqual(bead.bead_id, corrective.metadata.get("auto_corrective_for"))
+        self.assertEqual(["src/codex_orchestrator/skills.py"], corrective.touched_files)
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+            corrective.changed_files,
+        )
         bead = self.storage.load_bead(bead.bead_id)
         self.assertEqual(corrective_id, bead.metadata.get("auto_corrective_bead_id"))
+        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.touched_files)
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+            bead.handoff_summary.changed_files,
+        )
 
     def test_tester_needs_changes_creates_corrective_immediately(self) -> None:
         bead = self.storage.create_bead(title="Test work", agent_type="tester", description="validate")
@@ -1856,7 +1938,14 @@ class OrchestratorTests(unittest.TestCase):
         self.assertTrue(guardrail_records[0].details["template_path"].endswith("templates/agents/developer.md"))
 
     def test_scheduler_preserves_blocked_role_scope_handoff_details(self) -> None:
-        bead = self.storage.create_bead(title="Review implementation work", agent_type="review", description="inspect")
+        bead = self.storage.create_bead(
+            title="Review implementation work",
+            agent_type="review",
+            description="inspect",
+            touched_files=["src/codex_orchestrator/skills.py"],
+            changed_files=["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            conflict_risks="Review is scoped to the rewritten skill rollout files.",
+        )
         runner = FakeRunner(
             results={
                 bead.bead_id: AgentRunResult(
@@ -1886,6 +1975,20 @@ class OrchestratorTests(unittest.TestCase):
             bead.handoff_summary.remaining,
         )
         self.assertEqual("Review signoff is blocked until implementation is complete.", bead.handoff_summary.risks)
+        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.touched_files)
+        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.handoff_summary.touched_files)
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            bead.changed_files,
+        )
+        self.assertEqual(
+            ["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            bead.handoff_summary.changed_files,
+        )
+        self.assertEqual(
+            "Review is scoped to the rewritten skill rollout files.",
+            bead.handoff_summary.conflict_risks,
+        )
         self.assertEqual("Hand off to a developer to implement the requested changes.", bead.handoff_summary.next_action)
         self.assertEqual("developer", bead.handoff_summary.next_agent)
         self.assertEqual("The bead requires implementation work outside review scope.", bead.handoff_summary.block_reason)
@@ -2939,7 +3042,7 @@ class OrchestratorTests(unittest.TestCase):
         self.storage.save_bead(root)
         console = ConsoleReporter(stream=io.StringIO())
         with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
-            exit_code = command_merge(Namespace(bead_id=child.bead_id), self.storage, console)
+            exit_code = command_merge(Namespace(bead_id=child.bead_id, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b0001")
 
@@ -3186,71 +3289,52 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("Filter set to all.", state.status_panel_text())
         self.assertIn("done=1", state.status_panel_text())
 
-    def test_tui_runtime_merge_rejects_non_done_beads(self) -> None:
-        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="one", status=BEAD_READY)
+    def test_tui_runtime_merge_shows_cli_redirect_for_any_bead(self) -> None:
+        # TUI no longer performs merges inline; it shows the CLI command regardless of bead status
+        bead = self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="one", status=BEAD_READY)
         state = TuiRuntimeState(self.storage)
 
         state.request_merge()
 
         self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertIn("only done beads can be merged", state.status_message)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
-    def test_tui_runtime_merge_uses_existing_merge_path_and_survives_failure(self) -> None:
+    def test_tui_runtime_merge_shows_cli_redirect_for_done_bead(self) -> None:
+        # TUI redirects to CLI instead of executing merge inline
         bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
 
         state.request_merge()
-        self.assertTrue(state.awaiting_merge_confirmation)
 
-        merge_calls: list[str] = []
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
-        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            merge_calls.append(args.bead_id)
-            raise RuntimeError("merge conflict")
+    def test_tui_runtime_confirm_merge_no_op_when_no_pending_state(self) -> None:
+        # confirm_merge returns False gracefully when awaiting_merge_confirmation is False
+        self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
 
-        merged = state.confirm_merge(fake_merge)
+        # request_merge no longer sets awaiting_merge_confirmation
+        state.request_merge()
+        self.assertFalse(state.awaiting_merge_confirmation)
+
+        merged = state.confirm_merge()
 
         self.assertFalse(merged)
-        self.assertEqual([bead.bead_id], merge_calls)
-        self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertIn("Merge failed for B0001", state.status_message)
+        self.assertEqual("No merge pending confirmation.", state.status_message)
 
-    def test_tui_runtime_merge_handles_system_exit_without_terminating_runtime(self) -> None:
+    def test_tui_runtime_merge_clears_other_pending_states(self) -> None:
+        # request_merge clears pending retry/status flows
         bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
 
         state.request_merge()
-        self.assertTrue(state.awaiting_merge_confirmation)
 
-        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            raise SystemExit(f"{args.bead_id} has no feature branch to merge")
-
-        merged = state.confirm_merge(fake_merge)
-
-        self.assertFalse(merged)
-        self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertEqual(f"Merge failed for {bead.bead_id}.", state.status_message)
-        self.assertIn("has no feature branch to merge", state.activity_message)
-
-    def test_tui_runtime_merge_confirms_success_and_refreshes_messages(self) -> None:
-        bead = self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="one", status=BEAD_DONE)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        state.request_merge()
-        self.assertTrue(state.awaiting_merge_confirmation)
-
-        def fake_merge(args: Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
-            self.assertEqual(bead.bead_id, args.bead_id)
-            console.info("merge ok")
-            return 0
-
-        merged = state.confirm_merge(fake_merge)
-
-        self.assertTrue(merged)
-        self.assertFalse(state.awaiting_merge_confirmation)
-        self.assertEqual(f"Merged {bead.bead_id}.", state.status_message)
-        self.assertIn("merge ok", state.activity_message)
-        self.assertEqual(bead.bead_id, state.selected_bead_id)
+        self.assertFalse(state.awaiting_retry_confirmation)
+        self.assertFalse(state.status_flow_active)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
 
     def test_tui_render_tree_panel_marks_selected_row(self) -> None:
         rows = build_tree_rows([
@@ -3930,7 +4014,7 @@ class OrchestratorTests(unittest.TestCase):
         prefix = bead.bead_id[:4]
         console = ConsoleReporter(stream=io.StringIO())
         with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
-            exit_code = command_merge(Namespace(bead_id=prefix), self.storage, console)
+            exit_code = command_merge(Namespace(bead_id=prefix, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b-test")
 

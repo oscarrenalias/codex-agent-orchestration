@@ -45,12 +45,60 @@ class RepositoryStorage:
     def bead_path(self, bead_id: str) -> Path:
         return self.beads_dir / f"{bead_id}.json"
 
-    def save_bead(self, bead: Bead) -> None:
+    def _write_bead(self, bead: Bead) -> None:
         self.initialize()
         path = self.bead_path(bead.bead_id)
         tmp_path = path.with_suffix(f"{path.suffix}.tmp")
         tmp_path.write_text(json.dumps(bead.to_dict(), indent=2) + "\n", encoding="utf-8")
         tmp_path.replace(path)
+
+    def _missing_dependency_ids(self, dependencies: list[str]) -> list[str]:
+        missing: list[str] = []
+        for dependency_id in dependencies:
+            if self.bead_path(dependency_id).exists():
+                continue
+            if dependency_id not in missing:
+                missing.append(dependency_id)
+        return missing
+
+    def _validate_dependencies(self, dependencies: list[str]) -> None:
+        """Reject dependency lists that reference beads not present in storage."""
+        missing = self._missing_dependency_ids(dependencies)
+        if not missing:
+            return
+        missing_list = ", ".join(missing)
+        raise ValueError(f"Missing dependency beads: {missing_list}")
+
+    def _record_missing_dependency_warning(self, bead: Bead, dependency_id: str, error: ValueError) -> None:
+        summary = f"dependency_missing: {dependency_id} not found"
+        for record in reversed(bead.execution_history):
+            if record.event != "dependency_missing":
+                continue
+            if record.summary == summary:
+                return
+        bead.execution_history.append(
+            ExecutionRecord(
+                timestamp=utc_now(),
+                event="dependency_missing",
+                agent_type="scheduler",
+                summary=summary,
+                details={"dependency_id": dependency_id, "error": str(error)},
+            )
+        )
+        self._write_bead(bead)
+
+    def save_bead(self, bead: Bead) -> None:
+        """Persist a bead after enforcing that all declared dependencies exist."""
+        self._validate_dependencies(bead.dependencies)
+        self._write_bead(bead)
+
+    def _cleanup_deleted_dependency_references(self, bead_id: str) -> None:
+        """Remove a deleted bead from dependents, tolerating legacy on-disk corruption."""
+        for other in self.list_beads():
+            if bead_id not in other.dependencies:
+                continue
+            other.dependencies = [dependency for dependency in other.dependencies if dependency != bead_id]
+            self._write_bead(other)
 
     def write_telemetry_artifact(
         self,
@@ -273,10 +321,7 @@ class RepositoryStorage:
 
         self.bead_path(bead_id).unlink()
 
-        for other in self.list_beads():
-            if bead_id in other.dependencies:
-                other.dependencies = [d for d in other.dependencies if d != bead_id]
-                self.save_bead(other)
+        self._cleanup_deleted_dependency_references(bead_id)
 
         return bead
 
@@ -320,9 +365,23 @@ class RepositoryStorage:
         self.save_bead(bead)
 
     def dependency_satisfied(self, bead: Bead) -> bool:
-        return all(self.load_bead(dep).status == BEAD_DONE for dep in bead.dependencies)
+        """Return whether all dependencies are done, recording corrupt references once.
+
+        This keeps scheduler startup resilient if an on-disk bead predates
+        dependency validation or was edited outside normal storage APIs.
+        """
+        for dependency_id in bead.dependencies:
+            try:
+                dependency = self.load_bead(dependency_id)
+            except ValueError as exc:
+                self._record_missing_dependency_warning(bead, dependency_id, exc)
+                return False
+            if dependency.status != BEAD_DONE:
+                return False
+        return True
 
     def ready_beads(self) -> list[Bead]:
+        """List runnable beads, excluding leased beads and corrupt dependency graphs."""
         ready: list[Bead] = []
         for bead in self.list_beads():
             if bead.status != BEAD_READY:

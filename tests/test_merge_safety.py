@@ -1,0 +1,506 @@
+from __future__ import annotations
+
+import io
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from argparse import Namespace
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from codex_orchestrator.cli import command_merge
+from codex_orchestrator.config import CommonConfig, OrchestratorConfig, SchedulerConfig
+from codex_orchestrator.console import ConsoleReporter
+from codex_orchestrator.gitutils import GitError
+from codex_orchestrator.models import (
+    BEAD_DONE,
+    BEAD_OPEN,
+    BEAD_READY,
+)
+from codex_orchestrator.prompts import BUILT_IN_AGENT_TYPES
+from codex_orchestrator.storage import RepositoryStorage
+
+
+def _make_config(
+    *,
+    test_command: str | None = None,
+    test_timeout_seconds: int = 120,
+    max_corrective_attempts: int = 2,
+) -> OrchestratorConfig:
+    return OrchestratorConfig(
+        common=CommonConfig(
+            test_command=test_command,
+            test_timeout_seconds=test_timeout_seconds,
+        ),
+        scheduler=SchedulerConfig(
+            max_corrective_attempts=max_corrective_attempts,
+        ),
+    )
+
+
+class MergeSafetyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        subprocess.run(["git", "init"], cwd=self.root, check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=self.root, check=True)
+        subprocess.run(["git", "config", "user.name", "Test User"], cwd=self.root, check=True)
+        (self.root / "README.md").write_text("seed\n", encoding="utf-8")
+        source_templates = Path(__file__).resolve().parents[1] / "templates" / "agents"
+        target_templates = self.root / "templates" / "agents"
+        target_templates.mkdir(parents=True, exist_ok=True)
+        for template in BUILT_IN_AGENT_TYPES:
+            shutil.copy2(source_templates / f"{template}.md", target_templates / f"{template}.md")
+        # copy merge-conflict template if present
+        mc_template = Path(__file__).resolve().parents[1] / "templates" / "agents" / "merge-conflict.md"
+        if mc_template.exists():
+            shutil.copy2(mc_template, target_templates / "merge-conflict.md")
+        subprocess.run(["git", "add", "README.md"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "templates/agents"], cwd=self.root, check=True)
+        subprocess.run(["git", "commit", "-m", "init"], cwd=self.root, check=True, capture_output=True)
+        self.storage = RepositoryStorage(self.root)
+        self.storage.initialize()
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _make_done_bead_with_branch(self, branch_name: str = "feature/b-test") -> object:
+        bead = self.storage.create_bead(
+            title="Feature",
+            agent_type="developer",
+            description="some feature",
+            status=BEAD_DONE,
+        )
+        bead.execution_branch_name = branch_name
+        self.storage.save_bead(bead)
+        return bead
+
+    # -------------------------------------------------------------------------
+    # Happy path
+    # -------------------------------------------------------------------------
+
+    def test_happy_path_skipping_both_preflight_and_tests(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-happy")
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config()
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as mock_merge,
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=True),
+                self.storage,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        mock_merge.assert_called_once_with("feature/b-happy")
+
+    # -------------------------------------------------------------------------
+    # Existing unresolved merge-conflict bead blocks merge
+    # -------------------------------------------------------------------------
+
+    def test_existing_unresolved_merge_conflict_bead_blocks_merge(self) -> None:
+        root_bead = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
+        root_bead.execution_branch_name = "feature/b-root"
+        self.storage.save_bead(root_bead)
+
+        # create an unresolved merge-conflict child
+        self.storage.create_bead(
+            title="Resolve conflicts",
+            agent_type="developer",
+            description="conflicts",
+            bead_type="merge-conflict",
+            parent_id=root_bead.bead_id,
+            feature_root_id=root_bead.bead_id,
+            status=BEAD_OPEN,
+        )
+
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config()
+        with patch("codex_orchestrator.cli.load_config", return_value=cfg):
+            exit_code = command_merge(
+                Namespace(bead_id=root_bead.bead_id, skip_rebase=True, skip_tests=True),
+                self.storage,
+                console,
+            )
+        self.assertEqual(1, exit_code)
+
+    def test_done_merge_conflict_bead_does_not_block_merge(self) -> None:
+        root_bead = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
+        root_bead.execution_branch_name = "feature/b-root"
+        self.storage.save_bead(root_bead)
+
+        # create a resolved (done) merge-conflict child
+        conflict_bead = self.storage.create_bead(
+            title="Resolve conflicts",
+            agent_type="developer",
+            description="conflicts",
+            bead_type="merge-conflict",
+            parent_id=root_bead.bead_id,
+            feature_root_id=root_bead.bead_id,
+        )
+        conflict_bead.status = BEAD_DONE
+        self.storage.save_bead(conflict_bead)
+
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config()
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as mock_merge,
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=root_bead.bead_id, skip_rebase=True, skip_tests=True),
+                self.storage,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        mock_merge.assert_called_once()
+
+    # -------------------------------------------------------------------------
+    # Preflight: merge main into feature branch
+    # -------------------------------------------------------------------------
+
+    def test_preflight_skipped_when_skip_rebase_is_true(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-norebase")
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config()
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.WorktreeManager.merge_main_into_branch") as mock_preflight,
+            patch("codex_orchestrator.cli.WorktreeManager.merge_branch"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=True),
+                self.storage,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        mock_preflight.assert_not_called()
+
+    def test_preflight_conflict_creates_merge_conflict_bead_and_returns_1(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-conflict")
+        # give the bead a worktree path that "exists"
+        worktree_path = self.root / ".orchestrator" / "worktrees" / "fake"
+        worktree_path.mkdir(parents=True, exist_ok=True)
+        bead.execution_worktree_path = str(worktree_path)
+        self.storage.save_bead(bead)
+
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config()
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch(
+                "codex_orchestrator.cli.WorktreeManager.merge_main_into_branch",
+                side_effect=GitError("conflict"),
+            ),
+            patch("codex_orchestrator.cli.WorktreeManager.conflicted_files", return_value=["a.py"]),
+            patch("codex_orchestrator.cli._get_diff_context", return_value=""),
+            patch("codex_orchestrator.cli.WorktreeManager.abort_merge"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=False, skip_tests=True),
+                self.storage,
+                console,
+            )
+
+        self.assertEqual(1, exit_code)
+        conflict_beads = [
+            b for b in self.storage.list_beads() if b.bead_type == "merge-conflict"
+        ]
+        self.assertEqual(1, len(conflict_beads))
+        self.assertIn("a.py", conflict_beads[0].expected_files)
+
+    # -------------------------------------------------------------------------
+    # Test gate
+    # -------------------------------------------------------------------------
+
+    def test_test_gate_skipped_when_skip_tests_is_true(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-notests")
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config(test_command="uv run python -m unittest")
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.subprocess.run") as mock_proc,
+            patch("codex_orchestrator.cli.WorktreeManager.merge_branch"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=True),
+                self.storage,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        # subprocess.run should not have been called for the test command
+        # (merge_branch calls WorktreeManager, not subprocess.run directly)
+        for call in mock_proc.call_args_list:
+            if isinstance(call.args[0], str):
+                self.assertNotIn("unittest", call.args[0])
+
+    def test_test_gate_missing_test_command_warns_and_skips(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-noconfig")
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config(test_command=None)
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.WorktreeManager.merge_branch"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=False),
+                self.storage,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        output = stream.getvalue()
+        self.assertIn("No test_command configured", output)
+
+    def test_test_gate_failure_creates_merge_conflict_bead_and_returns_1(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-testfail")
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config(test_command="false")  # always fails
+        failing_proc = MagicMock()
+        failing_proc.returncode = 1
+        failing_proc.stdout = "FAILED"
+        failing_proc.stderr = ""
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.subprocess.run", return_value=failing_proc),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=False),
+                self.storage,
+                console,
+            )
+
+        self.assertEqual(1, exit_code)
+        conflict_beads = [
+            b for b in self.storage.list_beads() if b.bead_type == "merge-conflict"
+        ]
+        self.assertEqual(1, len(conflict_beads))
+
+    def test_test_gate_timeout_creates_merge_conflict_bead_and_returns_1(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-timeout")
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config(test_command="sleep 999", test_timeout_seconds=1)
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch(
+                "codex_orchestrator.cli.subprocess.run",
+                side_effect=subprocess.TimeoutExpired("sleep", 1),
+            ),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=False),
+                self.storage,
+                console,
+            )
+
+        self.assertEqual(1, exit_code)
+        conflict_beads = [
+            b for b in self.storage.list_beads() if b.bead_type == "merge-conflict"
+        ]
+        self.assertEqual(1, len(conflict_beads))
+        self.assertIn("timed out", conflict_beads[0].description.lower())
+
+    def test_test_gate_uses_configured_timeout(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-timeoutval")
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config(test_command="echo ok", test_timeout_seconds=42)
+        ok_proc = MagicMock()
+        ok_proc.returncode = 0
+        ok_proc.stdout = "ok"
+        ok_proc.stderr = ""
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.subprocess.run", return_value=ok_proc) as mock_run,
+            patch("codex_orchestrator.cli.WorktreeManager.merge_branch"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=False),
+                self.storage,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        # verify the timeout was passed to subprocess.run
+        run_kwargs = mock_run.call_args
+        self.assertEqual(42, run_kwargs.kwargs.get("timeout") or run_kwargs[1].get("timeout"))
+
+    # -------------------------------------------------------------------------
+    # Attempt cap escalation
+    # -------------------------------------------------------------------------
+
+    def test_attempt_cap_prevents_new_merge_conflict_bead_when_exceeded(self) -> None:
+        root_bead = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
+        root_bead.execution_branch_name = "feature/b-cap"
+        worktree_path = self.root / ".orchestrator" / "worktrees" / "cap"
+        worktree_path.mkdir(parents=True, exist_ok=True)
+        root_bead.execution_worktree_path = str(worktree_path)
+        self.storage.save_bead(root_bead)
+
+        # create existing merge-conflict beads that saturate the cap (2)
+        for i in range(2):
+            self.storage.create_bead(
+                title=f"Resolve conflict {i}",
+                agent_type="developer",
+                description="conflict",
+                bead_type="merge-conflict",
+                parent_id=root_bead.bead_id,
+                feature_root_id=root_bead.bead_id,
+            )
+
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config(max_corrective_attempts=2)
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch(
+                "codex_orchestrator.cli.WorktreeManager.merge_main_into_branch",
+                side_effect=GitError("conflict"),
+            ),
+            patch("codex_orchestrator.cli.WorktreeManager.conflicted_files", return_value=[]),
+            patch("codex_orchestrator.cli._get_diff_context", return_value=""),
+            patch("codex_orchestrator.cli.WorktreeManager.abort_merge"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=root_bead.bead_id, skip_rebase=False, skip_tests=True),
+                self.storage,
+                console,
+            )
+
+        self.assertEqual(1, exit_code)
+        # no new merge-conflict bead should have been created beyond the 2 already there
+        conflict_beads = [
+            b for b in self.storage.list_beads() if b.bead_type == "merge-conflict"
+        ]
+        self.assertEqual(2, len(conflict_beads))
+
+    def test_attempt_cap_allows_new_bead_when_below_cap(self) -> None:
+        root_bead = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
+        root_bead.execution_branch_name = "feature/b-undercap"
+        worktree_path = self.root / ".orchestrator" / "worktrees" / "undercap"
+        worktree_path.mkdir(parents=True, exist_ok=True)
+        root_bead.execution_worktree_path = str(worktree_path)
+        self.storage.save_bead(root_bead)
+
+        # 1 resolved (done) conflict bead; cap is 2 so a new one should be allowed.
+        # Using BEAD_DONE ensures the existing-conflict preflight check is not triggered.
+        resolved_conflict = self.storage.create_bead(
+            title="Resolve conflict",
+            agent_type="developer",
+            description="conflict",
+            bead_type="merge-conflict",
+            parent_id=root_bead.bead_id,
+            feature_root_id=root_bead.bead_id,
+        )
+        resolved_conflict.status = BEAD_DONE
+        self.storage.save_bead(resolved_conflict)
+
+        console = ConsoleReporter(stream=io.StringIO())
+        cfg = _make_config(max_corrective_attempts=2)
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch(
+                "codex_orchestrator.cli.WorktreeManager.merge_main_into_branch",
+                side_effect=GitError("conflict"),
+            ),
+            patch("codex_orchestrator.cli.WorktreeManager.conflicted_files", return_value=[]),
+            patch("codex_orchestrator.cli._get_diff_context", return_value=""),
+            patch("codex_orchestrator.cli.WorktreeManager.abort_merge"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=root_bead.bead_id, skip_rebase=False, skip_tests=True),
+                self.storage,
+                console,
+            )
+
+        self.assertEqual(1, exit_code)
+        conflict_beads = [
+            b for b in self.storage.list_beads() if b.bead_type == "merge-conflict"
+        ]
+        self.assertEqual(2, len(conflict_beads))
+
+    # -------------------------------------------------------------------------
+    # TUI no longer performs merges inline
+    # -------------------------------------------------------------------------
+
+    def test_tui_request_merge_does_not_set_awaiting_merge_confirmation(self) -> None:
+        from codex_orchestrator.tui import TuiRuntimeState, FILTER_ALL
+
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Done",
+            agent_type="developer",
+            description="done",
+            status=BEAD_DONE,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+        state.request_merge()
+
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIsNone(state.pending_merge_bead_id)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
+
+    def test_tui_request_merge_shows_cli_redirect_for_non_done_bead(self) -> None:
+        from codex_orchestrator.tui import TuiRuntimeState, FILTER_ALL
+
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Ready",
+            agent_type="developer",
+            description="ready",
+            status=BEAD_READY,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+        state.request_merge()
+
+        self.assertFalse(state.awaiting_merge_confirmation)
+        self.assertIn(f"orchestrator merge {bead.bead_id}", state.status_message)
+
+    def test_tui_confirm_merge_is_noop_without_pending_state(self) -> None:
+        from codex_orchestrator.tui import TuiRuntimeState, FILTER_ALL
+
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Done",
+            agent_type="developer",
+            description="done",
+            status=BEAD_DONE,
+        )
+        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
+
+        # request_merge no longer sets pending confirmation
+        state.request_merge()
+        merged = state.confirm_merge()
+
+        self.assertFalse(merged)
+        self.assertEqual("No merge pending confirmation.", state.status_message)
+
+
+if __name__ == "__main__":
+    unittest.main()

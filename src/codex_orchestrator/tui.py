@@ -142,12 +142,15 @@ DETAIL_SECTION_ACCEPTANCE = "acceptance"
 DETAIL_SECTION_FILES = "files"
 DETAIL_SECTION_HANDOFF = "handoff"
 DETAIL_SECTION_TELEMETRY = "telemetry"
+DETAIL_SECTION_HISTORY = "history"
 DETAIL_SECTION_ORDER = (
     DETAIL_SECTION_ACCEPTANCE,
     DETAIL_SECTION_FILES,
     DETAIL_SECTION_HANDOFF,
     DETAIL_SECTION_TELEMETRY,
+    DETAIL_SECTION_HISTORY,
 )
+EXECUTION_HISTORY_DISPLAY_LIMIT = 5
 
 STATUS_DISPLAY_ORDER = (
     BEAD_OPEN,
@@ -394,6 +397,14 @@ def format_detail_panel(bead: Bead | None, subtree_telemetry: dict | None = None
             sub_duration = subtree_telemetry.get("duration_ms", 0)
             sub_count = subtree_telemetry.get("bead_count", 0)
             lines.append(f"  Subtree: ${sub_cost:.2f} total, {_format_duration_ms(sub_duration)} duration, {sub_count} beads")
+    exec_history = bead.execution_history
+    if exec_history:
+        lines.append("Execution History:")
+        omitted = len(exec_history) - EXECUTION_HISTORY_DISPLAY_LIMIT
+        if omitted > 0:
+            lines.append(f"  ... {omitted} earlier entries omitted")
+        for record in exec_history[-EXECUTION_HISTORY_DISPLAY_LIMIT:]:
+            lines.append(f"  [{record.timestamp}] {record.event} ({record.agent_type}): {record.summary}")
     return "\n".join(lines)
 
 
@@ -471,6 +482,17 @@ def _detail_section_body(bead: Bead | None, section: str, subtree_telemetry: dic
             sub_count = subtree_telemetry.get("bead_count", 0)
             lines.append(f"Subtree: ${sub_cost:.2f} total, {_format_duration_ms(sub_duration)} duration, {sub_count} beads")
         return "\n".join(lines)
+    if section == DETAIL_SECTION_HISTORY:
+        exec_history = bead.execution_history
+        if not exec_history:
+            return "No execution history."
+        lines = []
+        omitted = len(exec_history) - EXECUTION_HISTORY_DISPLAY_LIMIT
+        if omitted > 0:
+            lines.append(f"... {omitted} earlier entries omitted")
+        for record in exec_history[-EXECUTION_HISTORY_DISPLAY_LIMIT:]:
+            lines.append(f"[{record.timestamp}] {record.event} ({record.agent_type}): {record.summary}")
+        return "\n".join(lines)
     raise ValueError(f"Unknown detail section: {section}")
 
 
@@ -480,6 +502,7 @@ def _detail_section_title(section: str) -> str:
         DETAIL_SECTION_FILES: "Files",
         DETAIL_SECTION_HANDOFF: "Handoff",
         DETAIL_SECTION_TELEMETRY: "Telemetry",
+        DETAIL_SECTION_HISTORY: "Execution History",
     }
     return titles[section]
 
@@ -507,10 +530,10 @@ def format_help_overlay() -> str:
             "u           Open status update flow",
             "r / b / d   Choose ready, blocked, done in status flow",
             "y           Confirm retry/status update",
-            "c           Cancel pending merge/retry/status",
-            "M           Request merge",
+            "c           Cancel pending retry/status",
+            "M           Merge: use 'orchestrator merge <id>' from CLI",
             "m           Toggle maximize panel",
-            "Enter       Toggle detail section / confirm merge",
+            "Enter       Toggle detail section",
             "E           Expand/collapse all tree nodes",
             "q           Quit",
             "",
@@ -853,20 +876,10 @@ class TuiRuntimeState:
     def request_merge(self) -> None:
         self._clear_pending_retry()
         self._clear_pending_status_flow()
+        self._clear_pending_merge()
         bead = self.selected_bead()
-        if bead is None:
-            self.status_message = "No bead selected."
-            self.awaiting_merge_confirmation = False
-            self.pending_merge_bead_id = None
-            return
-        if bead.status != BEAD_DONE:
-            self.status_message = f"{bead.bead_id} is {bead.status}; only done beads can be merged."
-            self.awaiting_merge_confirmation = False
-            self.pending_merge_bead_id = None
-            return
-        self.awaiting_merge_confirmation = True
-        self.pending_merge_bead_id = bead.bead_id
-        self.status_message = f"Confirm merge for {bead.bead_id} with Enter."
+        bead_id = bead.bead_id if bead is not None else "<id>"
+        self.status_message = f"Use CLI to merge: orchestrator merge {bead_id}"
 
     def confirm_merge(
         self,
@@ -1481,7 +1494,7 @@ def build_tui_app(
             Binding("t", "retry_blocked", "Retry"),
             Binding("u", "start_status_update", "Status"),
             Binding("m", "toggle_maximize", "Maximize"),
-            Binding("M", "request_merge", "Merge"),
+            Binding("M", "request_merge", "Merge (CLI)"),
             Binding("enter", "confirm_merge", "Confirm", show=False, priority=True),
             Binding("b", "choose_blocked_status", "Blocked", show=False),
             Binding("d", "choose_done_status", "Done", show=False),
