@@ -16,6 +16,7 @@ ACTIVE_STATUSES = {BEAD_OPEN, BEAD_READY, BEAD_IN_PROGRESS, BEAD_HANDED_OFF, BEA
 TERMINAL_STATUSES = {BEAD_DONE}
 AGENT_TYPES = {"planner", "developer", "tester", "documentation", "review", "scheduler"}
 MUTATING_AGENTS = {"developer", "tester", "documentation"}
+BEAD_TYPES = {"task", "epic", "feature", "merge-conflict"}
 
 
 def utc_now() -> str:

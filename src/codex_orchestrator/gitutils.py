@@ -134,6 +134,81 @@ class WorktreeManager:
             raise GitError(head_proc.stderr.strip() or head_proc.stdout.strip())
         return head_proc.stdout.strip()
 
+    def merge_main_into_branch(self, worktree_path: Path, main_branch: str = "main") -> None:
+        """Merge the main branch into the feature branch checked out in worktree_path.
+
+        Args:
+            worktree_path: Path to the feature worktree.
+            main_branch: Name of the main branch to merge from (default: 'main').
+
+        Raises:
+            GitError: If the merge fails (including conflict — caller should inspect
+                      conflicted_files() and abort_merge() as needed).
+        """
+        proc = subprocess.run(
+            ["git", "merge", "--no-ff", main_branch, "-m", f"Merge {main_branch} into feature branch"],
+            cwd=worktree_path,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise GitError(proc.stderr.strip() or proc.stdout.strip())
+
+    def abort_merge(self, worktree_path: Path) -> None:
+        """Abort an in-progress merge in the given worktree.
+
+        Args:
+            worktree_path: Path to the worktree where a merge is in progress.
+
+        Raises:
+            GitError: If there is no merge in progress or the abort fails.
+        """
+        proc = subprocess.run(
+            ["git", "merge", "--abort"],
+            cwd=worktree_path,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise GitError(proc.stderr.strip() or proc.stdout.strip())
+
+    def conflicted_files(self, worktree_path: Path) -> list[str]:
+        """Return the list of files with unresolved merge conflicts in the given worktree.
+
+        Args:
+            worktree_path: Path to the worktree to inspect.
+
+        Returns:
+            Sorted list of file paths that have unresolved conflicts (status 'UU', 'AA', 'DD',
+            'AU', 'UA', 'DU', 'UD').
+
+        Raises:
+            GitError: If the git status command fails.
+        """
+        proc = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=worktree_path,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise GitError(proc.stderr.strip() or proc.stdout.strip())
+        conflict_prefixes = {"UU", "AA", "DD", "AU", "UA", "DU", "UD"}
+        conflicted: list[str] = []
+        for line in proc.stdout.splitlines():
+            if len(line) < 3:
+                continue
+            xy = line[:2]
+            if xy in conflict_prefixes:
+                path = line[3:]
+                if " -> " in path:
+                    path = path.split(" -> ", 1)[1]
+                conflicted.append(path)
+        return sorted(conflicted)
+
     def changed_files(self, worktree_path: Path) -> list[str]:
         proc = subprocess.run(
             ["git", "status", "--porcelain", "--untracked-files=all"],
