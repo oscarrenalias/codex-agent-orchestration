@@ -328,6 +328,8 @@ class TuiRegressionTests(unittest.TestCase):
     def test_help_overlay_close_preserves_pending_merge_until_confirmed_after_close(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Done", agent_type="developer", description="done", status=BEAD_DONE)
         app = build_tui_app(self.storage, refresh_seconds=60)
+        app.runtime_state.filter_mode = FILTER_ALL
+        app.runtime_state.refresh()
 
         async def exercise_app() -> tuple[bool, bool, str]:
             async with app.run_test() as pilot:
