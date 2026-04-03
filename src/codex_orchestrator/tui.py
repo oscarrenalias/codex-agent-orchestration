@@ -142,12 +142,15 @@ DETAIL_SECTION_ACCEPTANCE = "acceptance"
 DETAIL_SECTION_FILES = "files"
 DETAIL_SECTION_HANDOFF = "handoff"
 DETAIL_SECTION_TELEMETRY = "telemetry"
+DETAIL_SECTION_HISTORY = "history"
 DETAIL_SECTION_ORDER = (
     DETAIL_SECTION_ACCEPTANCE,
     DETAIL_SECTION_FILES,
     DETAIL_SECTION_HANDOFF,
     DETAIL_SECTION_TELEMETRY,
+    DETAIL_SECTION_HISTORY,
 )
+EXECUTION_HISTORY_DISPLAY_LIMIT = 5
 
 STATUS_DISPLAY_ORDER = (
     BEAD_OPEN,
@@ -394,6 +397,14 @@ def format_detail_panel(bead: Bead | None, subtree_telemetry: dict | None = None
             sub_duration = subtree_telemetry.get("duration_ms", 0)
             sub_count = subtree_telemetry.get("bead_count", 0)
             lines.append(f"  Subtree: ${sub_cost:.2f} total, {_format_duration_ms(sub_duration)} duration, {sub_count} beads")
+    exec_history = bead.execution_history
+    if exec_history:
+        lines.append("Execution History:")
+        omitted = len(exec_history) - EXECUTION_HISTORY_DISPLAY_LIMIT
+        if omitted > 0:
+            lines.append(f"  ... {omitted} earlier entries omitted")
+        for record in exec_history[-EXECUTION_HISTORY_DISPLAY_LIMIT:]:
+            lines.append(f"  [{record.timestamp}] {record.event} ({record.agent_type}): {record.summary}")
     return "\n".join(lines)
 
 
@@ -471,6 +482,17 @@ def _detail_section_body(bead: Bead | None, section: str, subtree_telemetry: dic
             sub_count = subtree_telemetry.get("bead_count", 0)
             lines.append(f"Subtree: ${sub_cost:.2f} total, {_format_duration_ms(sub_duration)} duration, {sub_count} beads")
         return "\n".join(lines)
+    if section == DETAIL_SECTION_HISTORY:
+        exec_history = bead.execution_history
+        if not exec_history:
+            return "No execution history."
+        lines = []
+        omitted = len(exec_history) - EXECUTION_HISTORY_DISPLAY_LIMIT
+        if omitted > 0:
+            lines.append(f"... {omitted} earlier entries omitted")
+        for record in exec_history[-EXECUTION_HISTORY_DISPLAY_LIMIT:]:
+            lines.append(f"[{record.timestamp}] {record.event} ({record.agent_type}): {record.summary}")
+        return "\n".join(lines)
     raise ValueError(f"Unknown detail section: {section}")
 
 
@@ -480,6 +502,7 @@ def _detail_section_title(section: str) -> str:
         DETAIL_SECTION_FILES: "Files",
         DETAIL_SECTION_HANDOFF: "Handoff",
         DETAIL_SECTION_TELEMETRY: "Telemetry",
+        DETAIL_SECTION_HISTORY: "Execution History",
     }
     return titles[section]
 

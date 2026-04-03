@@ -132,6 +132,18 @@ Subtree: $1.85 total, 12:30 duration, 4 beads
 
 Fields are aggregated as sums. A bead contributes to the subtree totals only if it has telemetry recorded in its metadata.
 
+## Execution History Display
+
+The **Overview** and **History** sections of the detail panel each display at most the 5 most recent execution history entries. When a bead has more than 5 entries, the panel shows a truncation notice before the visible entries:
+
+```
+... 3 earlier entries omitted
+[2026-04-01T19:35:50+00:00] created (scheduler): Bead created
+...
+```
+
+The limit is fixed at 5 entries (`EXECUTION_HISTORY_DISPLAY_LIMIT` in `tui.py`). Earlier entries are not deleted — they remain stored in the bead JSON; only the display is truncated to keep the panel readable for long-running beads.
+
 ## Mouse Behavior
 
 - Clicking a bead row focuses the list and selects that bead.
