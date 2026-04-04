@@ -7,7 +7,9 @@ import shutil
 import subprocess
 import sys
 import threading
+from collections import Counter
 from dataclasses import asdict
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .config import load_config
@@ -887,8 +889,202 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
     return 0
 
 
+def _filter_beads_by_days(beads: list[Bead], days: int) -> list[Bead]:
+    """Return beads whose first execution_history entry falls within the last `days` days."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    result = []
+    for bead in beads:
+        if not bead.execution_history:
+            continue
+        ts = bead.execution_history[0].timestamp
+        try:
+            dt = datetime.fromisoformat(ts)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            if dt >= cutoff:
+                result.append(bead)
+        except ValueError:
+            pass
+    return result
+
+
+def _bead_wall_clock_seconds(bead: Bead) -> float | None:
+    """Compute total wall-clock seconds from started->completed/blocked/failed pairs.
+
+    Skips incomplete entries (no terminal event after a started event).
+    """
+    TERMINAL_EVENTS = {"completed", "blocked", "failed"}
+    started_ts: str | None = None
+    total: float = 0.0
+    found_any = False
+    for record in bead.execution_history:
+        if record.event == "started":
+            started_ts = record.timestamp
+        elif record.event in TERMINAL_EVENTS and started_ts is not None:
+            try:
+                start = datetime.fromisoformat(started_ts)
+                end = datetime.fromisoformat(record.timestamp)
+                if start.tzinfo is None:
+                    start = start.replace(tzinfo=timezone.utc)
+                if end.tzinfo is None:
+                    end = end.replace(tzinfo=timezone.utc)
+                total += (end - start).total_seconds()
+                found_any = True
+            except ValueError:
+                pass
+            started_ts = None
+    return total if found_any else None
+
+
+def _bead_turns(storage: RepositoryStorage, bead_id: str) -> int | None:
+    """Load the total num_turns from all telemetry artifact files for a bead."""
+    bead_telemetry_dir = storage.telemetry_dir / bead_id
+    if not bead_telemetry_dir.exists():
+        return None
+    total = 0
+    found_any = False
+    for artifact_path in sorted(bead_telemetry_dir.glob("*.json")):
+        try:
+            data = json.loads(artifact_path.read_text(encoding="utf-8"))
+            turns = data.get("metrics", {}).get("num_turns")
+            if turns is not None:
+                total += int(turns)
+                found_any = True
+        except (json.JSONDecodeError, OSError, ValueError):
+            pass
+    return total if found_any else None
+
+
+def _percentile(values: list[float], p: float) -> float | None:
+    """Compute the p-th percentile of a sorted list of values (linear interpolation)."""
+    if not values:
+        return None
+    sorted_vals = sorted(values)
+    k = (len(sorted_vals) - 1) * p / 100.0
+    lo = int(k)
+    hi = lo + 1
+    if hi >= len(sorted_vals):
+        return sorted_vals[lo]
+    frac = k - lo
+    return sorted_vals[lo] + frac * (sorted_vals[hi] - sorted_vals[lo])
+
+
+def aggregate_telemetry(
+    beads: list[Bead],
+    storage: RepositoryStorage,
+    transient_patterns: tuple[str, ...] = (),
+) -> dict:
+    """Compute aggregate telemetry metrics from the given list of beads.
+
+    Returns a structured dict suitable for both table and JSON output modes.
+    """
+    by_status: Counter[str] = Counter()
+    by_agent_type: Counter[str] = Counter()
+    wall_clock_values: list[float] = []
+    turns_values: list[int] = []
+    retry_count = 0
+    corrective_count = 0
+    merge_conflict_count = 0
+    timeout_block_count = 0
+    transient_block_count = 0
+
+    for bead in beads:
+        by_status[bead.status] += 1
+        by_agent_type[bead.agent_type] += 1
+
+        wc = _bead_wall_clock_seconds(bead)
+        if wc is not None:
+            wall_clock_values.append(wc)
+
+        turns = _bead_turns(storage, bead.bead_id)
+        if turns is not None:
+            turns_values.append(turns)
+
+        if bead.retries > 0:
+            retry_count += 1
+
+        if bead.bead_id.endswith("-corrective"):
+            corrective_count += 1
+
+        if bead.bead_type == "merge-conflict":
+            merge_conflict_count += 1
+
+        if bead.status == "blocked":
+            reason_lower = (bead.block_reason or "").lower()
+            if "timeout" in reason_lower or "timed out" in reason_lower:
+                timeout_block_count += 1
+            if transient_patterns and any(p in reason_lower for p in transient_patterns):
+                transient_block_count += 1
+
+    total = len(beads)
+    avg_wc = sum(wall_clock_values) / len(wall_clock_values) if wall_clock_values else None
+    p95_wc = _percentile(wall_clock_values, 95)
+    avg_turns = sum(turns_values) / len(turns_values) if turns_values else None
+
+    return {
+        "total_beads": total,
+        "by_status": dict(by_status),
+        "by_agent_type": dict(by_agent_type),
+        "avg_wall_clock_seconds": round(avg_wc, 1) if avg_wc is not None else None,
+        "p95_wall_clock_seconds": round(p95_wc, 1) if p95_wc is not None else None,
+        "avg_turns": round(avg_turns, 1) if avg_turns is not None else None,
+        "retry_rate": round(retry_count / total, 3) if total > 0 else None,
+        "corrective_bead_count": corrective_count,
+        "merge_conflict_bead_count": merge_conflict_count,
+        "timeout_block_count": timeout_block_count,
+        "transient_block_count": transient_block_count,
+    }
+
+
+def _format_telemetry_table(data: dict, console: ConsoleReporter) -> None:
+    """Render aggregated telemetry as a human-readable plain-text report."""
+    filters = data["filters"]
+    agg = data["aggregates"]
+    lines: list[str] = []
+
+    header = f"Telemetry report  (last {filters['days']} days)"
+    if filters.get("feature_root"):
+        header += f"  |  feature_root={filters['feature_root']}"
+    if filters.get("agent_type"):
+        header += f"  |  agent_type={filters['agent_type']}"
+    if filters.get("status"):
+        header += f"  |  status={filters['status']}"
+    lines.append(header)
+    lines.append(f"Total beads: {agg['total_beads']}")
+    lines.append("")
+
+    if agg["by_status"]:
+        lines.append("By status:")
+        for status, count in sorted(agg["by_status"].items()):
+            lines.append(f"  {status:<20} {count}")
+        lines.append("")
+
+    if agg["by_agent_type"]:
+        lines.append("By agent type:")
+        for agent_type, count in sorted(agg["by_agent_type"].items()):
+            lines.append(f"  {agent_type:<20} {count}")
+        lines.append("")
+
+    if agg["avg_wall_clock_seconds"] is not None:
+        lines.append(f"Avg wall-clock    : {agg['avg_wall_clock_seconds']}s")
+    if agg["p95_wall_clock_seconds"] is not None:
+        lines.append(f"P95 wall-clock    : {agg['p95_wall_clock_seconds']}s")
+    if agg["avg_turns"] is not None:
+        lines.append(f"Avg turns         : {agg['avg_turns']}")
+    if agg["retry_rate"] is not None:
+        lines.append(f"Retry rate        : {agg['retry_rate']:.1%}")
+    lines.append(f"Corrective beads  : {agg['corrective_bead_count']}")
+    lines.append(f"Merge-conflict    : {agg['merge_conflict_bead_count']}")
+    lines.append(f"Timeout blocks    : {agg['timeout_block_count']}")
+    lines.append(f"Transient blocks  : {agg['transient_block_count']}")
+
+    console.emit("\n".join(lines))
+
+
 def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
     beads = storage.list_beads()
+
+    beads = _filter_beads_by_days(beads, args.days)
 
     if args.feature_root:
         try:
@@ -904,6 +1100,9 @@ def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, cons
     if args.status:
         beads = [b for b in beads if b.status == args.status]
 
+    config = load_config(storage.root)
+    agg = aggregate_telemetry(beads, storage, config.scheduler.transient_block_patterns)
+
     result = {
         "filters": {
             "days": args.days,
@@ -912,6 +1111,7 @@ def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, cons
             "status": args.status or None,
         },
         "bead_count": len(beads),
+        "aggregates": agg,
         "beads": [
             {
                 "bead_id": b.bead_id,
@@ -919,11 +1119,17 @@ def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, cons
                 "agent_type": b.agent_type,
                 "status": b.status,
                 "feature_root_id": b.feature_root_id,
+                "wall_clock_seconds": _bead_wall_clock_seconds(b),
             }
             for b in beads
         ],
     }
-    console.dump_json(result)
+
+    if getattr(args, "output_json", False):
+        console.dump_json(result)
+    else:
+        _format_telemetry_table(result, console)
+
     return 0
 
 
