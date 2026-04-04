@@ -433,14 +433,17 @@ def cmd_show(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     if fm is None:
-        print(f"# {infer_display_name(path, None)}  (legacy spec — no frontmatter)\n")
-    else:
-        print("---")
-        print(
-            yaml.dump(fm, default_flow_style=False, allow_unicode=True, sort_keys=False),
-            end="",
-        )
-        print("---")
+        print(f"warning: {path} is a legacy spec — no frontmatter")
+        print()
+        sys.stdout.write(body)
+        return
+
+    print("---")
+    print(
+        yaml.dump(fm, default_flow_style=False, allow_unicode=True, sort_keys=False),
+        end="",
+    )
+    print("---")
 
     # Print first section body (up to first --- or 20 lines)
     body_lines = body.splitlines()
