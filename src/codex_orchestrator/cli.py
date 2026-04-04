@@ -1050,6 +1050,12 @@ def _format_telemetry_table(data: dict, console: ConsoleReporter) -> None:
     if filters.get("status"):
         header += f"  |  status={filters['status']}"
     lines.append(header)
+
+    if agg["total_beads"] == 0:
+        lines.append("No beads found.")
+        console.emit("\n".join(lines))
+        return
+
     lines.append(f"Total beads: {agg['total_beads']}")
     lines.append("")
 
@@ -1065,14 +1071,26 @@ def _format_telemetry_table(data: dict, console: ConsoleReporter) -> None:
             lines.append(f"  {agent_type:<20} {count}")
         lines.append("")
 
-    if agg["avg_wall_clock_seconds"] is not None:
-        lines.append(f"Avg wall-clock    : {agg['avg_wall_clock_seconds']}s")
-    if agg["p95_wall_clock_seconds"] is not None:
-        lines.append(f"P95 wall-clock    : {agg['p95_wall_clock_seconds']}s")
-    if agg["avg_turns"] is not None:
-        lines.append(f"Avg turns         : {agg['avg_turns']}")
-    if agg["retry_rate"] is not None:
-        lines.append(f"Retry rate        : {agg['retry_rate']:.1%}")
+    feature_roots = data.get("feature_roots") or []
+    if feature_roots and not filters.get("feature_root"):
+        lines.append("By feature root:")
+        for fr in feature_roots:
+            frid = fr["feature_root_id"]
+            title = fr.get("title") or ""
+            truncated = (title[:37] + "...") if len(title) > 40 else title
+            count = fr["bead_count"]
+            lines.append(f"  {frid}  {truncated:<40}  {count}")
+        lines.append("")
+
+    wc_avg = agg["avg_wall_clock_seconds"]
+    wc_p95 = agg["p95_wall_clock_seconds"]
+    avg_turns = agg["avg_turns"]
+    retry_rate = agg["retry_rate"]
+
+    lines.append(f"Avg wall-clock    : {f'{wc_avg}s' if wc_avg is not None else 'N/A'}")
+    lines.append(f"P95 wall-clock    : {f'{wc_p95}s' if wc_p95 is not None else 'N/A'}")
+    lines.append(f"Avg turns         : {avg_turns if avg_turns is not None else 'N/A'}")
+    lines.append(f"Retry rate        : {f'{retry_rate:.1%}' if retry_rate is not None else 'N/A'}")
     lines.append(f"Corrective beads  : {agg['corrective_bead_count']}")
     lines.append(f"Merge-conflict    : {agg['merge_conflict_bead_count']}")
     lines.append(f"Timeout blocks    : {agg['timeout_block_count']}")
@@ -1103,6 +1121,18 @@ def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, cons
     config = load_config(storage.root)
     agg = aggregate_telemetry(beads, storage, config.scheduler.transient_block_patterns)
 
+    feature_root_counts: Counter[str] = Counter()
+    feature_root_titles: dict[str, str] = {}
+    for b in beads:
+        frid = b.feature_root_id or b.bead_id
+        feature_root_counts[frid] += 1
+        if frid not in feature_root_titles:
+            try:
+                fr_bead = storage.load_bead(frid)
+                feature_root_titles[frid] = fr_bead.title or ""
+            except Exception:
+                feature_root_titles[frid] = ""
+
     result = {
         "filters": {
             "days": args.days,
@@ -1112,6 +1142,14 @@ def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, cons
         },
         "bead_count": len(beads),
         "aggregates": agg,
+        "feature_roots": [
+            {
+                "feature_root_id": frid,
+                "title": feature_root_titles.get(frid, ""),
+                "bead_count": count,
+            }
+            for frid, count in sorted(feature_root_counts.items())
+        ],
         "beads": [
             {
                 "bead_id": b.bead_id,
