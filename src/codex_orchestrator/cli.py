@@ -581,12 +581,12 @@ def command_merge(args: argparse.Namespace, storage: RepositoryStorage, console:
         return 1
 
     worktrees = WorktreeManager(storage.root, storage.worktrees_dir)
+    worktree_path = Path(
+        feature_root.execution_worktree_path or bead.execution_worktree_path or ""
+    )
 
     # Preflight: merge main into the feature branch to detect conflicts early
     if not args.skip_rebase:
-        worktree_path = Path(
-            feature_root.execution_worktree_path or bead.execution_worktree_path or ""
-        )
         if worktree_path and worktree_path.exists():
             with console.spin("Preflight: merging main into feature branch") as spinner:
                 try:
