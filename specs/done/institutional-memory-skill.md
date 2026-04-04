@@ -1,3 +1,17 @@
+---
+name: Institutional Memory Skill
+id: spec-54a09832
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Institutional Memory Skill
 
 ## Objective

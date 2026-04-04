@@ -1,3 +1,17 @@
+---
+name: Conflict-Aware Scheduling
+id: spec-ae687703
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Conflict-Aware Scheduling
 
 ## Objective

@@ -1,3 +1,17 @@
+---
+name: TUI Panel Focus, Scroll, And Mouse V1
+id: spec-edd9d7c4
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # TUI Panel Focus, Scroll, And Mouse V1
 
 ## Objective

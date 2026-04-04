@@ -1,3 +1,17 @@
+---
+name: Improve Agent Skills
+id: spec-26849373
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Improve Agent Skills
 
 ## Objective

@@ -1,3 +1,17 @@
+---
+name: Simple Bead Summary Command
+id: spec-86bff9da
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Simple Bead Summary Command
 
 ## Objective

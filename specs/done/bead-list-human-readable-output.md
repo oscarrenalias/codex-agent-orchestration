@@ -1,3 +1,17 @@
+---
+name: Bead List Human-Readable Output
+id: spec-156c2dc4
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Bead List Human-Readable Output
 
 ## Objective

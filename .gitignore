@@ -15,3 +15,8 @@ __pycache__/
 .orchestrator/telemetry/
 .orchestrator/worktrees/
 dist/
+
+
+# APM dependencies
+apm_modules/
+.claude/settings.local.json

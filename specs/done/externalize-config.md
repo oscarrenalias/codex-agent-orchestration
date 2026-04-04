@@ -1,3 +1,15 @@
+---
+name: Externalize Configuration to YAML
+id: spec-d3a1f8c2
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope: []
+---
+
 # Externalize Configuration to YAML
 
 ## Objective

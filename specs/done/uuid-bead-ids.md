@@ -1,3 +1,17 @@
+---
+name: UUID-Based Bead Identifiers
+id: spec-bce54c58
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # UUID-Based Bead Identifiers
 
 ## Objective

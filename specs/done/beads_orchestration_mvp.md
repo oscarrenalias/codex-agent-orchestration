@@ -1,3 +1,17 @@
+---
+name: Codex-based Multi-Agent Orchestration MVP
+id: spec-fd5f17b0
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Codex-based Multi-Agent Orchestration MVP
 
 ## Objective

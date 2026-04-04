@@ -1,3 +1,17 @@
+---
+name: 'Externalize Configuration Phase 1: Config Module and YAML File'
+id: spec-c173ee5f
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Externalize Configuration Phase 1: Config Module and YAML File
 
 ## Objective

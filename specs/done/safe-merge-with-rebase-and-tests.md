@@ -1,3 +1,17 @@
+---
+name: 'Safe Merge: Rebase and Test Before Merge'
+id: spec-c1020c92
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Safe Merge: Rebase and Test Before Merge
 
 ## Objective

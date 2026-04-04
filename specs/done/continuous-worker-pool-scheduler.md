@@ -1,3 +1,17 @@
+---
+name: Continuous Worker Pool Scheduler
+id: spec-bd3c602c
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Continuous Worker Pool Scheduler
 
 ## Objective

@@ -1,3 +1,15 @@
+---
+name: TUI Operator Console V1
+id: spec-e7b29d41
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope: []
+---
+
 # TUI Operator Console V1
 
 ## Objective

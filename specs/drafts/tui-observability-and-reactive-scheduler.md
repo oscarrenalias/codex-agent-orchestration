@@ -1,3 +1,17 @@
+---
+name: TUI Observability and Reactive Scheduler
+id: spec-f4a943a4
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: draft
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # TUI Observability and Reactive Scheduler
 
 ## Objective

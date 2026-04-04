@@ -1,3 +1,17 @@
+---
+name: Structured Review Verdict V1
+id: spec-b9e74217
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Structured Review Verdict V1
 
 ## Objective

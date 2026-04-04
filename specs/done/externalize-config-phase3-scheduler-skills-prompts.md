@@ -1,3 +1,17 @@
+---
+name: 'Externalize Configuration Phase 3: Scheduler, Skills, and Prompts'
+id: spec-27a859ee
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Externalize Configuration Phase 3: Scheduler, Skills, and Prompts
 
 ## Objective

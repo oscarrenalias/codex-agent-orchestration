@@ -1,3 +1,17 @@
+---
+name: Bead Execution Telemetry
+id: spec-f813ad1c
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Bead Execution Telemetry
 
 ## Objective

@@ -1,3 +1,17 @@
+---
+name: Claims List Human-Readable Output
+id: spec-4ebc5709
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Claims List Human-Readable Output
 
 ## Objective

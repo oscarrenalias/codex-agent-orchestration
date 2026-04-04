@@ -1,3 +1,17 @@
+---
+name: TUI Operator Actions V1
+id: spec-0880736d
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # TUI Operator Actions V1
 
 ## Objective

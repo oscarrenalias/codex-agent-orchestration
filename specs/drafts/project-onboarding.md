@@ -1,3 +1,17 @@
+---
+name: Project Onboarding
+id: spec-5db8d0ec
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: draft
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Project Onboarding
 
 ## Objective

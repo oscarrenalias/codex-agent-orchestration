@@ -1,3 +1,17 @@
+---
+name: TUI Responsiveness And Interaction V2
+id: spec-92cd1bbb
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # TUI Responsiveness And Interaction V2
 
 ## Objective

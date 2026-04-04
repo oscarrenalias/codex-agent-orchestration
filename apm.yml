@@ -1,0 +1,9 @@
+name: codex-agent-orchestration
+version: 1.0.0
+description: APM project for codex-agent-orchestration
+author: Renalias, Oscar
+dependencies:
+  apm:
+  - oscarrenalias/skill-spec-management
+  mcp: []
+scripts: {}

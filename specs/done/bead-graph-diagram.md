@@ -1,3 +1,17 @@
+---
+name: Bead Graph Diagram
+id: spec-65918345
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Bead Graph Diagram
 
 ## Objective

@@ -1,3 +1,17 @@
+---
+name: TUI Shortcuts Help Overlay V1
+id: spec-07f7f9c4
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # TUI Shortcuts Help Overlay V1
 
 ## Objective

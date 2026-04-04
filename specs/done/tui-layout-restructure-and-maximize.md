@@ -1,3 +1,17 @@
+---
+name: TUI Layout Restructure and Panel Maximize
+id: spec-b36a3688
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # TUI Layout Restructure and Panel Maximize
 
 ## Objective

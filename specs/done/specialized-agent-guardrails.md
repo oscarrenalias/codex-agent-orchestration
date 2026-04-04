@@ -1,3 +1,17 @@
+---
+name: Specialized Agent Guardrails
+id: spec-00338082
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Specialized Agent Guardrails
 
 ## Objective

@@ -1,3 +1,17 @@
+---
+name: Planner Bead Sizing and Coalesced Followups
+id: spec-7d0a815c
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Planner Bead Sizing and Coalesced Followups
 
 ## Objective

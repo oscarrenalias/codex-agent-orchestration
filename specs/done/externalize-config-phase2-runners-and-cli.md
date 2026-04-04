@@ -1,3 +1,17 @@
+---
+name: 'Externalize Configuration Phase 2: Runners and CLI'
+id: spec-186ab872
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Externalize Configuration Phase 2: Runners and CLI
 
 ## Objective
