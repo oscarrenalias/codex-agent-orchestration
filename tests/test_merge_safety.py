@@ -277,11 +277,10 @@ class MergeSafetyTests(unittest.TestCase):
         cfg = _make_config(test_command="false")  # always fails
         failing_proc = MagicMock()
         failing_proc.returncode = 1
-        failing_proc.stdout = "FAILED"
-        failing_proc.stderr = ""
+        failing_proc.stdout = iter(["FAILED\n"])
         with (
             patch("codex_orchestrator.cli.load_config", return_value=cfg),
-            patch("codex_orchestrator.cli.subprocess.run", return_value=failing_proc),
+            patch("codex_orchestrator.cli.subprocess.Popen", return_value=failing_proc),
         ):
             exit_code = command_merge(
                 Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=False),
@@ -299,12 +298,12 @@ class MergeSafetyTests(unittest.TestCase):
         bead = self._make_done_bead_with_branch("feature/b-timeout")
         console = ConsoleReporter(stream=io.StringIO())
         cfg = _make_config(test_command="sleep 999", test_timeout_seconds=1)
+        timeout_proc = MagicMock()
+        timeout_proc.stdout = iter([])
+        timeout_proc.wait.side_effect = [subprocess.TimeoutExpired("sleep", 1), None]
         with (
             patch("codex_orchestrator.cli.load_config", return_value=cfg),
-            patch(
-                "codex_orchestrator.cli.subprocess.run",
-                side_effect=subprocess.TimeoutExpired("sleep", 1),
-            ),
+            patch("codex_orchestrator.cli.subprocess.Popen", return_value=timeout_proc),
         ):
             exit_code = command_merge(
                 Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=False),
@@ -325,11 +324,10 @@ class MergeSafetyTests(unittest.TestCase):
         cfg = _make_config(test_command="echo ok", test_timeout_seconds=42)
         ok_proc = MagicMock()
         ok_proc.returncode = 0
-        ok_proc.stdout = "ok"
-        ok_proc.stderr = ""
+        ok_proc.stdout = iter([])
         with (
             patch("codex_orchestrator.cli.load_config", return_value=cfg),
-            patch("codex_orchestrator.cli.subprocess.run", return_value=ok_proc) as mock_run,
+            patch("codex_orchestrator.cli.subprocess.Popen", return_value=ok_proc),
             patch("codex_orchestrator.cli.WorktreeManager.merge_branch"),
         ):
             exit_code = command_merge(
@@ -338,9 +336,31 @@ class MergeSafetyTests(unittest.TestCase):
                 console,
             )
         self.assertEqual(0, exit_code)
-        # verify the timeout was passed to subprocess.run
-        run_kwargs = mock_run.call_args
-        self.assertEqual(42, run_kwargs.kwargs.get("timeout") or run_kwargs[1].get("timeout"))
+        # verify the timeout was passed to wait()
+        ok_proc.wait.assert_called_once_with(timeout=42)
+
+    def test_test_gate_streams_output_to_console(self) -> None:
+        bead = self._make_done_bead_with_branch("feature/b-stream")
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        cfg = _make_config(test_command="echo hello", test_timeout_seconds=30)
+        ok_proc = MagicMock()
+        ok_proc.returncode = 0
+        ok_proc.stdout = iter(["line one\n", "line two\n"])
+        with (
+            patch("codex_orchestrator.cli.load_config", return_value=cfg),
+            patch("codex_orchestrator.cli.subprocess.Popen", return_value=ok_proc),
+            patch("codex_orchestrator.cli.WorktreeManager.merge_branch"),
+        ):
+            exit_code = command_merge(
+                Namespace(bead_id=bead.bead_id, skip_rebase=True, skip_tests=False),
+                self.storage,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        output = stream.getvalue()
+        self.assertIn("line one", output)
+        self.assertIn("line two", output)
 
     # -------------------------------------------------------------------------
     # Attempt cap escalation

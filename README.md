@@ -43,7 +43,7 @@ The merge command runs two preflight checks before merging to main:
 
 1. **Merge-main preflight** (skippable with `--skip-rebase`): Merges the current `main` branch into your feature branch to catch conflicts early. If conflicts are detected, the orchestrator creates a `merge-conflict` bead for you to resolve. After resolving, run the scheduler to process the conflict bead, then retry the merge.
 
-2. **Test gate** (skippable with `--skip-tests`): Runs your configured test suite to validate the merge. Test failures create a `merge-conflict` bead, allowing you to address failures via the normal development workflow.
+2. **Test gate** (skippable with `--skip-tests`): Runs your configured test suite to validate the merge. Output is streamed to the terminal in real time. Test failures create a `merge-conflict` bead, allowing you to address failures via the normal development workflow.
 
 If conflicts are detected during either check, the merge is blocked. Resolve the conflict bead, then run:
 
