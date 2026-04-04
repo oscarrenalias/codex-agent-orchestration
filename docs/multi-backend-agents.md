@@ -118,9 +118,10 @@ Codex does not use an `--allowedTools` flag; tool access is controlled via the `
 
 When `claude -p` completes successfully but returns a conversational summary instead of the required JSON schema, `ClaudeCodeAgentRunner._retry_structured_output()` makes a single lightweight follow-up call to reformat the result.
 
-The retry call intentionally omits backend flags (e.g. `--dangerously-skip-permissions`) and `--allowedTools`. This is by design: the retry is a pure text-reformatting step, not a new agentic run. Excluding these flags prevents Claude from invoking tools during the retry, forcing it to produce the JSON output directly.
+The retry call intentionally omits backend flags (e.g. `--dangerously-skip-permissions`) but explicitly passes `--allowedTools ""` (empty string). This is by design: the retry is a pure text-reformatting step, not a new agentic run. Passing an empty `--allowedTools` list prevents Claude from invoking any tools during the retry, forcing it to produce the JSON output directly.
 
 The retry call uses:
+- `--allowedTools ""` (empty — no tools permitted)
 - `--output-format json`
 - `--json-schema <schema>`
 - `--max-turns 1`
