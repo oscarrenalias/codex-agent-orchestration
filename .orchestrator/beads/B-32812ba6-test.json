@@ -53,9 +53,12 @@
     "expected_files": [],
     "expected_globs": [],
     "touched_files": [],
-    "conflict_risks": ""
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-68f905b7",
+  "block_reason": "Deferred due to file-scope conflict with active bead B-aeb8ca9f",
   "conflict_risks": "No conflicts expected. onboarding.py and cli.py are scoped to this feature tree. _data/ template sync may conflict if another bead also modifies _data/templates/agents/.",
   "branch_name": "",
   "worktree_path": "",
@@ -109,6 +112,13 @@
       "event": "deferred",
       "agent_type": "tester",
       "summary": "Deferred due to file-scope conflict with active bead B-68f905b7",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:17:37.587257+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "Deferred due to file-scope conflict with active bead B-aeb8ca9f",
       "details": {}
     }
   ],

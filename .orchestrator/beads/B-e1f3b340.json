@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-e1f3b340",
+  "title": "Add bead deletion auto-commit in storage",
+  "agent_type": "developer",
+  "description": "Extend RepositoryStorage deletion flow so bead file removals are staged and committed immediately with the same best-effort and serialized git behavior used for write commits.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-d63fb4e3",
+  "dependencies": [
+    "B-bf774f33"
+  ],
+  "acceptance_criteria": [
+    "RepositoryStorage defines a deletion-specific git commit helper or equivalent focused path for removed bead files.",
+    "delete_bead stages bead file removal and creates an immediate git commit after successful deletion cleanup.",
+    "Deletion auto-commit reuses the same git serialization strategy as write auto-commit.",
+    "Deletion-related git failures remain silent and do not block bead removal."
+  ],
+  "linked_docs": [
+    "spec-b518b2b6",
+    "docs/development.md"
+  ],
+  "feature_root_id": "B-d63fb4e3",
+  "execution_branch_name": "feature/b-d63fb4e3",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-d63fb4e3",
+  "expected_files": [
+    "src/codex_orchestrator/storage.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-05T16:19:27.057056+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

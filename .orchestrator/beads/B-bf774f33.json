@@ -1,0 +1,66 @@
+{
+  "bead_id": "B-bf774f33",
+  "title": "Add per-write bead auto-commit in storage",
+  "agent_type": "developer",
+  "description": "Update RepositoryStorage write flow to detect bead creation vs update, serialize git operations with a lock, and best-effort stage and commit the written bead file from _write_bead without surfacing git failures.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-d63fb4e3",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "RepositoryStorage defines a private git commit helper for a single bead write and keeps git failures non-fatal.",
+    "_write_bead captures whether the bead file existed before the atomic replace and uses that state to choose created vs status commit messages.",
+    "Concurrent callers share a lock that serializes git add/git commit operations without changing the existing atomic file write behavior.",
+    "Commit messages use `[bead] <bead_id>: created (<agent_type>)` for first write and `[bead] <bead_id>: <status>` for later writes."
+  ],
+  "linked_docs": [
+    "spec-b518b2b6",
+    "docs/development.md"
+  ],
+  "feature_root_id": "B-d63fb4e3",
+  "execution_branch_name": "feature/b-d63fb4e3",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-d63fb4e3",
+  "expected_files": [
+    "src/codex_orchestrator/storage.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-05T16:19:27.056024+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}

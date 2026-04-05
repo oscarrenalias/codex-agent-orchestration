@@ -38,7 +38,10 @@
     "expected_files": [],
     "expected_globs": [],
     "touched_files": [],
-    "conflict_risks": ""
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
   },
   "block_reason": "",
   "conflict_risks": "",
