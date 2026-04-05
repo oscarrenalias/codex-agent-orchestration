@@ -2,14 +2,14 @@
 name: Bead Telemetry Analysis
 id: s-a0f0124
 description: Code editing capability for implementation-focused tasks.
-dependencies:
-priority:  medium
+dependencies: null
+priority: medium
 complexity: medium
-status: draft
+status: done
 scope:
-  in: 
+  in: null
   out: tui
-feature_root_id:
+feature_root_id: B-715e8f90
 tags: cli, telemetry
 ---
 

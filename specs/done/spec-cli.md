@@ -1,8 +1,7 @@
 ---
 name: Spec CLI
 id: spec-b2f91a3c
-description: Standalone CLI for creating and managing spec frontmatter and lifecycle
-  transitions.
+description: Standalone CLI for creating and managing spec frontmatter and lifecycle transitions.
 dependencies: null
 priority: medium
 complexity: small
@@ -11,10 +10,8 @@ tags:
 - cli
 - specs
 scope:
-  in: spec create, list, show, set subcommands; frontmatter read/write; file moves
-    between draft/planned/done
-  out: orchestrator planner integration, validation of transition rules, spec content
-    editing
+  in: spec create, list, show, set subcommands; frontmatter read/write; file moves between draft/planned/done
+  out: orchestrator planner integration, validation of transition rules, spec content editing
 feature_root_id: null
 ---
 
