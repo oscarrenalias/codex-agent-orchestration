@@ -3,7 +3,7 @@
   "title": "Verify Onboarding Flow And Regression Coverage",
   "agent_type": "tester",
   "description": "Run targeted tests for packaging and onboarding behavior, including init output structure, config generation, template substitution, memory seeding, gitignore updates, and immediate post-init usability.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-031382d2",
   "dependencies": [
@@ -21,47 +21,51 @@
   "execution_branch_name": "feature/b-031382d2",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-031382d2",
   "expected_files": [
-    "src/codex_orchestrator/cli.py"
+    "tests/test_cli_init.py"
   ],
   "expected_globs": [
-    "src/codex_orchestrator/*.py",
     "tests/**"
   ],
   "touched_files": [
-    "src/codex_orchestrator/cli.py"
+    "tests/test_cli_init.py"
   ],
   "changed_files": [
-    "src/codex_orchestrator/cli.py"
+    "tests/test_cli_init.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Wrote tests/test_cli_init.py with 16 tests covering: init subparser registration, --overwrite and --non-interactive flags, non-git directory rejection, missing runner binary rejection with hint message, successful non-interactive init, default answer values in non-interactive mode, overwrite flag forwarding, interactive mode delegation to collect_init_answers. Confirmed all 89 targeted tests pass.",
+    "remaining": "None. All acceptance criteria met: CLI init behavior tested end-to-end, packaged asset accessibility confirmed via test_assets.py, regression results clean.",
+    "risks": "None. Tests use mocking and temporary directories; no external dependencies.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_cli_init.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Ready for review agent",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "expected_files": [
+      "tests/test_cli_init.py"
+    ],
+    "expected_globs": [
+      "tests/**"
+    ],
+    "touched_files": [
+      "tests/test_cli_init.py"
+    ],
+    "conflict_risks": "None. Only tests/test_cli_init.py added; no overlap with other in-progress beads.",
+    "design_decisions": "Patched codex_orchestrator.onboarding.scaffold_project and collect_init_answers (not cli module) because command_init uses local imports inside the function body.",
+    "test_coverage_notes": "16 new tests in test_cli_init.py for command_init and init parser wiring. Pre-existing 73 tests in test_assets.py (24) and test_onboarding.py (49) confirm packaged asset paths and full onboarding scaffold coverage. All 89 targeted tests pass.",
+    "known_limitations": "None."
   },
   "block_reason": "",
-  "conflict_risks": "None. Only cli.py was touched; no overlap with other in-progress beads expected.",
+  "conflict_risks": "None. Only tests/test_cli_init.py added; no overlap with other in-progress beads.",
   "branch_name": "feature/b-031382d2",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-031382d2",
-  "lease": {
-    "owner": "tester:B-aeb8ca9f",
-    "expires_at": "2026-04-05T16:47:37.595843+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -102,6 +106,13 @@
       "details": {
         "template_path": ".orchestrator/agent-runs/B-aeb8ca9f/repo/templates/agents/tester.md"
       }
+    },
+    {
+      "timestamp": "2026-04-05T16:20:06.739896+00:00",
+      "event": "completed",
+      "agent_type": "tester",
+      "summary": "Added 16 new tests in tests/test_cli_init.py covering the `command_init` CLI command and `init` subparser wiring. All 89 targeted tests pass (16 new + 73 pre-existing across test_assets.py and test_onboarding.py).",
+      "details": {}
     }
   ],
   "metadata": {
@@ -175,6 +186,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added 16 new tests in tests/test_cli_init.py covering the `command_init` CLI command and `init` subparser wiring. All 89 targeted tests pass (16 new + 73 pre-existing across test_assets.py and test_onboarding.py).",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.5653180500000001,
+      "duration_ms": 143155,
+      "duration_api_ms": 132928,
+      "num_turns": 22,
+      "input_tokens": 20,
+      "output_tokens": 9188,
+      "cache_creation_tokens": 56779,
+      "cache_read_tokens": 715056,
+      "stop_reason": "end_turn",
+      "session_id": "dc118346-92a8-4e67-902d-bf81f22c0248",
+      "permission_denials": [],
+      "prompt_chars": 7276,
+      "prompt_lines": 145,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.5653180500000001,
+        "duration_ms": 143155,
+        "duration_api_ms": 132928,
+        "num_turns": 22,
+        "input_tokens": 20,
+        "output_tokens": 9188,
+        "cache_creation_tokens": 56779,
+        "cache_read_tokens": 715056,
+        "stop_reason": "end_turn",
+        "session_id": "dc118346-92a8-4e67-902d-bf81f22c0248",
+        "permission_denials": [],
+        "prompt_chars": 7276,
+        "prompt_lines": 145,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "bdd8d18e84f77f511a910dd04fae6713d377962b"
   }
 }
