@@ -1205,6 +1205,20 @@ def command_init(args: argparse.Namespace, console: ConsoleReporter) -> int:
     else:
         answers = collect_init_answers()
 
+    _RUNNER_INSTALL_HINTS: dict[str, str] = {
+        "claude": "npm install -g @anthropic-ai/claude-code",
+        "codex": "npm install -g @openai/codex",
+    }
+    binary = answers.runner
+    if shutil.which(binary) is None:
+        hint = _RUNNER_INSTALL_HINTS.get(binary, f"install the '{binary}' CLI tool")
+        console.error(
+            f"Runner binary '{binary}' not found in PATH.\n"
+            f"Install it with: {hint}\n"
+            f"Then re-run `orchestrator init`."
+        )
+        return 1
+
     scaffold_project(root, answers, overwrite=getattr(args, "overwrite", False))
     return 0
 
