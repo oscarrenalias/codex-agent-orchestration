@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from .config import BackendConfig, OrchestratorConfig, default_config
-from .models import AgentRunResult, Bead, PlanChild, PlanProposal
+from .models import AgentRunResult, Bead, HandoffSummary, PlanChild, PlanProposal
 from .prompts import build_planner_prompt, build_worker_prompt
 
 
@@ -185,6 +185,7 @@ class AgentRunner(ABC):
         workdir: Path,
         context_paths: list[Path],
         execution_env: dict[str, str] | None = None,
+        dep_handoffs: list[HandoffSummary] | None = None,
     ) -> AgentRunResult: ...
 
     @abstractmethod
@@ -255,8 +256,9 @@ class CodexAgentRunner(AgentRunner):
         workdir: Path,
         context_paths: list[Path],
         execution_env: dict[str, str] | None = None,
+        dep_handoffs: list[HandoffSummary] | None = None,
     ) -> AgentRunResult:
-        prompt = build_worker_prompt(bead, context_paths, workdir)
+        prompt = build_worker_prompt(bead, context_paths, workdir, dep_handoffs=dep_handoffs)
         prompt_chars = len(prompt)
         prompt_lines = prompt.count("\n") + 1
 
@@ -500,8 +502,9 @@ class ClaudeCodeAgentRunner(AgentRunner):
         workdir: Path,
         context_paths: list[Path],
         execution_env: dict[str, str] | None = None,
+        dep_handoffs: list[HandoffSummary] | None = None,
     ) -> AgentRunResult:
-        prompt = build_worker_prompt(bead, context_paths, workdir)
+        prompt = build_worker_prompt(bead, context_paths, workdir, dep_handoffs=dep_handoffs)
         prompt_chars = len(prompt)
         prompt_lines = prompt.count("\n") + 1
 
