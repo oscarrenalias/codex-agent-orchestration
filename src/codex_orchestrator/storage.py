@@ -72,6 +72,26 @@ class RepositoryStorage:
         except Exception:
             pass
 
+    def _git_commit_bead_deletion(self, bead: Bead, path: Path) -> None:
+        """Stage and commit a single bead file removal; git failures are non-fatal."""
+        message = f"[bead] {bead.bead_id}: deleted"
+        try:
+            with self._git_lock:
+                subprocess.run(
+                    ["git", "add", str(path)],
+                    cwd=self.root,
+                    check=True,
+                    capture_output=True,
+                )
+                subprocess.run(
+                    ["git", "commit", "-m", message, "--no-verify"],
+                    cwd=self.root,
+                    check=True,
+                    capture_output=True,
+                )
+        except Exception:
+            pass
+
     def _write_bead(self, bead: Bead) -> None:
         self.initialize()
         path = self.bead_path(bead.bead_id)
@@ -348,7 +368,9 @@ class RepositoryStorage:
                 f"Cannot delete bead {bead_id} with status '{bead.status}' without force=True"
             )
 
-        self.bead_path(bead_id).unlink()
+        path = self.bead_path(bead_id)
+        path.unlink()
+        self._git_commit_bead_deletion(bead, path)
 
         self._cleanup_deleted_dependency_references(bead_id)
 
