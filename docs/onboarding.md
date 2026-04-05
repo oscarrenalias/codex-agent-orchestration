@@ -106,7 +106,17 @@ specs/
   drafts/              # Working directory for draft specs
 ```
 
-`.gitignore` is updated automatically with entries for the runtime-only `.orchestrator/` subdirectories.
+`.gitignore` is updated automatically with entries for the runtime-only `.orchestrator/` subdirectories. Specifically, `orchestrator init` appends the following block (skipping any lines already present):
+
+```
+# orchestrator
+.orchestrator/worktrees/
+.orchestrator/telemetry/
+.orchestrator/logs/
+.orchestrator/agent-runs/
+```
+
+If `.gitignore` does not exist it is created. If all four entries are already present no changes are made.
 
 ### Generated config.yaml
 
