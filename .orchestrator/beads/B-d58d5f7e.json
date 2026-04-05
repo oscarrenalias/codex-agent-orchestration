@@ -29,8 +29,14 @@
     "docs/**/*.md",
     "tests/**"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "docs/onboarding.md",
+    "tests/test_cli_init.py"
+  ],
+  "changed_files": [
+    "docs/onboarding.md",
+    "tests/test_cli_init.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
@@ -47,13 +53,19 @@
     "expected_files": [],
     "expected_globs": [],
     "touched_files": [],
-    "conflict_risks": ""
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
   },
   "block_reason": "",
   "conflict_risks": "",
-  "branch_name": "",
+  "branch_name": "feature/b-031382d2",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-d58d5f7e",
+    "expires_at": "2026-04-05T16:51:31.532860+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -62,7 +74,121 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:21:31.630888+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-05T16:21:31.630917+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:21:33.783898+00:00",
+      "event": "guardrails_applied",
+      "agent_type": "review",
+      "summary": "Applied guardrails from .orchestrator/agent-runs/B-d58d5f7e/repo/templates/agents/review.md",
+      "details": {
+        "template_path": ".orchestrator/agent-runs/B-d58d5f7e/repo/templates/agents/review.md"
+      }
+    },
+    {
+      "timestamp": "2026-04-05T16:22:40.412090+00:00",
+      "event": "updated",
+      "agent_type": "review",
+      "summary": "Bead updated via CLI",
+      "details": {}
     }
   ],
-  "metadata": {}
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-d58d5f7e",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "3cf74c3487de6625b3d6e901d1de8750c24a1e22bb2368906dd7db5f9afb23f9",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-d58d5f7e/home",
+    "runner_backend": "claude",
+    "guardrails": {
+      "agent_type": "review",
+      "template_path": ".orchestrator/agent-runs/B-d58d5f7e/repo/templates/agents/review.md",
+      "template_text": "# Review Guardrails\n\nPrimary responsibility: Inspect code, tests, docs, and acceptance criteria for correctness, completeness, and risk.\n\nAllowed actions:\n- Review only the changed files listed in the bead's touched_files and changed_files fields. Do not read unrelated files.\n- Validate acceptance criteria against the implementation and handoff state.\n- Block with a clear recommendation when the bead actually requires implementation work.\n\nEfficiency constraints:\n- Do not run the test suite. Testing is the tester agent's responsibility.\n- Focus on correctness, completeness, and risk \u2014 not style or formatting.\n- Keep the review concise. If there are no findings, say so and approve promptly.\n\nDisallowed actions:\n- Implement feature work, tests, or docs instead of reporting findings.\n- Rewrite architecture or silently fix issues discovered during review.\n- Mark incomplete work as accepted without evidence.\n\nExpected outputs:\n- Return JSON with `outcome` set to `completed` (reviews always complete; use `verdict` for pass/fail) and `summary` as a one-line description of the review result.\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Treat `verdict` as the review signoff decision: `approved` means the bead can complete, while `needs_changes` means the bead must block for follow-up work.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when no unresolved findings remain.\n- Use `verdict=needs_changes`, set `findings_count` to the unresolved finding count, set `requires_followup=true` unless there is a stronger explicit reason not to, and always include `block_reason` when any required fix remains.\n- Keep `completed`, `remaining`, and `risks` as free-form narrative context only. They inform operators, but they do not override the structured verdict or control scheduler state.\n- Review findings ordered by severity, or an explicit statement that no findings were discovered.\n- Clear blocked handoff details when the task belongs to another agent type.",
+      "captured_at": "2026-04-05T16:21:33.783888+00:00"
+    },
+    "worker_prompt_context": {
+      "bead_id": "B-d58d5f7e",
+      "feature_root_id": "B-031382d2",
+      "title": "Review Project Onboarding Feature Readiness",
+      "agent_type": "review",
+      "description": "Review the combined packaging, onboarding, testing, and documentation changes for correctness, portability, and alignment with the spec's reusable-project goal.",
+      "status": "in_progress",
+      "acceptance_criteria": [
+        "Review confirms the implementation meets the stated acceptance criteria without relying on self-hosting-only paths.",
+        "Review calls out any residual risk around deferred decisions such as skill allowlist configurability or upgrade flows.",
+        "Review signs off only after shared test and documentation follow-up beads are complete."
+      ],
+      "dependencies": [
+        "B-aeb8ca9f",
+        "B-83f9c770"
+      ],
+      "linked_docs": [
+        "spec-5db8d0ec"
+      ],
+      "execution_branch_name": "feature/b-031382d2",
+      "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-031382d2",
+      "expected_files": [],
+      "expected_globs": [
+        "pyproject.toml",
+        "src/codex_orchestrator/*.py",
+        "templates/agents/*.md",
+        "docs/**/*.md",
+        "tests/**"
+      ],
+      "touched_files": [
+        "docs/onboarding.md",
+        "tests/test_cli_init.py"
+      ],
+      "conflict_risks": "",
+      "handoff_summary": {
+        "completed": "",
+        "remaining": "",
+        "risks": "",
+        "verdict": "",
+        "findings_count": 0,
+        "requires_followup": false,
+        "changed_files": [],
+        "updated_docs": [],
+        "next_action": "",
+        "next_agent": "",
+        "block_reason": "",
+        "expected_files": [],
+        "expected_globs": [],
+        "touched_files": [],
+        "conflict_risks": "",
+        "design_decisions": "",
+        "test_coverage_notes": "",
+        "known_limitations": ""
+      }
+    }
+  }
 }

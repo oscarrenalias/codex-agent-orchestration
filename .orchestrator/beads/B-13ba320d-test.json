@@ -52,7 +52,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-7ecf453c-test",
+  "block_reason": "Deferred due to file-scope conflict with active bead B-32812ba6-docs",
   "conflict_risks": "None. All file modifications were made by prior beads and are stable.",
   "branch_name": "",
   "worktree_path": "",
@@ -92,6 +92,48 @@
       "event": "deferred",
       "agent_type": "tester",
       "summary": "Deferred due to file-scope conflict with active bead B-7ecf453c-test",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:20:00.041136+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "Deferred due to file-scope conflict with active bead B-7ecf453c-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:20:07.857083+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "Deferred due to file-scope conflict with active bead B-7ecf453c-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:21:27.197304+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "Deferred due to file-scope conflict with active bead B-b22eeb63-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:21:31.526890+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "Deferred due to file-scope conflict with active bead B-b22eeb63-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:23:13.949181+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "Deferred due to file-scope conflict with active bead B-32812ba6-test",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:23:56.597508+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "Deferred due to file-scope conflict with active bead B-32812ba6-docs",
       "details": {}
     }
   ],

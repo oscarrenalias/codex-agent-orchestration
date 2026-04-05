@@ -57,7 +57,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-7ecf453c-test",
+  "block_reason": "Deferred due to file-scope conflict with active bead B-32812ba6-docs",
   "conflict_risks": "None. No new files created; all logic was pre-existing.",
   "branch_name": "",
   "worktree_path": "",
@@ -104,6 +104,48 @@
       "event": "deferred",
       "agent_type": "documentation",
       "summary": "Deferred due to file-scope conflict with active bead B-7ecf453c-test",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:20:00.040292+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-7ecf453c-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:20:07.856321+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-7ecf453c-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:21:27.196756+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-b22eeb63-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:21:31.525887+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-b22eeb63-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:23:13.948257+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-32812ba6-test",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-05T16:23:56.596817+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-32812ba6-docs",
       "details": {}
     }
   ],
