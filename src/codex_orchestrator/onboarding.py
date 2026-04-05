@@ -423,10 +423,12 @@ def collect_init_answers(
 
 
 def generate_config_yaml(answers: InitAnswers) -> str:
-    """Return a minimal ``config.yaml`` string reflecting *answers*.
+    """Return a ``config.yaml`` string reflecting *answers*.
 
-    Only the user-configurable fields are written.  All other settings fall
-    back to orchestrator defaults at load time via :func:`config.load_config`.
+    Writes the user-configurable ``common`` block plus the standard ``codex``
+    and ``claude`` backend blocks (binary, skills_dir, flags, and timeout).
+    Settings absent from this file fall back to orchestrator defaults at load
+    time via :func:`config.load_config`.
 
     Args:
         answers: Collected answers from :func:`collect_init_answers`.
@@ -442,6 +444,23 @@ def generate_config_yaml(answers: InitAnswers) -> str:
         f"  default_runner: {answers.runner}\n"
         f"  test_command: {answers.test_command}\n"
         f"  # max_workers is a CLI flag: orchestrator run --max-workers {answers.max_workers}\n"
+        "\n"
+        "codex:\n"
+        "  binary: codex\n"
+        "  skills_dir: .agents\n"
+        "  flags:\n"
+        "    - \"--skip-git-repo-check\"\n"
+        "    - \"--full-auto\"\n"
+        "    - \"--color\"\n"
+        "    - \"never\"\n"
+        "\n"
+        "claude:\n"
+        "  binary: claude\n"
+        "  skills_dir: .claude\n"
+        "  flags:\n"
+        "    - \"--dangerously-skip-permissions\"\n"
+        "  timeout_seconds: 900\n"
+        "  model_default: claude-sonnet-4-6\n"
     )
 
 
