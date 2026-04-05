@@ -94,6 +94,9 @@ AGENT_OUTPUT_SCHEMA = {
         "next_agent": {"type": "string"},
         "block_reason": {"type": "string"},
         "conflict_risks": {"type": "string"},
+        "design_decisions": {"type": "string", "default": ""},
+        "test_coverage_notes": {"type": "string", "default": ""},
+        "known_limitations": {"type": "string", "default": ""},
         "new_beads": {
             "type": "array",
             "items": {
