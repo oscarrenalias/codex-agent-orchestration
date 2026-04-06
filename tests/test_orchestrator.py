@@ -80,6 +80,10 @@ from codex_orchestrator.tui import (
     supported_filter_modes,
 )
 
+# Suppress git commits for the general test session.  BeadAutoCommitTests
+# re-enables this flag in its own setUp/tearDown to exercise real commit paths.
+RepositoryStorage._auto_commit = False
+
 
 class FakeRunner:
     def __init__(
@@ -4793,6 +4797,14 @@ class StructuredHandoffFieldsTests(OrchestratorTests):
 
 class BeadAutoCommitTests(OrchestratorTests):
     """Tests for per-write git auto-commit behavior in RepositoryStorage."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        RepositoryStorage._auto_commit = True
+
+    def tearDown(self) -> None:
+        RepositoryStorage._auto_commit = False
+        super().tearDown()
 
     def _last_commit_message(self) -> str:
         """Return the subject line of the most recent git commit."""
