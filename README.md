@@ -2,9 +2,19 @@
 
 ![agent-takt](docs/assets/takt.png)
 
-An agentic system for orchestrating specialized AI coding workers (Codex or Claude Code) against a Git-native task graph.
+**Takt** is an agentic system for orchestrating specialized AI coding workers (Codex or Claude Code) against a Git-native task graph.
 
-Workers operate on **beads** — discrete units of work with a defined lifecycle (`open` → `ready` → `in_progress` → `done` | `blocked`). Each bead runs in an isolated Git worktree with role-specific guardrails. Structured handoffs flow between `planner`, `developer`, `tester`, `documentation`, and `review` agents.
+AI coding agents are powerful but undisciplined — they skip tests, forget documentation, and lose context across long tasks. Takt enforces a structured development process: every feature is decomposed into discrete units of work called **beads**, each assigned to a specialized agent type with a defined role and guardrails. Nothing gets skipped because the scheduler won't let it.
+
+Takt is intentionally opinionated. Spec-driven development — writing a human-readable spec before any code is written — is optional but strongly recommended: it forces clarity upfront and gives agents the context they need to make good decisions. The [spec-management skill](https://github.com/oscarrenalias/skill-spec-management) complements the process by providing a structured workflow for writing, planning, and tracking specs through to completion. It is included in the skill catalog installed by `takt init` for Claude Code projects.
+
+## Key features
+- **Structured pipeline** — every feature flows through planning, implementation, testing, documentation, and review. Agents cannot skip steps or drift out of scope.
+- **Git-native isolation** — each bead runs in its own Git worktree, so parallel agents never step on each other.
+- **Self-healing** — blocked beads, merge conflicts, and test failures automatically create corrective work items rather than silently failing.
+- **Backend-agnostic** — works with Claude Code or Codex; switch with a flag or environment variable.
+- **Observable** — a terminal UI, telemetry, and structured JSON handoffs give full visibility into what agents are doing and why.
+- **Git-native** – beads are json files that live within the repository; they sit right next to the code that they modify, and their history and upates are tracked just like any other file in the repositoy
 
 ---
 
@@ -29,6 +39,8 @@ Once installed, initialise a new project in your repository:
 ```bash
 takt init
 ```
+
+This sets up the project structure, copies guardrail templates, and installs the recommended skill catalog — including the [spec-management skill](https://github.com/oscarrenalias/skill-spec-management) for Claude Code projects.
 
 ### Working with Specs
 
@@ -121,6 +133,16 @@ takt --runner claude run
 # or
 export AGENT_TAKT_RUNNER=claude
 ```
+
+### Current Limitations
+
+- **Single stack per project** — `takt` assumes one language, one test command, and one build pipeline per repository. Monorepos with multiple stacks or frameworks (e.g. a Python backend and a JavaScript frontend) are not well supported: the test command is global, and agent guardrails are not stack-aware.
+- **Local execution only** — agents run as local subprocesses. There is no support for remote or cloud-based execution environments.
+- **Claude Code and Codex only** — no support for other AI backends (GPT-4, Gemini, etc.).
+- **Fixed followup pipeline** — every developer bead automatically generates tester, documentation, and review followups. This pipeline is not configurable per bead or per feature; you cannot opt individual beads out of specific followup types.
+- **No human-in-the-loop gates** — there is no built-in mechanism to pause the pipeline and require explicit human approval before proceeding. Operator actions in the TUI can block beads manually, but this is not automated.
+- **Context window limits** — very large changes may exceed agent context limits. Beads need to be sized accordingly; the planner helps but cannot guarantee this automatically.
+- **No rollback** — if a merged feature introduces a regression, there is no automated rollback mechanism. Recovery goes through the normal bead pipeline.
 
 ---
 
