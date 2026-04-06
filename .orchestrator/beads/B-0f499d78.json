@@ -3,7 +3,7 @@
   "title": "Strengthen tester guardrail against background task misuse",
   "agent_type": "developer",
   "description": "The tester guardrail template (templates/agents/tester.md) already prohibits run_in_background but agents keep violating it. The failure mode: agent runs tests in background, receives a task-notification, then claims structured output was already submitted and ends without emitting JSON. Fix: (1) move the run_in_background prohibition to the very top of the template before any other content; (2) add explicit instruction: if a task-notification appears in context, the constraint was violated \u2014 re-run the test synchronously and emit JSON as the final response; (3) add a final-action reminder that the JSON verdict block must be the absolute last output of the response.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": null,
   "dependencies": [],
@@ -21,37 +21,48 @@
     "templates/agents/tester.md"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
-  "updated_docs": [],
+  "touched_files": [
+    "templates/agents/tester.md"
+  ],
+  "changed_files": [
+    "templates/agents/tester.md"
+  ],
+  "updated_docs": [
+    "templates/agents/tester.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "All three acceptance criteria implemented in templates/agents/tester.md: (1) run_in_background prohibition moved to top CRITICAL block before Allowed/Disallowed sections, (2) task-notification recovery instruction added, (3) final-action reminder added at end of file. No other behavioral content was changed.",
+    "remaining": "N/A",
+    "risks": "None \u2014 template-only change with no code impact.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "templates/agents/tester.md"
+    ],
+    "updated_docs": [
+      "templates/agents/tester.md"
+    ],
+    "next_action": "Proceed to review agent.",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "templates/agents/tester.md"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "templates/agents/tester.md"
+    ],
+    "conflict_risks": "None \u2014 only templates/agents/tester.md was modified.",
+    "design_decisions": "The CRITICAL block uses bold formatting and is placed before any section headers so it is visually prominent and encountered first on every load. The task-notification recovery instruction explicitly names the failure mode (background bash \u2192 notification \u2192 premature exit) and prescribes the exact corrective action (re-run synchronously, emit JSON). The FINAL REMINDER at the end mirrors the top constraint as a last-mile cue. No behavioral content from the original template was removed or altered.",
+    "test_coverage_notes": "This is a documentation/template-only change. The tester agent should verify: (1) the CRITICAL block appears before Allowed/Disallowed sections, (2) the task-notification recovery instruction is present and actionable, (3) the FINAL REMINDER appears at the very end, (4) existing allowed/disallowed/expected-output content is unchanged.",
+    "known_limitations": "This is a prompt-engineering mitigation; it cannot guarantee agent compliance. Persistent violations may require scheduler-side enforcement (e.g., detecting background task events and auto-blocking the bead)."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only templates/agents/tester.md was modified.",
   "branch_name": "feature/b-0f499d78",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-0f499d78",
-  "lease": {
-    "owner": "developer:B-0f499d78",
-    "expires_at": "2026-04-06T11:43:51.855532+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -93,6 +104,13 @@
       "details": {
         "template_path": ".orchestrator/agent-runs/B-0f499d78/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-06T11:14:39.622152+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Updated templates/agents/tester.md to strengthen the run_in_background guardrail: moved the prohibition to a CRITICAL block at the very top of the file, added explicit recovery instruction for when a task-notification appears in context, and added a FINAL REMINDER at the end of the file that the JSON verdict block must be the last output.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -159,6 +177,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated templates/agents/tester.md to strengthen the run_in_background guardrail: moved the prohibition to a CRITICAL block at the very top of the file, added explicit recovery instruction for when a task-notification appears in context, and added a FINAL REMINDER at the end of the file that the JSON verdict block must be the last output.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.14331314999999997,
+      "duration_ms": 45343,
+      "duration_api_ms": 40068,
+      "num_turns": 4,
+      "input_tokens": 6,
+      "output_tokens": 1909,
+      "cache_creation_tokens": 25003,
+      "cache_read_tokens": 69663,
+      "stop_reason": "end_turn",
+      "session_id": "5320f742-923e-4fab-b316-74fb8f2ab613",
+      "permission_denials": [],
+      "prompt_chars": 7727,
+      "prompt_lines": 140,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.14331314999999997,
+        "duration_ms": 45343,
+        "duration_api_ms": 40068,
+        "num_turns": 4,
+        "input_tokens": 6,
+        "output_tokens": 1909,
+        "cache_creation_tokens": 25003,
+        "cache_read_tokens": 69663,
+        "stop_reason": "end_turn",
+        "session_id": "5320f742-923e-4fab-b316-74fb8f2ab613",
+        "permission_denials": [],
+        "prompt_chars": 7727,
+        "prompt_lines": 140,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "55ad031e5a873d2b752b0a43d2600548e4f1c0e5"
   }
 }
