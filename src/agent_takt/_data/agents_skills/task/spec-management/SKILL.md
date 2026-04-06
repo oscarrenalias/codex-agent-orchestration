@@ -160,6 +160,19 @@ python3 <spec-py> set description "Adds OAuth login support" spec-a3f19c2b
 
 ---
 
+### `remove <spec>` — Delete a spec file
+
+Deletes a spec file. Prompts for confirmation if the spec is not in `draft` status.
+
+```bash
+python3 <spec-py> remove spec-a3f19c2b
+python3 <spec-py> remove my-feature --force
+```
+
+`--force` skips the confirmation prompt for non-draft specs.
+
+---
+
 ### `migrate <spec>` — Add frontmatter to a legacy spec
 
 Adds a standard frontmatter block to a spec file that has none. Infers the name from the first `# Heading` or the filename, generates a new ID, and infers the status from the file's current folder.
