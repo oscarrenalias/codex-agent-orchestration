@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-80cd72ce",
-  "dependencies": [],
+  "dependencies": [
+    "B-3f6ffee3",
+    "B-f670dae8"
+  ],
   "acceptance_criteria": [
     "All listed test modules import `agent_takt` instead of `codex_orchestrator`.",
     "Tests that patch source symbols use `agent_takt...` patch targets.",
