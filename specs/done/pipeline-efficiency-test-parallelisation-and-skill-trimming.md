@@ -8,7 +8,7 @@ dependencies:
 - spec-5db8d0ec
 priority: medium
 complexity: medium
-status: planned
+status: done
 tags:
 - pipeline
 - efficiency
@@ -97,17 +97,17 @@ Remove the two Python-specific command references from the tester guardrail temp
   `uv run python -m unittest tests.<module_name> -v`.
 ```
 
-**Replacement (language-agnostic):**
+**Replacement (persona/constraints only, no commands):**
 ```
 - Run only the tests related to the bead's changed files — never the full suite.
-  Refer to the `capability/test-execution` skill for the correct command syntax for this project.
+  Consult the `capability/test-execution` skill for the correct invocation for this project.
 ```
 ```
-- Run the full test suite. Always scope to the modules or files touched by this bead.
-  Refer to the `capability/test-execution` skill for targeted invocation syntax.
+- Run the full test suite. Always scope to the files touched by this bead.
+  Consult the `capability/test-execution` skill for targeted invocation syntax.
 ```
 
-The `capability/test-execution` skill is intentionally project-specific and already contains the correct Python/uv invocation patterns. The template must not duplicate that content — it defines the *what* (run targeted tests, not the full suite), the skill defines the *how* (which command to use).
+No commands, placeholders, or runner names belong in the template — not even `{{TEST_COMMAND}}`. The template defines the *what* (persona, constraints, output contract); the `capability/test-execution` skill defines the *how* (exact commands, targeting patterns, what to avoid). This separation means the template never needs updating when the test runner changes.
 
 ---
 
