@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7fbb44e7",
-  "dependencies": [],
+  "dependencies": [
+    "B-4bcc35b0"
+  ],
   "acceptance_criteria": [
     "Any existing docs that reference the old unittest discover command or Python-specific tester-template behavior are updated.",
     "No compensating expansion is added to `CLAUDE.md` to offset trimmed skill content.",
