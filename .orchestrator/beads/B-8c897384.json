@@ -3,7 +3,7 @@
   "title": "Validate auto-commit suppression and commit-behavior isolation",
   "agent_type": "tester",
   "description": "Run focused automated coverage for RepositoryStorage write and deletion paths, including the explicit auto-commit tests, and confirm the new flag suppresses git subprocess work without regressing default behavior.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-49fd235e",
   "dependencies": [
@@ -119,6 +119,13 @@
       "event": "failed",
       "agent_type": "tester",
       "summary": "Worker execution failed: Agent timed out after 900 seconds",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-06T11:02:12.946316+00:00",
+      "event": "updated",
+      "agent_type": "tester",
+      "summary": "Bead updated via CLI",
       "details": {}
     }
   ],
