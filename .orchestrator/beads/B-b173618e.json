@@ -1,0 +1,65 @@
+{
+  "bead_id": "B-b173618e",
+  "title": "Document test-only auto-commit suppression behavior",
+  "agent_type": "documentation",
+  "description": "Capture the intent and usage of the RepositoryStorage._auto_commit test switch in the most local maintainable place, keeping the change scoped to developer-facing context rather than user-facing product docs.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-49fd235e",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Developer-facing documentation or inline test context explains that _auto_commit is a test-only suppression switch with default production behavior left enabled.",
+    "Any note added makes clear that BeadAutoCommitTests are the explicit coverage point for real git commit behavior.",
+    "No unrelated user-facing documentation changes are introduced."
+  ],
+  "linked_docs": [
+    "spec-017afb02"
+  ],
+  "feature_root_id": "B-49fd235e",
+  "execution_branch_name": "feature/b-49fd235e",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-49fd235e",
+  "expected_files": [
+    "src/codex_orchestrator/storage.py",
+    "tests/test_orchestrator.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-06T08:16:27.366806+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}
