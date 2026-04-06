@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-c8588603",
+  "title": "Validate CI workflow structure and release assumptions",
+  "agent_type": "tester",
+  "description": "Validate the completed workflow configuration after both implementation beads land. Review the YAML structure, job dependency chain, command correctness against the repository, and version/release assumptions so the first push-to-main run is the only remaining live validation step.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-7932960d",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Validation confirms the workflow runs `test -> build -> publish` in the intended order using `needs:`.",
+    "Validation confirms the pytest command, `uv build`, and version bump commands match the repository's current Python package configuration.",
+    "Validation confirms the release flow uses the built artifact handoff rather than rebuilding in `publish`.",
+    "Any residual runtime-only risks for the first real GitHub Actions execution are explicitly called out."
+  ],
+  "linked_docs": [
+    "docs/development.md",
+    "README.md",
+    "pyproject.toml"
+  ],
+  "feature_root_id": "B-7932960d",
+  "execution_branch_name": "feature/b-7932960d",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-7932960d",
+  "expected_files": [
+    ".github/workflows/ci.yml",
+    "pyproject.toml"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-06T13:41:53.569948+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}
