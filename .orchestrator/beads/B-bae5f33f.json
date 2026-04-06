@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7fbb44e7",
-  "dependencies": [],
+  "dependencies": [
+    "B-aad15567",
+    "B-2e04745d"
+  ],
   "acceptance_criteria": [
     "General implementation advice is removed from the skill.",
     "The remaining content focuses on safe edit mechanics, diff discipline, and handoff-relevant self-checks.",
