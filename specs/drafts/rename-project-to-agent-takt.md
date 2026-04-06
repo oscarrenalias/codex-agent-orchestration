@@ -11,7 +11,7 @@ tags:
 - rename
 scope:
   in: pyproject.toml, src/codex_orchestrator/, tests/, CLAUDE.md, README.md, docs/, apm.yml, skills/spec-management/SKILL.md, templates/agents/
-  out: .orchestrator/ runtime directory, .orchestrator/config.yaml, bead JSON files, git history
+  out: bead JSON files, git history
 feature_root_id:
 ---
 
@@ -43,8 +43,8 @@ The project is no longer Codex-specific — it supports Claude Code and Codex in
 | Python import prefix | `from codex_orchestrator.` | `from agent_takt.` |
 | CLI command | `orchestrator` | `takt` |
 | Environment variable | `ORCHESTRATOR_RUNNER` | `AGENT_TAKT_RUNNER` |
-| Runtime state dir | `.orchestrator/` | **unchanged** (breaking for existing projects) |
-| Config file | `.orchestrator/config.yaml` | **unchanged** |
+| Runtime state dir | `.orchestrator/` | `.takt/` |
+| Config file | `.orchestrator/config.yaml` | `.takt/config.yaml` |
 
 ### 1. `src/` directory rename
 
@@ -52,7 +52,28 @@ Rename `src/codex_orchestrator/` to `src/agent_takt/`. This is a directory renam
 
 Delete the stale egg-info: `src/codex_agent_orchestration.egg-info/` (regenerated on next build).
 
-### 2. `pyproject.toml`
+### 2. Runtime state directory rename
+
+The hardcoded `.orchestrator` directory name appears in `storage.py`, `config.py`, `gitutils.py`, `cli.py`, and `scheduler.py` (anywhere that constructs paths like `root / ".orchestrator"`). Replace all occurrences with `.takt`.
+
+This affects:
+- `RepositoryStorage` root path construction
+- `load_config(root)` — looks for `root / ".orchestrator" / "config.yaml"`
+- `gitutils.py` — worktree paths under `.orchestrator/worktrees/`
+- `cli.py` — any hardcoded `.orchestrator` path references
+- Any log/telemetry path constants
+
+The existing `.orchestrator/` directory in this repo must be **migrated** as part of this bead:
+```bash
+mv .orchestrator .takt
+```
+Then create a symlink so the current session's worktrees (which still reference `.orchestrator/`) don't break mid-migration:
+```bash
+ln -s .takt .orchestrator
+```
+The symlink can be removed once all active worktrees are cleaned up.
+
+### 3. `pyproject.toml`
 
 ```toml
 [project]
@@ -75,14 +96,14 @@ agent_takt = [
 ]
 ```
 
-### 3. Internal imports within `src/agent_takt/`
+### 4. Internal imports within `src/agent_takt/`
 
 Every `from codex_orchestrator.` or `import codex_orchestrator` inside the source modules must be updated to `from agent_takt.` / `import agent_takt`.
 
 Files affected (all files in `src/codex_orchestrator/` that cross-import):
 `cli.py`, `runner.py`, `prompts.py`, `skills.py`, `scheduler.py`, `storage.py`, `planner.py`, `tui.py`, `onboarding.py`, `gitutils.py`, `graph.py`, `_assets.py`
 
-### 4. Environment variable fallback in `runner.py`
+### 5. Environment variable fallback in `runner.py`
 
 ```python
 # AGENT_TAKT_RUNNER takes priority; ORCHESTRATOR_RUNNER kept as legacy fallback
@@ -94,27 +115,27 @@ backend_name = (
 )
 ```
 
-### 5. Test files (15 files under `tests/`)
+### 6. Test files (15 files under `tests/`)
 
 Replace all `from codex_orchestrator.` with `from agent_takt.` and all `import codex_orchestrator` with `import agent_takt`.
 
 Files:
 `tests/test_onboarding.py`, `tests/test_config.py`, `tests/test_cli_init.py`, `tests/test_assets.py`, `tests/test_orchestrator.py`, `tests/test_model_override.py`, `tests/test_config_wiring_phase3.py`, `tests/test_bead_telemetry.py`, `tests/test_merge_safety.py`, `tests/test_telemetry_merge.py`, `tests/test_runner_timeout.py`, `tests/test_model_selection.py`, `tests/test_tui.py`, `tests/test_config_wiring.py`, `tests/test_console.py`
 
-### 6. `CLAUDE.md`
+### 7. `CLAUDE.md`
 
 - Title: "Codex Agent Orchestration" → "agent-takt"
 - All `uv run orchestrator` commands → `uv run takt`
 - All `src/codex_orchestrator/` path references → `src/agent_takt/`
 - Remove "Codex" branding from the multi-backend section description
 
-### 7. `README.md`
+### 8. `README.md`
 
 - Project name/title
 - All `uv run orchestrator` → `uv run takt`
 - Any "Codex-based" or "Codex Agent" branding
 
-### 8. `docs/` files
+### 9. `docs/` files
 
 Update command examples and path references in:
 - `docs/development.md` — `src/codex_orchestrator/` paths, `uv run orchestrator` commands
@@ -123,18 +144,18 @@ Update command examples and path references in:
 - `docs/multi-backend-agents.md` — `src/codex_orchestrator/runner.py`, `skills.py` path references
 - `docs/scheduler-telemetry.md` — any `orchestrator` command examples
 
-### 9. `apm.yml`
+### 10. `apm.yml`
 
 ```yaml
 name: agent-takt
 description: APM project for agent-takt
 ```
 
-### 10. `skills/spec-management/SKILL.md`
+### 11. `skills/spec-management/SKILL.md`
 
 Replace all `uv run orchestrator` with `uv run takt` in command examples.
 
-### 11. `.agents/skills/` and `.claude/skills/`
+### 12. `.agents/skills/` and `.claude/skills/`
 
 Search for any `uv run orchestrator` references in SKILL.md files and update to `uv run takt`.
 
@@ -147,30 +168,28 @@ Search for any `uv run orchestrator` references in SKILL.md files and update to 
 | `src/codex_orchestrator/` | Rename directory to `src/agent_takt/` |
 | `src/codex_agent_orchestration.egg-info/` | Delete (auto-regenerated) |
 | `pyproject.toml` | name, description, entry point, package-data key |
-| All `src/agent_takt/*.py` | Internal `codex_orchestrator` imports → `agent_takt` |
-| `tests/*.py` (15 files) | All `codex_orchestrator` imports → `agent_takt` |
-| `CLAUDE.md` | Title, paths, all `orchestrator` CLI references |
-| `README.md` | Title, branding, all `orchestrator` CLI references |
+| All `src/agent_takt/*.py` | Internal `codex_orchestrator` imports → `agent_takt`; `.orchestrator` path strings → `.takt` |
+| `tests/*.py` (15 files) | All `codex_orchestrator` imports → `agent_takt`; any `.orchestrator` path strings → `.takt` |
+| `CLAUDE.md` | Title, paths (`src/codex_orchestrator/` → `src/agent_takt/`, `.orchestrator/` → `.takt/`), all `orchestrator` CLI references |
+| `README.md` | Title, branding, all `orchestrator` CLI references, `.orchestrator/` → `.takt/` |
 | `docs/development.md` | Paths and command examples |
-| `docs/onboarding.md` | Command examples |
+| `docs/onboarding.md` | Command examples, `.orchestrator/` → `.takt/` |
 | `docs/tui.md` | Command examples |
 | `docs/multi-backend-agents.md` | Path references |
-| `docs/scheduler-telemetry.md` | Command examples |
+| `docs/scheduler-telemetry.md` | `.orchestrator/telemetry/` → `.takt/telemetry/`, command examples |
 | `apm.yml` | name, description |
-| `skills/spec-management/SKILL.md` | `uv run orchestrator` → `uv run takt` |
-| `.agents/skills/**/*.md` | Any `uv run orchestrator` references |
-| `.claude/skills/**/*.md` | Any `uv run orchestrator` references |
+| `skills/spec-management/SKILL.md` | `uv run orchestrator` → `uv run takt`; `.orchestrator/` → `.takt/` |
+| `.agents/skills/**/*.md` | Any `uv run orchestrator` or `.orchestrator/` references |
+| `.claude/skills/**/*.md` | Any `uv run orchestrator` or `.orchestrator/` references |
 
 ---
 
 ## What Does NOT Change
 
-- `.orchestrator/` runtime directory name — renaming would break existing projects
-- `.orchestrator/config.yaml` structure and keys
-- Bead JSON files and storage format
+- `.takt/config.yaml` internal structure and keys
+- Bead JSON file format and storage schema
 - Git branch naming conventions (`feature/b-...`)
-- Worktree paths (`.orchestrator/worktrees/`)
-- All skill file logic and content (except `uv run orchestrator` command strings)
+- All skill file logic and content (except `uv run orchestrator` and `.orchestrator/` command strings)
 - GitHub repository name (out of scope — done separately by the developer via `gh repo rename`)
 
 ---
@@ -184,9 +203,12 @@ Search for any `uv run orchestrator` references in SKILL.md files and update to 
 - `pyproject.toml` has `name = "agent-takt"` and entry point `takt = "agent_takt.cli:main"`
 - No remaining `codex_orchestrator` references in `src/`, `tests/`, or docs (verified by grep)
 - No remaining `uv run orchestrator` in `CLAUDE.md`, `README.md`, or `docs/`
+- No remaining `.orchestrator/` path references in source, tests, or docs
 - `ORCHESTRATOR_RUNNER` env var still works as a silent fallback (backward compat)
 - `AGENT_TAKT_RUNNER` env var takes priority over `ORCHESTRATOR_RUNNER`
 - `src/codex_agent_orchestration.egg-info/` is deleted or absent
+- `.takt/` directory exists and contains all runtime state (beads, logs, worktrees, etc.)
+- A `.orchestrator → .takt` symlink exists in the repo root to ease the transition
 
 ---
 
