@@ -207,7 +207,7 @@ class MergeSafetyTests(unittest.TestCase):
         with (
             patch("agent_takt.cli.load_config", return_value=cfg),
             patch(
-                "codex_orchestrator.cli.WorktreeManager.merge_main_into_branch",
+                "agent_takt.cli.WorktreeManager.merge_main_into_branch",
                 side_effect=GitError("conflict"),
             ),
             patch("agent_takt.cli.WorktreeManager.conflicted_files", return_value=["a.py"]),
@@ -395,7 +395,7 @@ class MergeSafetyTests(unittest.TestCase):
         with (
             patch("agent_takt.cli.load_config", return_value=cfg),
             patch(
-                "codex_orchestrator.cli.WorktreeManager.merge_main_into_branch",
+                "agent_takt.cli.WorktreeManager.merge_main_into_branch",
                 side_effect=GitError("conflict"),
             ),
             patch("agent_takt.cli.WorktreeManager.conflicted_files", return_value=[]),
@@ -446,7 +446,7 @@ class MergeSafetyTests(unittest.TestCase):
         with (
             patch("agent_takt.cli.load_config", return_value=cfg),
             patch(
-                "codex_orchestrator.cli.WorktreeManager.merge_main_into_branch",
+                "agent_takt.cli.WorktreeManager.merge_main_into_branch",
                 side_effect=GitError("conflict"),
             ),
             patch("agent_takt.cli.WorktreeManager.conflicted_files", return_value=[]),

@@ -1417,8 +1417,8 @@ class OrchestratorTests(unittest.TestCase):
             title="Review work",
             agent_type="review",
             description="inspect",
-            touched_files=["src/codex_orchestrator/skills.py"],
-            changed_files=["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+            touched_files=["src/agent_takt/skills.py"],
+            changed_files=["src/agent_takt/skills.py", "docs/multi-backend-agents.md"],
         )
         runner = FakeRunner(
             results={
@@ -1441,16 +1441,16 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(BEAD_READY, corrective.status)
         self.assertEqual(bead.bead_id, corrective.parent_id)
         self.assertEqual(bead.bead_id, corrective.metadata.get("auto_corrective_for"))
-        self.assertEqual(["src/codex_orchestrator/skills.py"], corrective.touched_files)
+        self.assertEqual(["src/agent_takt/skills.py"], corrective.touched_files)
         self.assertEqual(
-            ["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+            ["src/agent_takt/skills.py", "docs/multi-backend-agents.md"],
             corrective.changed_files,
         )
         bead = self.storage.load_bead(bead.bead_id)
         self.assertEqual(corrective_id, bead.metadata.get("auto_corrective_bead_id"))
-        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.touched_files)
+        self.assertEqual(["src/agent_takt/skills.py"], bead.touched_files)
         self.assertEqual(
-            ["src/codex_orchestrator/skills.py", "docs/multi-backend-agents.md"],
+            ["src/agent_takt/skills.py", "docs/multi-backend-agents.md"],
             bead.handoff_summary.changed_files,
         )
 
@@ -1557,7 +1557,7 @@ class OrchestratorTests(unittest.TestCase):
                         description="build",
                         acceptance_criteria=["works"],
                         dependencies=[],
-                        expected_files=["src/codex_orchestrator/scheduler.py"],
+                        expected_files=["src/agent_takt/scheduler.py"],
                         children=[
                             PlanChild(
                                 title="Review",
@@ -1565,7 +1565,7 @@ class OrchestratorTests(unittest.TestCase):
                                 description="check",
                                 acceptance_criteria=["approved"],
                                 dependencies=["Implement"],
-                                expected_globs=["src/codex_orchestrator/*.py"],
+                                expected_globs=["src/agent_takt/*.py"],
                             )
                         ],
                     )
@@ -1589,8 +1589,8 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(feature.bead_id, review.feature_root_id)
         self.assertEqual(implement.bead_id, review.parent_id)
         self.assertEqual([implement.bead_id], review.dependencies)
-        self.assertEqual(["src/codex_orchestrator/scheduler.py"], implement.expected_files)
-        self.assertEqual(["src/codex_orchestrator/*.py"], review.expected_globs)
+        self.assertEqual(["src/agent_takt/scheduler.py"], implement.expected_files)
+        self.assertEqual(["src/agent_takt/*.py"], review.expected_globs)
 
     def test_planner_writes_shared_followups_at_feature_root_with_multi_bead_dependencies(self) -> None:
         spec_path = self.root / "spec.md"
@@ -1770,13 +1770,13 @@ class OrchestratorTests(unittest.TestCase):
             title="Scheduler conflict A",
             agent_type="developer",
             description="one",
-            expected_files=["src/codex_orchestrator/scheduler.py"],
+            expected_files=["src/agent_takt/scheduler.py"],
         )
         bead2 = self.storage.create_bead(
             title="Scheduler conflict B",
             agent_type="developer",
             description="two",
-            expected_files=["src/codex_orchestrator/scheduler.py"],
+            expected_files=["src/agent_takt/scheduler.py"],
         )
         runner = FakeRunner(
             results={
@@ -1797,13 +1797,13 @@ class OrchestratorTests(unittest.TestCase):
             title="Planner scope",
             agent_type="developer",
             description="one",
-            expected_files=["src/codex_orchestrator/planner.py"],
+            expected_files=["src/agent_takt/planner.py"],
         )
         bead2 = self.storage.create_bead(
             title="Storage scope",
             agent_type="developer",
             description="two",
-            expected_files=["src/codex_orchestrator/storage.py"],
+            expected_files=["src/agent_takt/storage.py"],
         )
         runner = FakeRunner(
             results={
@@ -1948,8 +1948,8 @@ class OrchestratorTests(unittest.TestCase):
             title="Review implementation work",
             agent_type="review",
             description="inspect",
-            touched_files=["src/codex_orchestrator/skills.py"],
-            changed_files=["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            touched_files=["src/agent_takt/skills.py"],
+            changed_files=["src/agent_takt/skills.py", "CLAUDE.md"],
             conflict_risks="Review is scoped to the rewritten skill rollout files.",
         )
         runner = FakeRunner(
@@ -1981,14 +1981,14 @@ class OrchestratorTests(unittest.TestCase):
             bead.handoff_summary.remaining,
         )
         self.assertEqual("Review signoff is blocked until implementation is complete.", bead.handoff_summary.risks)
-        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.touched_files)
-        self.assertEqual(["src/codex_orchestrator/skills.py"], bead.handoff_summary.touched_files)
+        self.assertEqual(["src/agent_takt/skills.py"], bead.touched_files)
+        self.assertEqual(["src/agent_takt/skills.py"], bead.handoff_summary.touched_files)
         self.assertEqual(
-            ["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            ["src/agent_takt/skills.py", "CLAUDE.md"],
             bead.changed_files,
         )
         self.assertEqual(
-            ["src/codex_orchestrator/skills.py", "CLAUDE.md"],
+            ["src/agent_takt/skills.py", "CLAUDE.md"],
             bead.handoff_summary.changed_files,
         )
         self.assertEqual(
@@ -2080,8 +2080,8 @@ class OrchestratorTests(unittest.TestCase):
             title="Active bead",
             agent_type="developer",
             description="running",
-            expected_files=["src/codex_orchestrator/scheduler.py"],
-            touched_files=["src/codex_orchestrator/scheduler.py"],
+            expected_files=["src/agent_takt/scheduler.py"],
+            touched_files=["src/agent_takt/scheduler.py"],
             conflict_risks="Potential overlap with scheduler edits.",
         )
         bead.status = BEAD_IN_PROGRESS
@@ -2092,14 +2092,14 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(bead.bead_id, claims[0]["bead_id"])
         self.assertEqual(bead.bead_id, claims[0]["feature_root_id"])
         self.assertEqual("touched_files", claims[0]["scope_source"])
-        self.assertEqual(["src/codex_orchestrator/scheduler.py"], claims[0]["touched_files"])
+        self.assertEqual(["src/agent_takt/scheduler.py"], claims[0]["touched_files"])
 
     def test_cli_claims_defaults_to_json_output(self) -> None:
         bead = self.storage.create_bead(
             title="CLI bead",
             agent_type="developer",
             description="running",
-            expected_files=["src/codex_orchestrator/storage.py"],
+            expected_files=["src/agent_takt/storage.py"],
         )
         bead.status = BEAD_IN_PROGRESS
         bead.lease = Lease(owner="developer:cli", expires_at="2099-01-01T00:00:00+00:00")
@@ -2115,7 +2115,7 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual("developer", claims[0]["agent_type"])
         self.assertEqual(bead.bead_id, claims[0]["feature_root_id"])
         self.assertEqual("expected_files", claims[0]["scope_source"])
-        self.assertEqual(["src/codex_orchestrator/storage.py"], claims[0]["expected_files"])
+        self.assertEqual(["src/agent_takt/storage.py"], claims[0]["expected_files"])
         self.assertEqual("developer:cli", claims[0]["lease"]["owner"])
         self.assertNotIn(" | ", rendered)
 
@@ -2124,7 +2124,7 @@ class OrchestratorTests(unittest.TestCase):
             title="CLI bead plain",
             agent_type="developer",
             description="running",
-            expected_files=["src/codex_orchestrator/storage.py"],
+            expected_files=["src/agent_takt/storage.py"],
         )
         bead.status = BEAD_IN_PROGRESS
         bead.lease = Lease(owner="developer:plain", expires_at="2099-01-01T00:00:00+00:00")
@@ -2757,7 +2757,7 @@ class OrchestratorTests(unittest.TestCase):
             description="one",
             parent_id=root.bead_id,
             dependencies=[root.bead_id],
-            expected_files=["src/codex_orchestrator/planner.py"],
+            expected_files=["src/agent_takt/planner.py"],
         )
         bead2 = self.storage.create_bead(
             title="Storage scope",
@@ -2765,7 +2765,7 @@ class OrchestratorTests(unittest.TestCase):
             description="two",
             parent_id=root.bead_id,
             dependencies=[root.bead_id],
-            expected_files=["src/codex_orchestrator/storage.py"],
+            expected_files=["src/agent_takt/storage.py"],
         )
         runner = FakeRunner(
             results={
@@ -2836,7 +2836,7 @@ class OrchestratorTests(unittest.TestCase):
 
     def test_worker_prompt_loads_matching_guardrail_template_for_review(self) -> None:
         bead = self.storage.create_bead(title="Review", agent_type="review", description="inspect changes")
-        bead.changed_files = ["src/codex_orchestrator/scheduler.py"]
+        bead.changed_files = ["src/agent_takt/scheduler.py"]
         prompt = build_worker_prompt(bead, [], self.root)
         self.assertIn(str(guardrail_template_path("review", root=self.root)), prompt)
         self.assertIn("Primary responsibility: Inspect code, tests, docs, and acceptance criteria", prompt)
@@ -2867,9 +2867,9 @@ class OrchestratorTests(unittest.TestCase):
             title="Review work",
             agent_type="review",
             description="inspect",
-            expected_files=["src/codex_orchestrator/scheduler.py"],
-            touched_files=["src/codex_orchestrator/scheduler.py"],
-            changed_files=["src/codex_orchestrator/scheduler.py", "tests/test_orchestrator.py"],
+            expected_files=["src/agent_takt/scheduler.py"],
+            touched_files=["src/agent_takt/scheduler.py"],
+            changed_files=["src/agent_takt/scheduler.py", "tests/test_orchestrator.py"],
         )
         bead.status = BEAD_BLOCKED
         bead.block_reason = "Needs a bounded corrective fix."
@@ -2881,9 +2881,9 @@ class OrchestratorTests(unittest.TestCase):
 
         bead = self.storage.load_bead(bead.bead_id)
         corrective = self.storage.load_bead(bead.metadata["auto_corrective_bead_id"])
-        self.assertEqual(["src/codex_orchestrator/scheduler.py"], corrective.touched_files)
+        self.assertEqual(["src/agent_takt/scheduler.py"], corrective.touched_files)
         self.assertEqual(
-            ["src/codex_orchestrator/scheduler.py", "tests/test_orchestrator.py"],
+            ["src/agent_takt/scheduler.py", "tests/test_orchestrator.py"],
             corrective.changed_files,
         )
 
@@ -2894,8 +2894,8 @@ class OrchestratorTests(unittest.TestCase):
             description="inspect",
             expected_files=[
                 "templates/agents/planner.md",
-                "src/codex_orchestrator/prompts.py",
-                "src/codex_orchestrator/scheduler.py",
+                "src/agent_takt/prompts.py",
+                "src/agent_takt/scheduler.py",
                 "tests/test_orchestrator.py",
             ],
         )
@@ -3218,10 +3218,10 @@ class OrchestratorTests(unittest.TestCase):
             feature_root_id="B0030",
             dependencies=["B0098"],
             acceptance_criteria=["Build rows", "Format detail panel"],
-            expected_files=["src/codex_orchestrator/tui.py"],
+            expected_files=["src/agent_takt/tui.py"],
             expected_globs=["tests/test_tui*.py"],
-            touched_files=["src/codex_orchestrator/tui.py"],
-            changed_files=["src/codex_orchestrator/tui.py", "tests/test_orchestrator.py"],
+            touched_files=["src/agent_takt/tui.py"],
+            changed_files=["src/agent_takt/tui.py", "tests/test_orchestrator.py"],
             updated_docs=["docs/tui.md"],
             block_reason="Waiting on review",
             conflict_risks="Coordinate with review bead on footer text.",
@@ -3229,14 +3229,14 @@ class OrchestratorTests(unittest.TestCase):
                 completed="Implemented the TUI helpers.",
                 remaining="Need review signoff.",
                 risks="Footer wording may change with runtime integration.",
-                changed_files=["src/codex_orchestrator/tui.py", "tests/test_orchestrator.py"],
+                changed_files=["src/agent_takt/tui.py", "tests/test_orchestrator.py"],
                 updated_docs=["docs/tui.md"],
                 next_action="Run the review bead.",
                 next_agent="review",
                 block_reason="Waiting on review",
-                expected_files=["src/codex_orchestrator/tui.py"],
+                expected_files=["src/agent_takt/tui.py"],
                 expected_globs=["tests/test_tui*.py"],
-                touched_files=["src/codex_orchestrator/tui.py"],
+                touched_files=["src/agent_takt/tui.py"],
                 conflict_risks="Coordinate with review bead on footer text.",
             ),
         )
@@ -3256,7 +3256,7 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("Feature Root: B0030", detail)
         self.assertIn("Dependencies: B0098", detail)
         self.assertIn("  - Build rows", detail)
-        self.assertIn("  changed: src/codex_orchestrator/tui.py, tests/test_orchestrator.py", detail)
+        self.assertIn("  changed: src/agent_takt/tui.py, tests/test_orchestrator.py", detail)
         self.assertIn("  next_agent: review", detail)
         self.assertIn("  conflict_risks: Coordinate with review bead on footer text.", detail)
         self.assertEqual(
@@ -4901,7 +4901,7 @@ class BeadAutoCommitTests(OrchestratorTests):
         bead.status = BEAD_IN_PROGRESS
 
         with patch(
-            "codex_orchestrator.storage.subprocess.run",
+            "agent_takt.storage.subprocess.run",
             side_effect=subprocess.CalledProcessError(1, ["git"]),
         ):
             # Must not raise
@@ -4916,7 +4916,7 @@ class BeadAutoCommitTests(OrchestratorTests):
         bead.status = BEAD_BLOCKED
 
         with patch(
-            "codex_orchestrator.storage.subprocess.run",
+            "agent_takt.storage.subprocess.run",
             side_effect=FileNotFoundError("git not found"),
         ):
             self.storage.save_bead(bead)

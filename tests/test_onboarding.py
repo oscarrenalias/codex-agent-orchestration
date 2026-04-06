@@ -1,4 +1,4 @@
-"""Tests for src/codex_orchestrator/onboarding.py.
+"""Tests for src/agent_takt/onboarding.py.
 
 Covers:
 - copy_asset_file / copy_asset_dir (low-level helpers)
