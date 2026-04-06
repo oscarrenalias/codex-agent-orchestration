@@ -23,6 +23,7 @@ from .models import (
 
 class RepositoryStorage:
     _git_lock: threading.Lock = threading.Lock()
+    _auto_commit: bool = True
 
     SUMMARY_STATUS_KEYS = (
         BEAD_OPEN,
@@ -51,6 +52,8 @@ class RepositoryStorage:
 
     def _git_commit_bead(self, bead: Bead, path: Path, *, is_new: bool) -> None:
         """Stage and commit a single bead file; git failures are non-fatal."""
+        if not RepositoryStorage._auto_commit:
+            return
         if is_new:
             message = f"[bead] {bead.bead_id}: created ({bead.agent_type})"
         else:
@@ -74,6 +77,8 @@ class RepositoryStorage:
 
     def _git_commit_bead_deletion(self, bead: Bead, path: Path) -> None:
         """Stage and commit a single bead file removal; git failures are non-fatal."""
+        if not RepositoryStorage._auto_commit:
+            return
         message = f"[bead] {bead.bead_id}: deleted"
         try:
             with self._git_lock:
