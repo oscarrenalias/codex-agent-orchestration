@@ -3,7 +3,7 @@
   "title": "Validate auto-commit suppression and commit-behavior isolation",
   "agent_type": "tester",
   "description": "Run focused automated coverage for RepositoryStorage write and deletion paths, including the explicit auto-commit tests, and confirm the new flag suppresses git subprocess work without regressing default behavior.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-49fd235e",
   "dependencies": [
@@ -58,9 +58,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 only storage.py was modified; no overlap with other in-progress beads expected.\nNone \u2014 single-file change in a method not touched by any sibling bead.\nNone \u2014 only tests/test_orchestrator.py was modified; no source files were changed.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-49fd235e",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-49fd235e",
+  "lease": {
+    "owner": "tester:B-8c897384",
+    "expires_at": "2026-04-06T08:50:04.115136+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -69,7 +72,44 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-06T08:20:04.376843+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-06T08:20:04.376869+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {}
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-8c897384",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/tester-validation",
+      "capability/test-execution",
+      "task/defect-bead-creation",
+      "task/regression-triage",
+      "memory"
+    ],
+    "skill_bundle_hash": "f2dd07f62fd5db42c893eaa1624b8e2026c600e045c16c735d863413c4256ff5",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-8c897384/home",
+    "runner_backend": "claude"
+  }
 }
