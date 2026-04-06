@@ -54,7 +54,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-215f6d97-docs",
+  "block_reason": "Deferred due to file-scope conflict with active bead B-aa3e7707-test",
   "conflict_risks": "None \u2014 all three changed files are exclusive to this feature branch.",
   "branch_name": "",
   "worktree_path": "",
@@ -94,6 +94,13 @@
       "event": "deferred",
       "agent_type": "documentation",
       "summary": "Deferred due to file-scope conflict with active bead B-215f6d97-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-06T18:54:48.394772+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-aa3e7707-test",
       "details": {}
     }
   ],
