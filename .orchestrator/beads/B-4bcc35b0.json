@@ -6,7 +6,13 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7fbb44e7",
-  "dependencies": [],
+  "dependencies": [
+    "B-6a22a4ad",
+    "B-aad15567",
+    "B-2e04745d",
+    "B-bae5f33f",
+    "B-cc8cd64e"
+  ],
   "acceptance_criteria": [
     "`uv run pytest tests/ -n auto -q` passes on the implemented branch state.",
     "Observed suite timing is recorded and compared against the under-2-minute target, or any environment-based limitation is called out explicitly.",
