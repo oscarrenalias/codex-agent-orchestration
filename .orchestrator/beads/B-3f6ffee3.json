@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-80cd72ce",
-  "dependencies": [],
+  "dependencies": [
+    "B-fad5ad23"
+  ],
   "acceptance_criteria": [
     "The package directory lives at `src/agent_takt/` and `src/codex_orchestrator/` is removed.",
     "Source modules import from `agent_takt` instead of `codex_orchestrator`.",
