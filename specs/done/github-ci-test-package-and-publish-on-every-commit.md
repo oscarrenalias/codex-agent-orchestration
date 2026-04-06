@@ -6,7 +6,7 @@ description: GitHub Actions workflow that runs tests, builds, and publishes a re
 dependencies: null
 priority: medium
 complexity: low
-status: planned
+status: done
 tags: []
 scope:
   in: null
