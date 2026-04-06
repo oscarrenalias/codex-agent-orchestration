@@ -21,9 +21,11 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "docs/memory/known-issues.md",
     "templates/agents/tester.md"
   ],
   "changed_files": [
+    "docs/memory/known-issues.md",
     "templates/agents/tester.md"
   ],
   "updated_docs": [],
