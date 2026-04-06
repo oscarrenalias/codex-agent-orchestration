@@ -1539,7 +1539,7 @@ def build_tui_app(
             yield Static(id="status-bar")
 
         def on_mount(self) -> None:
-            self.title = "Orchestrator TUI"
+            self.title = "takt TUI"
             self.sub_title = feature_root_id or "all features"
             self.set_interval(refresh_seconds, self._on_interval_tick)
             self._populate_bead_tree()
