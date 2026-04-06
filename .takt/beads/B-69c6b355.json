@@ -27,8 +27,12 @@
   "expected_globs": [
     ".github/workflows/ci.yml"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    ".github/workflows/ci.yml"
+  ],
+  "changed_files": [
+    ".github/workflows/ci.yml"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
@@ -51,7 +55,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only file touched is `.github/workflows/ci.yml`, no overlap with other in-progress beads.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
