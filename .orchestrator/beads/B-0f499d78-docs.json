@@ -3,7 +3,7 @@
   "title": "Document Strengthen tester guardrail against background task misuse",
   "agent_type": "documentation",
   "description": "Update docs for B-0f499d78",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-0f499d78",
   "dependencies": [
@@ -47,9 +47,12 @@
   },
   "block_reason": "Deferred due to file-scope conflict with active bead B-0f499d78-test",
   "conflict_risks": "None \u2014 only templates/agents/tester.md was modified.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-0f499d78",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-0f499d78",
+  "lease": {
+    "owner": "documentation:B-0f499d78-docs",
+    "expires_at": "2026-04-06T11:45:22.618583+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -65,7 +68,44 @@
       "agent_type": "documentation",
       "summary": "Deferred due to file-scope conflict with active bead B-0f499d78-test",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-06T11:15:22.872143+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-06T11:15:22.872173+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {}
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-0f499d78-docs",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "008487fee7052c53d0e3a334a20bb4bbda0cc0daa3a51251ae93714ed8704ba1",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-0f499d78-docs/home",
+    "runner_backend": "claude"
+  }
 }
