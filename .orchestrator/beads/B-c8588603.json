@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7932960d",
-  "dependencies": [],
+  "dependencies": [
+    "B-b16030dc",
+    "B-ef9f3a1f"
+  ],
   "acceptance_criteria": [
     "Validation confirms the workflow runs `test -> build -> publish` in the intended order using `needs:`.",
     "Validation confirms the pytest command, `uv build`, and version bump commands match the repository's current Python package configuration.",
