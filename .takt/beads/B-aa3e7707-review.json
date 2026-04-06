@@ -24,16 +24,28 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "docs/memory/conventions.md",
+    "docs/memory/known-issues.md",
+    "docs/onboarding.md",
     "src/agent_takt/cli.py",
     "src/agent_takt/onboarding.py",
     "src/agent_takt/scheduler.py",
-    "src/agent_takt/tui.py"
+    "src/agent_takt/tui.py",
+    "tests/test_merge_safety.py",
+    "tests/test_orchestrator.py",
+    "tests/test_tui.py"
   ],
   "changed_files": [
+    "docs/memory/conventions.md",
+    "docs/memory/known-issues.md",
+    "docs/onboarding.md",
     "src/agent_takt/cli.py",
     "src/agent_takt/onboarding.py",
     "src/agent_takt/scheduler.py",
-    "src/agent_takt/tui.py"
+    "src/agent_takt/tui.py",
+    "tests/test_merge_safety.py",
+    "tests/test_orchestrator.py",
+    "tests/test_tui.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
