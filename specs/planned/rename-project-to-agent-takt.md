@@ -1,18 +1,20 @@
 ---
 name: Rename project to agent-takt
 id: spec-1797b8d3
-description: Rename the package, module, and CLI from codex-agent-orchestration/codex_orchestrator/orchestrator to agent-takt/agent_takt/takt
-dependencies:
+description: Rename the package, module, and CLI from codex-agent-orchestration/codex_orchestrator/orchestrator
+  to agent-takt/agent_takt/takt
+dependencies: null
 priority: medium
 complexity: medium
-status: draft
+status: planned
 tags:
 - refactoring
 - rename
 scope:
-  in: pyproject.toml, src/codex_orchestrator/, tests/, CLAUDE.md, README.md, docs/, apm.yml, skills/spec-management/SKILL.md, templates/agents/
+  in: pyproject.toml, src/codex_orchestrator/, tests/, CLAUDE.md, README.md, docs/,
+    apm.yml, skills/spec-management/SKILL.md, templates/agents/
   out: bead JSON files, git history
-feature_root_id:
+feature_root_id: null
 ---
 
 # Rename Project to agent-takt
