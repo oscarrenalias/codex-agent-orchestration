@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7fbb44e7",
-  "dependencies": [],
+  "dependencies": [
+    "B-4bcc35b0",
+    "B-9bb25200"
+  ],
   "acceptance_criteria": [
     "The reviewer explicitly approves or rejects the trimmed skill content based on retained actionable guidance.",
     "The review confirms the final config uses parallel pytest and that the tester template is language-agnostic.",
