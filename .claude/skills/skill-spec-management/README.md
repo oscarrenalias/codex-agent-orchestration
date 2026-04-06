@@ -28,6 +28,8 @@ python3 spec.py <subcommand> [args]
 | `set description <text> <spec>` | Set the `description` field |
 | `set feature-root <id> <spec>` | Link spec to a feature root bead ID |
 | `migrate <spec>` | Add frontmatter to a legacy spec that has none |
+| `remove <spec>` | Delete a spec file (prompts confirmation for non-draft specs) |
+| `remove --force <spec>` | Delete without confirmation |
 
 `<spec>` can be a full spec ID (e.g. `spec-a3f19c2b`) or a partial filename substring.
 

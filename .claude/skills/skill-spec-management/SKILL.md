@@ -175,6 +175,28 @@ Fails if the spec already has frontmatter.
 
 ---
 
+### `remove <spec>` — Delete a spec file
+
+Permanently deletes the spec file. Behaviour depends on status:
+
+- **draft** specs are deleted immediately with no confirmation.
+- **planned** or **done** specs prompt for confirmation (`[y/N]`) to prevent accidental deletion.
+
+```bash
+python3 <spec-py> remove spec-a3f19c2b
+python3 <spec-py> remove my-feature
+```
+
+Use `--force` to skip the confirmation prompt (useful in automated or non-interactive contexts):
+
+```bash
+python3 <spec-py> remove --force spec-a3f19c2b
+```
+
+> **Note for agents:** always use `--force` when deleting specs non-interactively, otherwise the confirmation prompt will block execution.
+
+---
+
 ## ID and Filename Resolution
 
 Every subcommand that takes a `<spec>` argument resolves it as follows:
