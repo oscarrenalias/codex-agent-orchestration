@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7fbb44e7",
-  "dependencies": [],
+  "dependencies": [
+    "B-a86667a1"
+  ],
   "acceptance_criteria": [
     "`uv run pytest tests/ -n0 -q` is executed against the current branch state.",
     "Any failures caused by pytest compatibility or implicit ordering assumptions are identified with concrete follow-up notes.",
