@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-49fd235e",
-  "dependencies": [],
+  "dependencies": [
+    "B-8c897384"
+  ],
   "acceptance_criteria": [
     "Developer-facing documentation or inline test context explains that _auto_commit is a test-only suppression switch with default production behavior left enabled.",
     "Any note added makes clear that BeadAutoCommitTests are the explicit coverage point for real git commit behavior.",
