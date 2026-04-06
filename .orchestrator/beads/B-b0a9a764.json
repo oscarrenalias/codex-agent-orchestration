@@ -1,0 +1,58 @@
+{
+  "bead_id": "B-b0a9a764",
+  "title": "Resolve merge conflicts for Disable auto-commit during tests",
+  "agent_type": "developer",
+  "description": "Merge conflict detected during preflight merge of main into feature/b-49fd235e.\nConflicted files: .orchestrator/config.yaml\n\nGit error: Auto-merging .orchestrator/config.yaml\nCONFLICT (content): Merge conflict in .orchestrator/config.yaml\nAutomatic merge failed; fix conflicts and then commit the result.\n\nDiff context:\ndiff --cc .orchestrator/config.yaml\nindex 2ba5a68,0dda9b7..0000000\n--- a/.orchestrator/config.yaml\n+++ b/.orchestrator/config.yaml\n@@@ -5,7 -5,7 +5,11 @@@ common\n    default_runner: codex\n    templates_dir: templates/agents\n    test_command: uv run python -m unittest discover -s tests\n++<<<<<<< HEAD\n +  test_timeout_seconds: 1500\n++=======\n+   test_timeout_seconds: 1800\n++>>>>>>> main\n    agent_types:\n      - planner\n      - developer\n",
+  "status": "ready",
+  "bead_type": "merge-conflict",
+  "parent_id": "B-49fd235e",
+  "dependencies": [],
+  "acceptance_criteria": [],
+  "linked_docs": [],
+  "feature_root_id": "B-49fd235e",
+  "execution_branch_name": "feature/b-49fd235e",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-49fd235e",
+  "expected_files": [
+    ".orchestrator/config.yaml"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "Conflicted files: .orchestrator/config.yaml",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-06T11:06:50.218016+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}
