@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-49fd235e",
-  "dependencies": [],
+  "dependencies": [
+    "B-8c897384",
+    "B-b173618e"
+  ],
   "acceptance_criteria": [
     "Review confirms the new flag only suppresses git side effects and does not alter other RepositoryStorage behavior.",
     "Review confirms test isolation is explicit and does not weaken the auto-commit behavior tests.",
