@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7932960d",
-  "dependencies": [],
+  "dependencies": [
+    "B-b16030dc"
+  ],
   "acceptance_criteria": [
     "The `build` job configures git identity, runs `uv version --bump patch`, reads the bumped version, commits `pyproject.toml` with `[skip ci]`, and pushes to `main`.",
     "The built artifacts reflect the bumped version from `pyproject.toml`.",
