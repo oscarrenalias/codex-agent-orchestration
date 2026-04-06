@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-49fd235e",
-  "dependencies": [],
+  "dependencies": [
+    "B-3355be1f",
+    "B-d4cffe95"
+  ],
   "acceptance_criteria": [
     "tests/test_orchestrator.py sets RepositoryStorage._auto_commit = False at module scope for the main test session.",
     "BeadAutoCommitTests explicitly enables auto-commit for tests that verify git commit behavior and restores prior state afterward if needed.",
