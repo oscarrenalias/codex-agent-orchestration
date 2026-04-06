@@ -3,7 +3,7 @@
   "title": "Document Pipeline And Guardrail Updates",
   "agent_type": "documentation",
   "description": "Update any repository documentation or examples that would be stale after the pytest command change or tester-template generalization, while explicitly avoiding compensating additions to CLAUDE.md.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-7fbb44e7",
   "dependencies": [
@@ -53,9 +53,12 @@
   },
   "block_reason": "",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-7fbb44e7",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/worktrees/B-7fbb44e7",
+  "lease": {
+    "owner": "documentation:B-9bb25200",
+    "expires_at": "2026-04-06T12:34:41.446098+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -64,7 +67,44 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-06T12:04:41.831950+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-06T12:04:41.831976+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {}
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-9bb25200",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "008487fee7052c53d0e3a334a20bb4bbda0cc0daa3a51251ae93714ed8704ba1",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.orchestrator/agent-runs/B-9bb25200/home",
+    "runner_backend": "claude"
+  }
 }
