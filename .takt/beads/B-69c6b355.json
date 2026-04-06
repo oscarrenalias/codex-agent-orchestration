@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-1be2cb4e",
-  "dependencies": [],
+  "dependencies": [
+    "B-83950618"
+  ],
   "acceptance_criteria": [
     "Review confirms spec-only commits would not trigger CI.",
     "Review confirms `.orchestrator/`-only commits would not trigger CI.",
