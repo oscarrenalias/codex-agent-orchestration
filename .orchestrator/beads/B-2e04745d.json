@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7fbb44e7",
-  "dependencies": [],
+  "dependencies": [
+    "B-aad15567"
+  ],
   "acceptance_criteria": [
     "Generic clean-code and duplicated workflow guidance is removed from the file.",
     "Any retained content is specific to developer-bead execution rather than base policy.",
