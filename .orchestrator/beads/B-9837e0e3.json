@@ -6,7 +6,14 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-80cd72ce",
-  "dependencies": [],
+  "dependencies": [
+    "B-fad5ad23",
+    "B-3f6ffee3",
+    "B-f670dae8",
+    "B-0426c52e",
+    "B-e77b6df4",
+    "B-7289ee45"
+  ],
   "acceptance_criteria": [
     "`uv run takt --help` succeeds.",
     "`uv run takt summary`, `uv run takt bead list --plain`, and `uv run takt run --once` succeed in the migrated repository state or fail only for unrelated pre-existing reasons that are documented.",
