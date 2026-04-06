@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7932960d",
-  "dependencies": [],
+  "dependencies": [
+    "B-c8588603"
+  ],
   "acceptance_criteria": [
     "Documentation explains that pushes to `main` run tests, build the package, and publish a GitHub release automatically.",
     "Documentation explains that CI auto-bumps only the patch version and that developers must bump major/minor locally before pushing.",
