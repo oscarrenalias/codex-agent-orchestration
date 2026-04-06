@@ -31,13 +31,13 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from codex_orchestrator.config import (
+from agent_takt.config import (
     BackendConfig,
     OrchestratorConfig,
     SchedulerConfig,
     default_config,
 )
-from codex_orchestrator.models import (
+from agent_takt.models import (
     AgentRunResult,
     BEAD_BLOCKED,
     BEAD_DONE,
@@ -49,19 +49,19 @@ from codex_orchestrator.models import (
     Lease,
     utc_now,
 )
-from codex_orchestrator.prompts import (
+from agent_takt.prompts import (
     BUILT_IN_AGENT_TYPES,
     DEFAULT_TEMPLATES_DIR,
     guardrail_template_path,
     load_guardrail_template,
     supported_agent_types,
 )
-from codex_orchestrator.scheduler import Scheduler
-from codex_orchestrator.skills import (
+from agent_takt.scheduler import Scheduler
+from agent_takt.skills import (
     AGENT_SKILL_ALLOWLIST,
     prepare_isolated_execution_root,
 )
-from codex_orchestrator.storage import RepositoryStorage
+from agent_takt.storage import RepositoryStorage
 
 
 # ---------------------------------------------------------------------------
@@ -459,7 +459,7 @@ class TestSkillsConfigWiring(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
         _make_git_repo(self.root)
-        self.state_dir = self.root / ".orchestrator"
+        self.state_dir = self.root / ".takt"
         self.state_dir.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self):
@@ -608,7 +608,7 @@ class TestMemorySkillCopiedToExecRoot(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
         _make_git_repo(self.root)
-        self.state_dir = self.root / ".orchestrator"
+        self.state_dir = self.root / ".takt"
         self.state_dir.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self):

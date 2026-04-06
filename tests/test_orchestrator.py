@@ -17,7 +17,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from codex_orchestrator.cli import (
+from agent_takt.cli import (
     LIST_PLAIN_COLUMNS,
     build_parser,
     command_bead,
@@ -29,11 +29,11 @@ from codex_orchestrator.cli import (
     command_summary,
     command_tui,
 )
-from codex_orchestrator.config import SchedulerConfig
-from codex_orchestrator.console import ConsoleReporter
-from codex_orchestrator.gitutils import GitError, WorktreeManager
-from codex_orchestrator.graph import MAX_TITLE_LENGTH, render_bead_graph
-from codex_orchestrator.models import (
+from agent_takt.config import SchedulerConfig
+from agent_takt.console import ConsoleReporter
+from agent_takt.gitutils import GitError, WorktreeManager
+from agent_takt.graph import MAX_TITLE_LENGTH, render_bead_graph
+from agent_takt.models import (
     AgentRunResult,
     BEAD_BLOCKED,
     BEAD_DONE,
@@ -48,8 +48,8 @@ from codex_orchestrator.models import (
     PlanChild,
     PlanProposal,
 )
-from codex_orchestrator.planner import PlanningService
-from codex_orchestrator.prompts import (
+from agent_takt.planner import PlanningService
+from agent_takt.prompts import (
     BUILT_IN_AGENT_TYPES,
     build_planner_prompt,
     build_worker_prompt,
@@ -59,10 +59,10 @@ from codex_orchestrator.prompts import (
     render_context_snippets,
     render_dep_handoff_context,
 )
-from codex_orchestrator.runner import AGENT_OUTPUT_SCHEMA, PLANNER_OUTPUT_SCHEMA
-from codex_orchestrator.scheduler import Scheduler
-from codex_orchestrator.storage import RepositoryStorage
-from codex_orchestrator.tui import (
+from agent_takt.runner import AGENT_OUTPUT_SCHEMA, PLANNER_OUTPUT_SCHEMA
+from agent_takt.scheduler import Scheduler
+from agent_takt.storage import RepositoryStorage
+from agent_takt.tui import (
     FILTER_ACTIONABLE,
     FILTER_ALL,
     FILTER_DEFAULT,
@@ -2669,7 +2669,7 @@ class OrchestratorTests(unittest.TestCase):
         stream = io.StringIO()
         console = ConsoleReporter(stream=stream)
 
-        with patch("codex_orchestrator.tui.load_textual_runtime", side_effect=RuntimeError("missing textual")):
+        with patch("agent_takt.tui.load_textual_runtime", side_effect=RuntimeError("missing textual")):
             exit_code = command_tui(Namespace(feature_root=None, refresh_seconds=3, max_workers=1), self.storage, console)
 
         self.assertEqual(1, exit_code)
@@ -2682,7 +2682,7 @@ class OrchestratorTests(unittest.TestCase):
         stream = io.StringIO()
         console = ConsoleReporter(stream=stream)
 
-        with patch("codex_orchestrator.tui.run_tui", return_value=0) as run_tui:
+        with patch("agent_takt.tui.run_tui", return_value=0) as run_tui:
             exit_code = command_tui(Namespace(feature_root=root.bead_id, refresh_seconds=9, max_workers=1), self.storage, console)
 
         self.assertEqual(0, exit_code)
@@ -2698,7 +2698,7 @@ class OrchestratorTests(unittest.TestCase):
         stream = io.StringIO()
         console = ConsoleReporter(stream=stream)
 
-        with patch("codex_orchestrator.tui.run_tui") as run_tui:
+        with patch("agent_takt.tui.run_tui") as run_tui:
             exit_code = command_tui(Namespace(feature_root="B9999", refresh_seconds=3, max_workers=1), self.storage, console)
 
         self.assertEqual(1, exit_code)
@@ -2719,7 +2719,7 @@ class OrchestratorTests(unittest.TestCase):
         stream = io.StringIO()
         console = ConsoleReporter(stream=stream)
 
-        with patch("codex_orchestrator.tui.run_tui") as run_tui:
+        with patch("agent_takt.tui.run_tui") as run_tui:
             exit_code = command_tui(Namespace(feature_root=child.bead_id, refresh_seconds=3, max_workers=1), self.storage, console)
 
         self.assertEqual(1, exit_code)
@@ -3056,7 +3056,7 @@ class OrchestratorTests(unittest.TestCase):
         root.branch_name = "feature/b0001"
         self.storage.save_bead(root)
         console = ConsoleReporter(stream=io.StringIO())
-        with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
+        with patch("agent_takt.cli.WorktreeManager.merge_branch") as merge_branch:
             exit_code = command_merge(Namespace(bead_id=child.bead_id, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b0001")
@@ -3065,7 +3065,7 @@ class OrchestratorTests(unittest.TestCase):
         repo_file = self.root / "specs" / "example.md"
         repo_file.parent.mkdir(parents=True, exist_ok=True)
         repo_file.write_text("spec\n", encoding="utf-8")
-        worktree_root = self.root / ".orchestrator" / "worktrees" / "B0002"
+        worktree_root = self.root / ".takt" / "worktrees" / "B0002"
         worktree_root.mkdir(parents=True, exist_ok=True)
         rendered = render_context_snippets([repo_file], worktree_root)
         self.assertIn("example.md", rendered)
@@ -3370,7 +3370,7 @@ class OrchestratorTests(unittest.TestCase):
     def test_run_tui_returns_nonzero_and_hint_when_textual_missing(self) -> None:
         stream = io.StringIO()
 
-        with patch("codex_orchestrator.tui.load_textual_runtime", side_effect=RuntimeError("missing textual")):
+        with patch("agent_takt.tui.load_textual_runtime", side_effect=RuntimeError("missing textual")):
             exit_code = run_tui(self.storage, stream=stream)
 
         self.assertEqual(1, exit_code)
@@ -3385,7 +3385,7 @@ class OrchestratorTests(unittest.TestCase):
 
     def test_codex_runner_populates_minimal_telemetry(self) -> None:
         """CodexAgentRunner.run_bead attaches measured telemetry fields."""
-        from codex_orchestrator.runner import CodexAgentRunner
+        from agent_takt.runner import CodexAgentRunner
 
         bead = self.storage.create_bead(title="Telemetry codex", agent_type="developer", description="test")
         bead.status = BEAD_IN_PROGRESS
@@ -3431,7 +3431,7 @@ class OrchestratorTests(unittest.TestCase):
 
     def test_claude_runner_populates_provider_telemetry(self) -> None:
         """ClaudeCodeAgentRunner.run_bead extracts all provider fields from response envelope."""
-        from codex_orchestrator.runner import ClaudeCodeAgentRunner
+        from agent_takt.runner import ClaudeCodeAgentRunner
 
         bead = self.storage.create_bead(title="Telemetry claude", agent_type="developer", description="test")
         bead.status = BEAD_IN_PROGRESS
@@ -3503,7 +3503,7 @@ class OrchestratorTests(unittest.TestCase):
 
     def test_codex_telemetry_prompt_chars_and_lines_match_actual_prompt(self) -> None:
         """Verify prompt_chars and prompt_lines reflect the actual prompt content."""
-        from codex_orchestrator.runner import CodexAgentRunner
+        from agent_takt.runner import CodexAgentRunner
 
         bead = self.storage.create_bead(title="Telemetry prompt", agent_type="developer", description="test")
         bead.status = BEAD_IN_PROGRESS
@@ -3552,7 +3552,7 @@ class OrchestratorTests(unittest.TestCase):
         fresh_root = Path(tempfile.mkdtemp())
         try:
             storage = RepositoryStorage(fresh_root)
-            telemetry_dir = fresh_root / ".orchestrator" / "telemetry"
+            telemetry_dir = fresh_root / ".takt" / "telemetry"
             self.assertFalse(telemetry_dir.exists())
             storage.initialize()
             self.assertTrue(telemetry_dir.is_dir())
@@ -3562,7 +3562,7 @@ class OrchestratorTests(unittest.TestCase):
     def test_telemetry_dir_attribute(self) -> None:
         """RepositoryStorage.telemetry_dir points to .orchestrator/telemetry."""
         storage = RepositoryStorage(self.root)
-        self.assertEqual(storage.telemetry_dir, self.root.resolve() / ".orchestrator" / "telemetry")
+        self.assertEqual(storage.telemetry_dir, self.root.resolve() / ".takt" / "telemetry")
 
     def test_write_telemetry_artifact_creates_file(self) -> None:
         """write_telemetry_artifact writes a JSON file at the expected path."""
@@ -3726,7 +3726,7 @@ class OrchestratorTests(unittest.TestCase):
     def test_gitignore_contains_telemetry_entry(self) -> None:
         """.gitignore includes .orchestrator/telemetry/ to exclude heavy artifacts."""
         gitignore = (REPO_ROOT / ".gitignore").read_text()
-        self.assertIn(".orchestrator/telemetry/", gitignore)
+        self.assertIn(".takt/telemetry/", gitignore)
 
     # --- Scheduler telemetry integration tests (B0123) ---
 
@@ -4032,7 +4032,7 @@ class OrchestratorTests(unittest.TestCase):
         self.storage.save_bead(bead)
         prefix = bead.bead_id[:4]
         console = ConsoleReporter(stream=io.StringIO())
-        with patch("codex_orchestrator.cli.WorktreeManager.merge_branch") as merge_branch:
+        with patch("agent_takt.cli.WorktreeManager.merge_branch") as merge_branch:
             exit_code = command_merge(Namespace(bead_id=prefix, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b-test")
@@ -4886,7 +4886,7 @@ class BeadAutoCommitTests(OrchestratorTests):
                 raise subprocess.CalledProcessError(1, cmd)
             return original_run(*args, **kwargs)
 
-        with patch("codex_orchestrator.storage.subprocess.run", side_effect=fail_on_commit):
+        with patch("agent_takt.storage.subprocess.run", side_effect=fail_on_commit):
             self.storage.delete_bead(bead_id)
 
         self.assertFalse(path.exists())
@@ -4936,7 +4936,7 @@ class BeadAutoCommitTests(OrchestratorTests):
                 raise subprocess.CalledProcessError(1, cmd)
             return original_run(*args, **kwargs)
 
-        with patch("codex_orchestrator.storage.subprocess.run", side_effect=fail_on_commit):
+        with patch("agent_takt.storage.subprocess.run", side_effect=fail_on_commit):
             deleted = self.storage.delete_bead(bead_id)
 
         self.assertEqual(deleted.bead_id, bead_id)
@@ -4958,7 +4958,7 @@ class BeadAutoCommitTests(OrchestratorTests):
                 raise subprocess.CalledProcessError(1, cmd)
             return original_run(*args, **kwargs)
 
-        with patch("codex_orchestrator.storage.subprocess.run", side_effect=fail_on_commit):
+        with patch("agent_takt.storage.subprocess.run", side_effect=fail_on_commit):
             self.storage.delete_bead(dep.bead_id)
 
         reloaded = self.storage.load_bead(consumer.bead_id)
@@ -5010,7 +5010,7 @@ class BeadAutoCommitTests(OrchestratorTests):
         """_git_commit_bead returns immediately when _auto_commit is False."""
         RepositoryStorage._auto_commit = False
         try:
-            with patch("codex_orchestrator.storage.subprocess.run") as mock_run:
+            with patch("agent_takt.storage.subprocess.run") as mock_run:
                 bead = self.storage.create_bead(
                     title="No-commit write", agent_type="developer", description="x"
                 )
@@ -5031,7 +5031,7 @@ class BeadAutoCommitTests(OrchestratorTests):
 
         RepositoryStorage._auto_commit = False
         try:
-            with patch("codex_orchestrator.storage.subprocess.run") as mock_run:
+            with patch("agent_takt.storage.subprocess.run") as mock_run:
                 self.storage.delete_bead(bead_id)
                 mock_run.assert_not_called()
         finally:

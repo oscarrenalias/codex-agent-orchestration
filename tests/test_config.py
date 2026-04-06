@@ -12,7 +12,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from codex_orchestrator.config import (
+from agent_takt.config import (
     BackendConfig,
     OrchestratorConfig,
     SchedulerConfig,
@@ -263,7 +263,7 @@ class TestLoadConfigFromYAML(unittest.TestCase):
     """load_config() correctly reads a YAML file."""
 
     def _write_config(self, tmp: Path, yaml_text: str):
-        orch_dir = tmp / ".orchestrator"
+        orch_dir = tmp / ".takt"
         orch_dir.mkdir(parents=True, exist_ok=True)
         (orch_dir / "config.yaml").write_text(textwrap.dedent(yaml_text))
 
@@ -387,7 +387,7 @@ class TestLoadConfigFromYAML(unittest.TestCase):
     def test_empty_yaml_file(self):
         """Empty YAML file (parses as None) falls back to defaults."""
         with tempfile.TemporaryDirectory() as tmp:
-            orch_dir = Path(tmp) / ".orchestrator"
+            orch_dir = Path(tmp) / ".takt"
             orch_dir.mkdir(parents=True)
             (orch_dir / "config.yaml").write_text("")
             cfg = load_config(Path(tmp))

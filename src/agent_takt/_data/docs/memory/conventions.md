@@ -30,4 +30,4 @@ worktree at `.takt/worktrees/{feature-root-id}`.
 
 Beads move through: `open` → `ready` → `in_progress` → `done` | `blocked` | `handed_off`.
 Only the scheduler transitions beads out of `in_progress`. Do not manually mark a
-developer bead `done` — use `orchestrator merge` after work is complete.
+developer bead `done` — use `takt merge` after work is complete.
