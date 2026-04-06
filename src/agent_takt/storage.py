@@ -101,7 +101,7 @@ class RepositoryStorage:
         self.initialize()
         path = self.bead_path(bead.bead_id)
         is_new = not path.exists()
-        tmp_path = path.with_suffix(f"{path.suffix}.tmp")
+        tmp_path = path.parent / f"{path.stem}.{uuid.uuid4().hex[:8]}.tmp"
         tmp_path.write_text(json.dumps(bead.to_dict(), indent=2) + "\n", encoding="utf-8")
         tmp_path.replace(path)
         self._git_commit_bead(bead, path, is_new=is_new)
