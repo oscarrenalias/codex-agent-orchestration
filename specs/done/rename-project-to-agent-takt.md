@@ -6,7 +6,7 @@ description: Rename the package, module, and CLI from codex-agent-orchestration/
 dependencies: null
 priority: medium
 complexity: medium
-status: planned
+status: done
 tags:
 - refactoring
 - rename
