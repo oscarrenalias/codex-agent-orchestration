@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import threading
+from importlib.metadata import version as _pkg_version
 from collections import Counter
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
@@ -134,7 +135,8 @@ def apply_operator_status_update(storage: RepositoryStorage, bead_id: str, targe
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="orchestrator")
+    parser = argparse.ArgumentParser(prog="takt")
+    parser.add_argument("--version", action="version", version=f"takt {_pkg_version('agent-takt')}")
     parser.add_argument("--root", default=".", help="Repository root")
     parser.add_argument(
         "--runner",
