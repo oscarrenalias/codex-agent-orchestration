@@ -401,7 +401,7 @@ class TestLoadConfigFromRepo(unittest.TestCase):
         # This test only checks structural/non-tunable fields.
         # Operator-tunable fields (max_corrective_attempts, timeout_seconds,
         # retry_timeout_seconds, transient_block_patterns) are intentionally
-        # overridden in .orchestrator/config.yaml and are NOT asserted here.
+        # overridden in .takt/config.yaml and are NOT asserted here.
         cfg = load_config(REPO_ROOT)
         default = default_config()
         self.assertEqual(cfg.default_runner, default.default_runner)
@@ -419,7 +419,7 @@ class TestLoadConfigFromRepo(unittest.TestCase):
             cfg.scheduler.followup_suffixes,
             default.scheduler.followup_suffixes,
         )
-        # transient_block_patterns is intentionally extended in .orchestrator/config.yaml
+        # transient_block_patterns is intentionally extended in .takt/config.yaml
         # Check backends loaded from YAML match defaults
         for name in ("codex", "claude"):
             self.assertEqual(

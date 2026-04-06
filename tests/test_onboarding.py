@@ -599,7 +599,7 @@ class TestScaffoldProject(unittest.TestCase):
         ):
             scaffold_project(self.root, answers, stream_out=out)
 
-        # .orchestrator subdirs
+        # .takt subdirs
         for subdir in ("beads", "logs", "worktrees", "telemetry", "agent-runs"):
             self.assertTrue((self.root / ".takt" / subdir).is_dir(), subdir)
 

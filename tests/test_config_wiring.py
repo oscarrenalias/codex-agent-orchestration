@@ -353,6 +353,7 @@ class TestMakeServices(unittest.TestCase):
     def test_default_backend_from_config(self):
         """No --runner arg and no env var → uses config.default_runner."""
         with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("AGENT_TAKT_RUNNER", None)
             os.environ.pop("ORCHESTRATOR_RUNNER", None)
             storage, scheduler, planner = make_services(self.root)
             # Default config has default_runner="codex"
@@ -360,15 +361,26 @@ class TestMakeServices(unittest.TestCase):
 
     def test_runner_arg_takes_precedence(self):
         """--runner claude overrides config.default_runner and env."""
-        with patch.dict(os.environ, {"ORCHESTRATOR_RUNNER": "codex"}, clear=False):
+        with patch.dict(os.environ, {"AGENT_TAKT_RUNNER": "codex"}, clear=False):
             storage, scheduler, planner = make_services(self.root, runner_backend="claude")
             self.assertIsInstance(scheduler.runner, ClaudeCodeAgentRunner)
 
     def test_env_var_overrides_config_default(self):
-        """$ORCHESTRATOR_RUNNER overrides config.default_runner."""
-        with patch.dict(os.environ, {"ORCHESTRATOR_RUNNER": "claude"}, clear=False):
+        """$AGENT_TAKT_RUNNER overrides config.default_runner."""
+        with patch.dict(os.environ, {"AGENT_TAKT_RUNNER": "claude"}, clear=False):
             storage, scheduler, planner = make_services(self.root)
             self.assertIsInstance(scheduler.runner, ClaudeCodeAgentRunner)
+
+    def test_legacy_orchestrator_runner_env_var(self):
+        """$ORCHESTRATOR_RUNNER is honoured as a legacy fallback when AGENT_TAKT_RUNNER is absent."""
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("AGENT_TAKT_RUNNER", None)
+            os.environ["ORCHESTRATOR_RUNNER"] = "claude"
+            try:
+                storage, scheduler, planner = make_services(self.root)
+                self.assertIsInstance(scheduler.runner, ClaudeCodeAgentRunner)
+            finally:
+                os.environ.pop("ORCHESTRATOR_RUNNER", None)
 
     def test_unknown_backend_exits(self):
         """Unknown backend name produces SystemExit with valid options."""
@@ -621,12 +633,12 @@ class TestBackendResolutionPriority(unittest.TestCase):
               allowed_tools_default:
                 - Read
         """))
-        with patch.dict(os.environ, {"ORCHESTRATOR_RUNNER": "codex"}, clear=False):
+        with patch.dict(os.environ, {"AGENT_TAKT_RUNNER": "codex"}, clear=False):
             _, scheduler, _ = make_services(self.root, runner_backend="claude")
             self.assertIsInstance(scheduler.runner, ClaudeCodeAgentRunner)
 
     def test_env_beats_config(self):
-        """$ORCHESTRATOR_RUNNER overrides config.default_runner when no arg given."""
+        """$AGENT_TAKT_RUNNER overrides config.default_runner when no arg given."""
         orch_dir = self.root / ".takt"
         orch_dir.mkdir(parents=True, exist_ok=True)
         (orch_dir / "config.yaml").write_text(textwrap.dedent("""\
@@ -643,7 +655,7 @@ class TestBackendResolutionPriority(unittest.TestCase):
               allowed_tools_default:
                 - Read
         """))
-        with patch.dict(os.environ, {"ORCHESTRATOR_RUNNER": "claude"}, clear=False):
+        with patch.dict(os.environ, {"AGENT_TAKT_RUNNER": "claude"}, clear=False):
             _, scheduler, _ = make_services(self.root)
             self.assertIsInstance(scheduler.runner, ClaudeCodeAgentRunner)
 
@@ -666,6 +678,7 @@ class TestBackendResolutionPriority(unittest.TestCase):
                 - Read
         """))
         with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("AGENT_TAKT_RUNNER", None)
             os.environ.pop("ORCHESTRATOR_RUNNER", None)
             _, scheduler, _ = make_services(self.root)
             self.assertIsInstance(scheduler.runner, ClaudeCodeAgentRunner)

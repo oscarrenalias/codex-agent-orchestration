@@ -3548,7 +3548,7 @@ class OrchestratorTests(unittest.TestCase):
     # -- Telemetry artifact storage tests (B0118) ---------------------------
 
     def test_initialize_creates_telemetry_dir(self) -> None:
-        """RepositoryStorage.initialize() creates .orchestrator/telemetry/."""
+        """RepositoryStorage.initialize() creates .takt/telemetry/."""
         fresh_root = Path(tempfile.mkdtemp())
         try:
             storage = RepositoryStorage(fresh_root)
@@ -3560,7 +3560,7 @@ class OrchestratorTests(unittest.TestCase):
             shutil.rmtree(fresh_root)
 
     def test_telemetry_dir_attribute(self) -> None:
-        """RepositoryStorage.telemetry_dir points to .orchestrator/telemetry."""
+        """RepositoryStorage.telemetry_dir points to .takt/telemetry."""
         storage = RepositoryStorage(self.root)
         self.assertEqual(storage.telemetry_dir, self.root.resolve() / ".takt" / "telemetry")
 
@@ -3724,7 +3724,7 @@ class OrchestratorTests(unittest.TestCase):
             shutil.rmtree(fresh_root)
 
     def test_gitignore_contains_telemetry_entry(self) -> None:
-        """.gitignore includes .orchestrator/telemetry/ to exclude heavy artifacts."""
+        """.gitignore includes .takt/telemetry/ to exclude heavy artifacts."""
         gitignore = (REPO_ROOT / ".gitignore").read_text()
         self.assertIn(".takt/telemetry/", gitignore)
 
