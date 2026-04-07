@@ -26,6 +26,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from agent_takt.cli import (
+    _bead_cost_usd,
     _bead_wall_clock_seconds,
     _filter_beads_by_days,
     _format_telemetry_table,
@@ -59,7 +60,11 @@ def _make_bead(
     retries: int = 0,
     feature_root_id: str | None = None,
     history: list[ExecutionRecord] | None = None,
+    cost_usd: float | None = None,
 ) -> Bead:
+    metadata: dict = {}
+    if cost_usd is not None:
+        metadata["telemetry"] = {"cost_usd": cost_usd}
     return Bead(
         bead_id=bead_id,
         title=title,
@@ -71,6 +76,7 @@ def _make_bead(
         retries=retries,
         feature_root_id=feature_root_id,
         execution_history=history or [],
+        metadata=metadata,
     )
 
 
@@ -569,6 +575,214 @@ class TestCliHelpIncludesTelemetry(unittest.TestCase):
         self.assertIn("--feature-root", option_strings)
         self.assertIn("--agent-type", option_strings)
         self.assertIn("--json", option_strings)
+
+
+# ---------------------------------------------------------------------------
+# _bead_cost_usd
+# ---------------------------------------------------------------------------
+
+class TestBeadCostUsd(unittest.TestCase):
+
+    def test_returns_none_when_no_metadata(self):
+        bead = _make_bead()
+        self.assertIsNone(_bead_cost_usd(bead))
+
+    def test_returns_none_when_telemetry_missing_cost(self):
+        bead = _make_bead()
+        bead.metadata["telemetry"] = {}
+        self.assertIsNone(_bead_cost_usd(bead))
+
+    def test_returns_float_when_cost_present(self):
+        bead = _make_bead(cost_usd=0.1234)
+        self.assertAlmostEqual(_bead_cost_usd(bead), 0.1234, places=4)
+
+    def test_returns_none_when_metadata_is_empty_dict(self):
+        bead = _make_bead()
+        self.assertEqual(bead.metadata, {})
+        self.assertIsNone(_bead_cost_usd(bead))
+
+    def test_handles_integer_cost(self):
+        bead = _make_bead()
+        bead.metadata["telemetry"] = {"cost_usd": 1}
+        self.assertEqual(_bead_cost_usd(bead), 1.0)
+        self.assertIsInstance(_bead_cost_usd(bead), float)
+
+
+# ---------------------------------------------------------------------------
+# aggregate_telemetry — cost fields
+# ---------------------------------------------------------------------------
+
+class TestAggregateTelemetryCost(unittest.TestCase):
+
+    def _storage(self) -> MagicMock:
+        storage = MagicMock()
+        storage.telemetry_dir = Path("/tmp/fake-telemetry")
+        return storage
+
+    def test_total_and_avg_cost_none_when_no_cost_data(self):
+        beads = [_make_bead(bead_id="B-1"), _make_bead(bead_id="B-2")]
+        agg = aggregate_telemetry(beads, self._storage())
+        self.assertIsNone(agg["total_cost_usd"])
+        self.assertIsNone(agg["avg_cost_usd_per_bead"])
+
+    def test_total_cost_sums_beads_with_cost(self):
+        beads = [
+            _make_bead(bead_id="B-1", cost_usd=0.10),
+            _make_bead(bead_id="B-2", cost_usd=0.20),
+        ]
+        agg = aggregate_telemetry(beads, self._storage())
+        self.assertAlmostEqual(agg["total_cost_usd"], 0.30, places=4)
+
+    def test_avg_cost_excludes_beads_without_cost(self):
+        beads = [
+            _make_bead(bead_id="B-1", cost_usd=0.10),
+            _make_bead(bead_id="B-2"),  # no cost
+            _make_bead(bead_id="B-3", cost_usd=0.30),
+        ]
+        agg = aggregate_telemetry(beads, self._storage())
+        # avg only over B-1 and B-3
+        self.assertAlmostEqual(agg["avg_cost_usd_per_bead"], 0.20, places=4)
+
+    def test_cost_rounded_to_4_decimal_places(self):
+        beads = [_make_bead(bead_id="B-1", cost_usd=0.123456789)]
+        agg = aggregate_telemetry(beads, self._storage())
+        self.assertEqual(agg["total_cost_usd"], round(0.123456789, 4))
+
+
+# ---------------------------------------------------------------------------
+# _format_telemetry_table — cost lines and per-bead breakdown
+# ---------------------------------------------------------------------------
+
+class TestFormatTelemetryTableCost(unittest.TestCase):
+
+    def _agg(self, total_cost=None, avg_cost=None) -> dict:
+        return {
+            "total_beads": 2,
+            "by_status": {"done": 2},
+            "by_agent_type": {"developer": 2},
+            "avg_wall_clock_seconds": None,
+            "p95_wall_clock_seconds": None,
+            "avg_turns": None,
+            "retry_rate": None,
+            "corrective_bead_count": 0,
+            "merge_conflict_bead_count": 0,
+            "timeout_block_count": 0,
+            "transient_block_count": 0,
+            "total_cost_usd": total_cost,
+            "avg_cost_usd_per_bead": avg_cost,
+        }
+
+    def _make_data(self, agg, feature_root=None) -> dict:
+        return {
+            "filters": {"days": 7, "feature_root": feature_root, "agent_type": None, "status": None},
+            "aggregates": agg,
+            "feature_roots": [],
+        }
+
+    def test_cost_na_when_no_cost_data(self):
+        console = MagicMock(spec=ConsoleReporter)
+        data = self._make_data(self._agg())
+        _format_telemetry_table(data, console)
+        output = console.emit.call_args[0][0]
+        self.assertIn("Total cost        : N/A", output)
+        self.assertIn("Avg cost/bead     : N/A", output)
+
+    def test_cost_shown_when_data_present(self):
+        console = MagicMock(spec=ConsoleReporter)
+        data = self._make_data(self._agg(total_cost=0.5000, avg_cost=0.2500))
+        _format_telemetry_table(data, console)
+        output = console.emit.call_args[0][0]
+        self.assertIn("Total cost        : $0.5000", output)
+        self.assertIn("Avg cost/bead     : $0.2500", output)
+
+    def test_per_bead_breakdown_shown_with_feature_root_and_beads(self):
+        now = _now()
+        b1 = _make_bead(bead_id="B-aabbccdd11223344", agent_type="developer", status="done", cost_usd=0.1000)
+        b1.execution_history = _make_history(
+            created_at=now - timedelta(seconds=60),
+            started_at=now - timedelta(seconds=60),
+            completed_at=now,
+        )
+        b2 = _make_bead(bead_id="B-aabbccdd99887766", agent_type="tester", status="done")
+        b2.execution_history = _make_history(created_at=now)
+        console = MagicMock(spec=ConsoleReporter)
+        data = self._make_data(self._agg(total_cost=0.1000, avg_cost=0.1000), feature_root="B-aabb")
+        _format_telemetry_table(data, console, beads=[b1, b2])
+        output = console.emit.call_args[0][0]
+        self.assertIn("Per-bead breakdown:", output)
+        self.assertIn("B-aabbccdd11223344", output)
+        self.assertIn("$0.1000", output)
+        # b2 has no cost, should show "-"
+        self.assertIn("-", output)
+
+    def test_per_bead_breakdown_not_shown_without_feature_root(self):
+        console = MagicMock(spec=ConsoleReporter)
+        now = _now()
+        b = _make_bead(bead_id="B-aabbccdd11223344", cost_usd=0.05)
+        data = self._make_data(self._agg(total_cost=0.05, avg_cost=0.05), feature_root=None)
+        _format_telemetry_table(data, console, beads=[b])
+        output = console.emit.call_args[0][0]
+        self.assertNotIn("Per-bead breakdown:", output)
+
+    def test_per_bead_breakdown_not_shown_when_beads_none(self):
+        console = MagicMock(spec=ConsoleReporter)
+        data = self._make_data(self._agg(), feature_root="B-aabb")
+        _format_telemetry_table(data, console, beads=None)
+        output = console.emit.call_args[0][0]
+        self.assertNotIn("Per-bead breakdown:", output)
+
+
+# ---------------------------------------------------------------------------
+# command_telemetry JSON — cost_usd in per-bead entries
+# ---------------------------------------------------------------------------
+
+class TestCommandTelemetryCostJson(unittest.TestCase):
+
+    def _make_bead_with_history(self, bead_id: str, **kwargs) -> Bead:
+        now = _now()
+        history = _make_history(created_at=now - timedelta(days=1))
+        return _make_bead(bead_id=bead_id, history=history, **kwargs)
+
+    def _run_command(self, args, beads):
+        storage = _make_storage(beads)
+        console = MagicMock(spec=ConsoleReporter)
+        with patch("agent_takt.cli.load_config") as mock_config:
+            mock_config.return_value = MagicMock(
+                scheduler=MagicMock(transient_block_patterns=()),
+            )
+            rc = command_telemetry(args, storage, console)
+        return rc, console
+
+    def test_json_beads_include_cost_usd_field(self):
+        bead = self._make_bead_with_history("B-aabb1122", cost_usd=0.25)
+        args = _make_args(output_json=True)
+        rc, console = self._run_command(args, [bead])
+        self.assertEqual(rc, 0)
+        dumped = console.dump_json.call_args[0][0]
+        bead_entries = dumped["beads"]
+        self.assertEqual(len(bead_entries), 1)
+        self.assertIn("cost_usd", bead_entries[0])
+        self.assertAlmostEqual(bead_entries[0]["cost_usd"], 0.25, places=4)
+
+    def test_json_beads_cost_usd_none_when_no_metadata(self):
+        bead = self._make_bead_with_history("B-aabb1122")
+        args = _make_args(output_json=True)
+        rc, console = self._run_command(args, [bead])
+        self.assertEqual(rc, 0)
+        dumped = console.dump_json.call_args[0][0]
+        self.assertIsNone(dumped["beads"][0]["cost_usd"])
+
+    def test_json_aggregates_include_cost_fields(self):
+        bead = self._make_bead_with_history("B-aabb1122", cost_usd=0.10)
+        args = _make_args(output_json=True)
+        rc, console = self._run_command(args, [bead])
+        self.assertEqual(rc, 0)
+        dumped = console.dump_json.call_args[0][0]
+        agg = dumped["aggregates"]
+        self.assertIn("total_cost_usd", agg)
+        self.assertIn("avg_cost_usd_per_bead", agg)
+        self.assertAlmostEqual(agg["total_cost_usd"], 0.10, places=4)
+        self.assertAlmostEqual(agg["avg_cost_usd_per_bead"], 0.10, places=4)
 
 
 if __name__ == "__main__":
