@@ -3,7 +3,7 @@
   "title": "Review scheduler refactor for behavior parity and package boundaries",
   "agent_type": "review",
   "description": "Review the completed refactor for correctness, dependency hygiene, public API preservation, and alignment with the no-functional-change requirement.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
   "dependencies": [
@@ -30,21 +30,20 @@
     "src/agent_takt/scheduler/finalize.py",
     "src/agent_takt/scheduler/followups.py",
     "src/agent_takt/scheduler/reporter.py",
-    "tests/helpers.py",
-    "tests/test_scheduler_core.py",
-    "tests/test_scheduler_execution.py",
-    "tests/test_scheduler_finalize.py",
-    "tests/test_scheduler_followups.py",
-    "tests/test_scheduler_beads.py",
     "CLAUDE.md",
     "docs/development.md"
   ],
   "expected_globs": [
     "src/agent_takt/scheduler/*.py",
-    "tests/test_scheduler*.py",
     "docs/*.md"
   ],
   "touched_files": [
+    "src/agent_takt/scheduler/__init__.py",
+    "src/agent_takt/scheduler/core.py",
+    "src/agent_takt/scheduler/execution.py",
+    "src/agent_takt/scheduler/finalize.py",
+    "src/agent_takt/scheduler/followups.py",
+    "src/agent_takt/scheduler/reporter.py",
     "CLAUDE.md",
     "docs/development.md"
   ],
@@ -52,24 +51,54 @@
     "CLAUDE.md",
     "docs/development.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md",
+    "docs/development.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
-    "findings_count": 0,
+    "completed": "Reviewed all six scheduler sub-modules, public re-exports, delegation shims, import graph, and documentation updates. All acceptance criteria are met: package split preserves behavior and public imports; source and test splits match spec boundaries; circular imports are correctly prevented via TYPE_CHECKING guard in finalize.py; delegation shims in core.py preserve the Scheduler attribute surface for existing tests.",
+    "remaining": "None. One non-blocking quality finding documented below.",
+    "risks": "Minor: SchedulerResult is imported but unused in followups.py:10. No behavioral impact \u2014 remove in a cleanup pass if desired.",
+    "verdict": "approved",
+    "findings_count": 1,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
+    "changed_files": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "next_action": "None required. Bead can complete.",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
+    "expected_files": [
+      "src/agent_takt/scheduler/__init__.py",
+      "src/agent_takt/scheduler/core.py",
+      "src/agent_takt/scheduler/execution.py",
+      "src/agent_takt/scheduler/finalize.py",
+      "src/agent_takt/scheduler/followups.py",
+      "src/agent_takt/scheduler/reporter.py",
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "expected_globs": [
+      "src/agent_takt/scheduler/*.py",
+      "docs/*.md"
+    ],
+    "touched_files": [
+      "src/agent_takt/scheduler/__init__.py",
+      "src/agent_takt/scheduler/core.py",
+      "src/agent_takt/scheduler/execution.py",
+      "src/agent_takt/scheduler/finalize.py",
+      "src/agent_takt/scheduler/followups.py",
+      "src/agent_takt/scheduler/reporter.py",
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
     "conflict_risks": "",
-    "design_decisions": "",
+    "design_decisions": "Unused SchedulerResult import in followups.py:10 is an existing artifact from the split \u2014 it was not in the original followups scope but was included during extraction. No behavioral impact.",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
@@ -77,10 +106,7 @@
   "conflict_risks": "",
   "branch_name": "feature/b-f6706ed8",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-8b750b11",
-    "expires_at": "2026-04-07T19:25:53.292780+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -121,6 +147,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-8b750b11/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T18:59:01.388841+00:00",
+      "event": "completed",
+      "agent_type": "review",
+      "summary": "Scheduler package split approved with one non-blocking finding (unused SchedulerResult import in followups.py).",
+      "details": {}
     }
   ],
   "metadata": {
@@ -212,7 +245,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Scheduler package split approved with one non-blocking finding (unused SchedulerResult import in followups.py).",
+      "verdict": "approved",
+      "findings_count": 1,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.6980896500000001,
+      "duration_ms": 183971,
+      "duration_api_ms": 171425,
+      "num_turns": 34,
+      "input_tokens": 1309,
+      "output_tokens": 8665,
+      "cache_creation_tokens": 48347,
+      "cache_read_tokens": 1276288,
+      "stop_reason": "end_turn",
+      "session_id": "bf51d0df-a367-48b5-a9e4-e6b8bc89367e",
+      "permission_denials": [],
+      "prompt_chars": 7802,
+      "prompt_lines": 175,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.6980896500000001,
+        "duration_ms": 183971,
+        "duration_api_ms": 171425,
+        "num_turns": 34,
+        "input_tokens": 1309,
+        "output_tokens": 8665,
+        "cache_creation_tokens": 48347,
+        "cache_read_tokens": 1276288,
+        "stop_reason": "end_turn",
+        "session_id": "bf51d0df-a367-48b5-a9e4-e6b8bc89367e",
+        "permission_denials": [],
+        "prompt_chars": 7802,
+        "prompt_lines": 175,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": []
 }
