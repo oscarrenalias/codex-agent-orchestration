@@ -36,11 +36,11 @@ Several options were evaluated:
 
 Embedding generation is the main dependency concern. Options evaluated:
 
-- **fastembed** (Qdrant) — uses ONNX models, no torch required. Ships `all-MiniLM-L6-v2` or `BAAI/bge-small-en-v1.5` (~80-130MB one-time download, cached). Fast ONNX inference (~50-100ms per batch). `pip install fastembed` is the full install. **Recommended.**
+- **fastembed** (Qdrant) — uses ONNX models, no torch required. Handles model download, caching, and ONNX inference transparently. Ships `BAAI/bge-small-en-v1.5` (~130MB one-time download, cached in `~/.cache/fastembed`). Fast ONNX inference (~50-100ms per batch). `pip install fastembed` is the full install. **Required.**
 - **sentence-transformers** — same models, but requires torch (~500MB). Too heavy.
-- **BM25 fallback** — `rank-bm25`, 30KB, no download. Activates when fastembed is not installed.
+- **BM25** — considered as a fallback but rejected; adds complexity for a degraded mode that isn't worth supporting.
 
-Default model: **`BAAI/bge-small-en-v1.5`** — better quality than all-MiniLM-L6-v2 on technical text, 384 dimensions, ONNX-based. Configurable via `.takt/config.yaml`.
+Default model: **`BAAI/bge-small-en-v1.5`** — outperforms `all-MiniLM-L6-v2` (used by chromadb/mempalace) on retrieval tasks (MTEB ~63 vs ~57), specifically fine-tuned for asymmetric query-document matching. 384 dimensions, ~130MB, ONNX-based. Configurable via `.takt/config.yaml`.
 
 Retrieval quality was validated via prototype: with 440 drawers mined from the spec corpus, queries like "merge conflict resolution strategy", "TUI terminal interface", and "scheduler followup beads" all returned the correct document as the top result with positive similarity scores.
 
@@ -221,12 +221,12 @@ Add `docs/memory/memory.db`.
 - The memory skill instructs agents to call `takt memory search` at bead start and `takt memory add` when they discover something reusable. Agents no longer read the full memory files.
 - Existing entries in `known-issues.md` and `conventions.md` are auto-migrated to `docs/memory/entries/` on first `takt memory rebuild` if the legacy files exist.
 - `takt init` on a new project creates `docs/memory/entries/` and an empty `memory.db` with WAL mode enabled.
-- When fastembed is not installed, `takt memory search` falls back to BM25 keyword search and prints a warning indicating semantic search is unavailable.
-- All existing tests pass. New tests cover: add/search/rebuild round-trip, concurrent writes (4 workers), BM25 fallback, auto-migration of legacy files, idempotent rebuild.
+- When fastembed is not installed, `takt memory` commands fail with a clear error: `"fastembed is required for memory commands. Install it with: pip install agent-takt[memory]"`.
+- All existing tests pass. New tests cover: add/search/rebuild round-trip, concurrent writes (4 workers), auto-migration of legacy files, idempotent rebuild.
 
 ## Pending Decisions
 
-- **fastembed as hard or optional dependency**: if hard (`install_requires`), always available but adds ~80MB to the base install. If optional (`extras_require = {"memory": ["fastembed"]}`), BM25 fallback must be good enough for degraded use. Recommend optional: `pip install agent-takt[memory]`.
+- **fastembed as hard or optional dependency**: fastembed is an optional dependency (`extras_require = {"memory": ["fastembed"]}`). It handles model download, caching, and ONNX inference — no need to implement those concerns manually. Install via `pip install agent-takt[memory]`. No BM25 fallback; memory commands fail clearly if fastembed is absent. **Resolved: optional dependency, no fallback.**
 - **Should operator and worker skills diverge?** Currently identical. The worker skill should use `takt memory search` for retrieval at bead start. The operator (Claude Code) already has session context loaded and may query on demand. Could leave them identical for now and split in a follow-up spec.
 - **Embedding dimensionality in schema**: `BAAI/bge-small-en-v1.5` produces 384 dimensions. Changing model after initial setup requires a full `takt memory rebuild`. The schema should record which model was used to detect model mismatch on search/add.
 - **What happens to `docs/memory/known-issues.md` and `docs/memory/conventions.md` after migration?** Options: delete them, keep as read-only archives, or redirect with a note. Recommend keeping with a header note pointing to the new system.
