@@ -28,7 +28,7 @@ src/agent_takt/
       bead.py     bead sub-command handler (create, list, show, update, delete, label, unlabel, claims, graph)
       run.py      run command + CliSchedulerReporter (cycle progress reporter for CLI output)
       merge.py    merge command handler
-      telemetry.py telemetry command + formatting helpers (aggregate_telemetry, format_telemetry_table)
+      telemetry.py telemetry command + formatting helpers (command_telemetry, aggregate_telemetry)
       init.py     init and upgrade command handlers
       misc.py     Remaining commands: plan, handoff, retry, summary, tui, asset
   config.py       YAML config loader + frozen dataclass models
