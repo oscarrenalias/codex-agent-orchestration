@@ -8,7 +8,6 @@
   "parent_id": "B-43eb598c",
   "dependencies": [
     "B-43eb598c",
-    "B-43eb598c-test",
     "B-43eb598c-docs"
   ],
   "acceptance_criteria": [],
