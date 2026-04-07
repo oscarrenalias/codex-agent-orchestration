@@ -3,7 +3,7 @@
   "title": "Validate manifest, upgrade, and asset command behavior",
   "agent_type": "tester",
   "description": "Add and run focused automated tests covering init-time manifest creation, config merge semantics, upgrade decision handling, dry-run behavior, removed-bundle disabling, and asset ownership command flows.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-af3f17ad",
   "dependencies": [
@@ -76,7 +76,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Agent timed out after 1500 seconds",
+  "block_reason": "",
   "conflict_risks": "",
   "branch_name": "feature/b-af3f17ad",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-af3f17ad",
@@ -134,6 +134,13 @@
       "event": "failed",
       "agent_type": "tester",
       "summary": "Worker execution failed: Agent timed out after 1500 seconds",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T13:45:57.253002+00:00",
+      "event": "retried",
+      "agent_type": "tester",
+      "summary": "Requeued blocked bead after transient infrastructure/auth error",
       "details": {}
     }
   ],
