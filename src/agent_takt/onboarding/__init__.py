@@ -22,14 +22,14 @@ from importlib.metadata import version as _pkg_version
 from pathlib import Path
 from typing import IO, Literal
 
-from ._assets import (
+from .._assets import (
     packaged_agents_skills_dir,
     packaged_claude_skills_dir,
     packaged_default_config,
     packaged_docs_memory_dir,
     packaged_templates_dir,
 )
-from .console import BOLD, GREEN, RESET, ConsoleReporter
+from ..console import BOLD, GREEN, RESET, ConsoleReporter
 
 
 # ---------------------------------------------------------------------------
