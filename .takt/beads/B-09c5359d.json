@@ -41,6 +41,7 @@
     "src/agent_takt/scheduler/followups.py",
     "src/agent_takt/scheduler/reporter.py",
     "tests/helpers.py",
+    "tests/test_orchestrator.py",
     "tests/test_scheduler_beads.py",
     "tests/test_scheduler_core.py",
     "tests/test_scheduler_execution.py",
@@ -50,6 +51,7 @@
   ],
   "expected_globs": [
     "src/agent_takt/scheduler/*.py",
+    "tests/*.py",
     "tests/test_scheduler*.py"
   ],
   "touched_files": [
@@ -57,6 +59,8 @@
     "src/agent_takt/scheduler/__init__.py",
     "src/agent_takt/scheduler/core.py",
     "src/agent_takt/scheduler/reporter.py",
+    "tests/helpers.py",
+    "tests/test_orchestrator.py",
     "uv.lock"
   ],
   "changed_files": [
@@ -64,6 +68,8 @@
     "src/agent_takt/scheduler/__init__.py",
     "src/agent_takt/scheduler/core.py",
     "src/agent_takt/scheduler/reporter.py",
+    "tests/helpers.py",
+    "tests/test_orchestrator.py",
     "uv.lock"
   ],
   "updated_docs": [],
@@ -88,7 +94,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "Downstream beads that split core.py will have overlapping scope with `src/agent_takt/scheduler/core.py`. They should be sequenced, not run in parallel.",
+  "conflict_risks": "Downstream beads that split core.py will have overlapping scope with `src/agent_takt/scheduler/core.py`. They should be sequenced, not run in parallel.\nLow. Only `tests/helpers.py` (new file) and `tests/test_orchestrator.py` (refactored) were modified. No source files touched.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
