@@ -30,7 +30,8 @@
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9b67fe9f",
   "expected_files": [
     "src/agent_takt/tui.py",
-    "src/agent_takt/tui/__init__.py"
+    "src/agent_takt/tui/__init__.py",
+    "src/agent_takt/tui/state.py"
   ],
   "expected_globs": [
     "README.md",
@@ -40,11 +41,13 @@
   ],
   "touched_files": [
     "src/agent_takt/tui.py",
-    "src/agent_takt/tui/__init__.py"
+    "src/agent_takt/tui/__init__.py",
+    "src/agent_takt/tui/state.py"
   ],
   "changed_files": [
     "src/agent_takt/tui.py",
-    "src/agent_takt/tui/__init__.py"
+    "src/agent_takt/tui/__init__.py",
+    "src/agent_takt/tui/state.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
@@ -68,7 +71,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "Beads that claim `src/agent_takt/tui.py` as an expected file must be aware it no longer exists; the file is now `src/agent_takt/tui/__init__.py`.",
+  "conflict_risks": "Beads that claim `src/agent_takt/tui.py` as an expected file must be aware it no longer exists; the file is now `src/agent_takt/tui/__init__.py`.\nNone \u2014 only tui package files were modified. No overlap with other in-progress beads expected.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
