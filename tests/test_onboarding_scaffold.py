@@ -1,4 +1,4 @@
-"""Tests for src/agent_takt/onboarding.py.
+"""Tests for scaffold orchestration in agent_takt.onboarding.
 
 Covers:
 - resolve_memory_seed
@@ -6,11 +6,12 @@ Covers:
 - seed_memory_files
 - update_gitignore
 - create_specs_howto
-- scaffold_project (high-level entry point)
+- scaffold_project (high-level entry point + load_config integration)
 - commit_scaffold
 
 Asset installation and copy helper tests live in test_onboarding_assets.py.
 Config generation, key merge, and template substitution tests live in test_onboarding_config.py.
+Upgrade evaluation, AssetDecision, and manifest read/write tests live in test_onboarding_upgrade.py.
 """
 
 from __future__ import annotations
