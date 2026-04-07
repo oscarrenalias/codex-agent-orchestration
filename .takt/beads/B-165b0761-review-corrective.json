@@ -1,0 +1,73 @@
+{
+  "bead_id": "B-165b0761-review-corrective",
+  "title": "Corrective fix for B-165b0761-review: Review takt init: commit scaffolded files to git after scaffold",
+  "agent_type": "developer",
+  "description": "Blocked reason: Finding 1 (BLOCKING): tests/test_onboarding.py line 331 \u2014 `self.assertIn(\"--max-workers 3\", yaml_text)` in TestGenerateConfigYaml.test_contains_runner. generate_config_yaml() only substitutes default_runner and test_command; max_workers is never written to the YAML, and default_config.yaml contains no --max-workers line. This assertion will always fail. Fix: either remove the assertion or (if the intent is to embed a max_workers reminder comment) update generate_config_yaml to inject one. The docs/onboarding.md design note says max_workers is intentionally NOT a config key, so the correct fix is to drop the assertion. Finding 2 (MINOR): docs/onboarding.md line 113 shows the .gitignore section header comment as `# orchestrator` but onboarding.py:591 writes `# takt`. Fix: change the example in docs to show `# takt`.\n\nRemaining work: Two issues must be fixed before approval: (1) remove or correct the --max-workers assertion in test_contains_runner; (2) correct the gitignore comment example in docs/onboarding.md.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-165b0761-review",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-165b0761-review.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B-165b0761",
+  "execution_branch_name": "feature/b-165b0761",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-165b0761",
+  "expected_files": [
+    "src/agent_takt/onboarding.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "src/agent_takt/onboarding.py",
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
+  ],
+  "changed_files": [
+    "src/agent_takt/onboarding.py",
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "No file-scope conflicts \u2014 only onboarding.py, tests/test_onboarding.py, and docs/onboarding.md are in scope.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T09:17:09.249551+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-165b0761-review"
+  },
+  "labels": []
+}
