@@ -70,7 +70,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "Deferred due to file-scope conflict with active bead B-190f76d3",
   "conflict_risks": "None. This bead only added a new file and modified import paths; no logic was changed. Sibling beads touching other `cli/commands/*.py` files are unaffected.",
   "branch_name": "",
   "worktree_path": "",
@@ -82,6 +82,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T20:35:44.161104+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-190f76d3",
       "details": {}
     }
   ],
