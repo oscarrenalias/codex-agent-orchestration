@@ -3,7 +3,7 @@
   "title": "Split State And Tree TUI Tests",
   "agent_type": "developer",
   "description": "Migrate the `TuiRuntimeState` and tree-building coverage out of `tests/test_tui.py` into `tests/test_tui_state.py` and `tests/test_tui_tree.py`, keeping assertions intact except for import-path adjustments.",
-  "status": "in_progress",
+  "status": "blocked",
   "bead_type": "task",
   "parent_id": "B-9b67fe9f",
   "dependencies": [
@@ -28,8 +28,14 @@
   "expected_globs": [
     "tests/test_tui*.py"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_tui_state.py",
+    "tests/test_tui_tree.py"
+  ],
+  "changed_files": [
+    "tests/test_tui_state.py",
+    "tests/test_tui_tree.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
@@ -38,28 +44,37 @@
     "verdict": "",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_tui_state.py",
+      "tests/test_tui_tree.py"
+    ],
     "updated_docs": [],
     "next_action": "",
     "next_agent": "",
-    "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
+    "block_reason": "Agent timed out after 1500 seconds",
+    "expected_files": [
+      "tests/test_tui.py",
+      "tests/test_tui_state.py",
+      "tests/test_tui_tree.py"
+    ],
+    "expected_globs": [
+      "tests/test_tui*.py"
+    ],
+    "touched_files": [
+      "tests/test_tui_state.py",
+      "tests/test_tui_tree.py"
+    ],
     "conflict_risks": "",
     "design_decisions": "",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "Agent timed out after 1500 seconds",
   "conflict_risks": "",
   "branch_name": "feature/b-9b67fe9f",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9b67fe9f",
-  "lease": {
-    "owner": "developer:B-70d21ff2",
-    "expires_at": "2026-04-08T00:00:45.537879+00:00"
-  },
-  "retries": 0,
+  "lease": null,
+  "retries": 1,
   "execution_history": [
     {
       "timestamp": "2026-04-07T22:20:41.378679+00:00",
@@ -100,6 +115,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-70d21ff2/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T23:55:53.416533+00:00",
+      "event": "failed",
+      "agent_type": "developer",
+      "summary": "Worker execution failed: Agent timed out after 1500 seconds",
+      "details": {}
     }
   ],
   "metadata": {
@@ -173,6 +195,15 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
+    },
+    "last_agent_result": {
+      "outcome": "failed",
+      "summary": "Worker execution failed: Agent timed out after 1500 seconds",
+      "verdict": "",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": "Agent timed out after 1500 seconds"
     }
   },
   "labels": []
