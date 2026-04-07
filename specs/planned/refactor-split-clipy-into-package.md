@@ -1,16 +1,18 @@
 ---
 name: "Refactor: split cli.py into package"
 id: spec-3986e80d
-description: Split cli.py (1704 lines) into a focused package with separate modules for argument parsing, formatting, services, and command implementations. Move CLI tests out of test_orchestrator.py.
+description: "Split cli.py (1704 lines) into a focused package with separate modules for argument parsing, formatting, services, and command implementations. Move CLI tests out of test_orchestrator.py."
 dependencies: spec-2e7c81af
 priority: medium
 complexity: medium
-status: draft
-tags: [refactoring, cli]
+status: planned
+tags:
+- refactoring
+- cli
 scope:
-  in: src/agent_takt/cli.py, tests/test_orchestrator.py (CLI tests only)
-  out: scheduler.py, tui.py, onboarding.py
-feature_root_id:
+  in: "src/agent_takt/cli.py, tests/test_orchestrator.py (CLI tests only)"
+  out: "scheduler.py, tui.py, onboarding.py"
+feature_root_id: null
 ---
 # Refactor: split cli.py into package
 
