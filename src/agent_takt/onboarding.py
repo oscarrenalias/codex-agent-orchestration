@@ -758,6 +758,50 @@ def collect_init_answers(
 # ---------------------------------------------------------------------------
 
 
+def merge_config_keys(
+    user_config: dict,
+    bundled_config: dict,
+    *,
+    _prefix: str = "",
+) -> tuple[dict, list[str]]:
+    """Recursively merge *bundled_config* keys into *user_config*, skipping existing keys.
+
+    Only keys that are present in *bundled_config* but absent from *user_config*
+    are inserted.  Existing user keys and values are never removed or overwritten.
+    When both sides have a mapping at the same key, the merge recurses into that
+    mapping so that nested new keys are inserted without disturbing sibling keys.
+
+    Args:
+        user_config: The user's current config dict.  Mutated in-place and
+            returned as the first element of the result tuple.
+        bundled_config: The bundled default config dict used as the source of
+            missing keys.
+        _prefix: Internal — dotted path prefix used during recursion.  Callers
+            should not set this argument.
+
+    Returns:
+        A tuple ``(merged_config, added_keys)`` where *merged_config* is the
+        updated *user_config* (same object, mutated in-place) and *added_keys*
+        is a list of dotted key paths that were inserted, e.g.
+        ``["scheduler.max_corrective_attempts", "claude.timeout_seconds"]``.
+        The list is empty when no keys were added.
+    """
+    added_keys: list[str] = []
+    for key, bundled_value in bundled_config.items():
+        dotted = f"{_prefix}{key}" if _prefix else key
+        if key not in user_config:
+            user_config[key] = bundled_value
+            added_keys.append(dotted)
+        elif isinstance(bundled_value, dict) and isinstance(user_config[key], dict):
+            _, child_added = merge_config_keys(
+                user_config[key],
+                bundled_value,
+                _prefix=f"{dotted}.",
+            )
+            added_keys.extend(child_added)
+    return user_config, added_keys
+
+
 def generate_config_yaml(answers: InitAnswers) -> str:
     """Return a ``config.yaml`` string reflecting *answers*.
 
