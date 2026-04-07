@@ -3,7 +3,7 @@
   "title": "Create scheduler package scaffold and public re-exports",
   "agent_type": "developer",
   "description": "Replace `src/agent_takt/scheduler.py` with a `src/agent_takt/scheduler/` package, move the current implementation into package modules as a starting point, and preserve `from agent_takt.scheduler import Scheduler` compatibility through `__init__.py` re-exports.",
-  "status": "ready",
+  "status": "blocked",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
   "dependencies": [],
@@ -52,7 +52,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "Preparing worktree (checking out 'feature/b-f6706ed8')\nfatal: 'feature/b-f6706ed8' is already used by worktree at '/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f6706ed8'",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -64,6 +64,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T18:39:11.836319+00:00",
+      "event": "blocked",
+      "agent_type": "developer",
+      "summary": "Preparing worktree (checking out 'feature/b-f6706ed8')\nfatal: 'feature/b-f6706ed8' is already used by worktree at '/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f6706ed8'",
       "details": {}
     }
   ],
