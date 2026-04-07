@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-af3f17ad",
-  "dependencies": [],
+  "dependencies": [
+    "B-d4009584",
+    "B-f7cd2b80"
+  ],
   "acceptance_criteria": [
     "Review confirms the implementation matches the manifest decision table, config merge rules, and ownership semantics from the spec.",
     "Review checks that dry-run mode is non-mutating and that removed bundled assets are disabled rather than deleted.",
