@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-91666ec7",
+  "title": "Extract TUI Operator Actions Module",
+  "agent_type": "developer",
+  "description": "Move operator workflows for merge, retry, status updates, and scheduler cycle execution into `src/agent_takt/tui/actions.py`, preserving the existing control flow and side effects.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-9b67fe9f",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Operator action flows are relocated to `src/agent_takt/tui/actions.py`.",
+    "The action layer depends only on upstream package modules required by the proposed split.",
+    "No workflow behavior changes are introduced during extraction."
+  ],
+  "linked_docs": [
+    "spec-e923fc0e"
+  ],
+  "feature_root_id": "B-9b67fe9f",
+  "execution_branch_name": "feature/b-9b67fe9f",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9b67fe9f",
+  "expected_files": [
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/render.py"
+  ],
+  "expected_globs": [
+    "src/agent_takt/tui/*.py"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T22:20:40.892570+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
