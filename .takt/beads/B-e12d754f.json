@@ -3,7 +3,7 @@
   "title": "Split onboarding asset tests",
   "agent_type": "developer",
   "description": "Migrate asset installation and copy helper tests from the monolithic onboarding test file into `tests/test_onboarding_assets.py`.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-4bf759f3",
   "dependencies": [
@@ -27,37 +27,51 @@
   "expected_globs": [
     "tests/test_onboarding*.py"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_onboarding.py",
+    "tests/test_onboarding_assets.py"
+  ],
+  "changed_files": [
+    "tests/test_onboarding.py",
+    "tests/test_onboarding_assets.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Created `tests/test_onboarding_assets.py` with 13 test classes covering: copy_asset_file, copy_asset_dir, install_templates, install_default_config, install_templates_with_substitution, install_agents_skills (spec-management), scaffold+spec-management skill, install_claude_skills (takt skill), scaffold+takt skill, write_assets_manifest, read_assets_manifest, evaluate_upgrade_actions (all 8 action types), and scaffold+manifest creation. Removed all 13 classes from `test_onboarding.py` and cleaned up now-unused imports (json, os, MagicMock, install_agents_skills). The monolithic file retains 11 classes covering resolve_memory_seed, collect_init_answers, generate_config_yaml, substitute_template_placeholders, seed_memory_files, update_gitignore, create_specs_howto, scaffold_project (integration), scaffold+load_config integration, commit_scaffold, and merge_config_keys.",
+    "remaining": "None. The tester bead will verify the migrated tests still pass.",
+    "risks": "None expected. The migration is a pure move \u2014 no test logic was changed, only the file containing each class. Imports in the new file cover all needed symbols; unused imports were removed from the original.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_onboarding.py",
+      "tests/test_onboarding_assets.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester bead should run the full test suite and verify all tests in both test_onboarding.py and test_onboarding_assets.py pass.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "expected_files": [
+      "tests/test_onboarding_assets.py",
+      "tests/test_onboarding.py"
+    ],
+    "expected_globs": [
+      "tests/test_onboarding*.py"
+    ],
+    "touched_files": [
+      "tests/test_onboarding.py",
+      "tests/test_onboarding_assets.py"
+    ],
+    "conflict_risks": "None. Only test files in scope; no source code touched.",
+    "design_decisions": "Moved all asset-related test classes: copy helpers (TestCopyAssetFile, TestCopyAssetDir), install functions (TestInstallTemplates, TestInstallDefaultConfig, TestInstallTemplatesWithSubstitution, TestInstallAgentsSkillsSpecManagement, TestInstallClaudeSkillsTaktSkill), manifest tests (TestWriteAssetsManifest, TestReadAssetsManifest), upgrade evaluation (TestEvaluateUpgradeActions), and scaffold-level integration tests for skills/manifest (TestScaffoldProjectSpecManagementSkill, TestScaffoldProjectTaktSkill, TestScaffoldProjectManifest). TestInstallTemplatesWithSubstitution was included because it tests an install function, even though it also exercises template substitution. The _make_answers helper was duplicated into both files rather than creating a shared helper module, keeping each file self-contained.",
+    "test_coverage_notes": "Tester should confirm: (1) all classes in test_onboarding_assets.py execute without import errors, (2) all classes removed from test_onboarding.py no longer appear there, (3) the remaining classes in test_onboarding.py still pass, (4) no test is duplicated across both files.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None. Only test files in scope; no source code touched.",
   "branch_name": "feature/b-4bf759f3",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4bf759f3",
-  "lease": {
-    "owner": "developer:B-e12d754f",
-    "expires_at": "2026-04-07T20:00:46.817387+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +113,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-e12d754f/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T19:43:19.254407+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Migrated asset installation and copy helper tests from `tests/test_onboarding.py` into the new `tests/test_onboarding_assets.py`. Both files pass Python syntax checks.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -171,7 +192,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Migrated asset installation and copy helper tests from `tests/test_onboarding.py` into the new `tests/test_onboarding_assets.py`. Both files pass Python syntax checks.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 2.335457100000001,
+      "duration_ms": 743362,
+      "duration_api_ms": 731183,
+      "num_turns": 56,
+      "input_tokens": 58,
+      "output_tokens": 55150,
+      "cache_creation_tokens": 100964,
+      "cache_read_tokens": 3764727,
+      "stop_reason": "end_turn",
+      "session_id": "6af780ab-9529-4aa1-a112-c58fe0071c63",
+      "permission_denials": [],
+      "prompt_chars": 6988,
+      "prompt_lines": 146,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 2.335457100000001,
+        "duration_ms": 743362,
+        "duration_api_ms": 731183,
+        "num_turns": 56,
+        "input_tokens": 58,
+        "output_tokens": 55150,
+        "cache_creation_tokens": 100964,
+        "cache_read_tokens": 3764727,
+        "stop_reason": "end_turn",
+        "session_id": "6af780ab-9529-4aa1-a112-c58fe0071c63",
+        "permission_denials": [],
+        "prompt_chars": 6988,
+        "prompt_lines": 146,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "19127184e2bdf6ba3d62547967c5052c93813c95"
   },
   "labels": []
 }
