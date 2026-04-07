@@ -117,6 +117,13 @@
       "agent_type": "review",
       "summary": "needs_changes: 1 blocking test bug (spurious --max-workers assertion) + 1 minor docs/code mismatch in .gitignore comment header",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T09:17:09.652161+00:00",
+      "event": "corrective_planned",
+      "agent_type": "review",
+      "summary": "Created corrective bead B-165b0761-review-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -230,7 +237,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-165b0761-review-corrective"
   },
   "labels": []
 }
