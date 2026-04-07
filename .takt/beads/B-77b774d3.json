@@ -116,6 +116,13 @@
       "agent_type": "developer",
       "summary": "Cannot delete tests/test_orchestrator.py \u2014 65 unique tests remain that have not been migrated to any other file. The dependency beads (B-15b8cb14, B-d5497009) only migrated bead, run, merge, and telemetry CLI tests. Deleting the file now would permanently lose coverage across CLI commands, TUI internals, planner, worker prompts, output schema, graph rendering, and storage/bead-ID operations.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T20:59:58.298278+00:00",
+      "event": "corrective_planned",
+      "agent_type": "developer",
+      "summary": "Created corrective bead B-77b774d3-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -234,7 +241,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-77b774d3-corrective"
   },
   "labels": []
 }
