@@ -131,7 +131,7 @@ class TestSchedulerConfigWiring(unittest.TestCase):
 
         self.assertEqual(sched.followup_suffixes, {"tester": "test", "documentation": "docs", "review": "review"})
         self.assertEqual(sched.corrective_suffix, "corrective")
-        self.assertEqual(sched.max_corrective_attempts, 2)
+        self.assertEqual(sched.max_corrective_attempts, 5)
         self.assertEqual(sched.transient_block_patterns, cfg.scheduler.transient_block_patterns)
         self.assertEqual(sched.lease_timeout_minutes, 30)
         self.assertEqual(sched.runnable_reassign_agents, set(cfg.agent_types))

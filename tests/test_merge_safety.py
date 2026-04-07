@@ -522,5 +522,33 @@ class MergeSafetyTests(unittest.TestCase):
         self.assertEqual("No merge pending confirmation.", state.status_message)
 
 
+class MergeBranchResolveStrategyTests(unittest.TestCase):
+    """Verify WorktreeManager.merge_branch uses the resolve strategy."""
+
+    def test_merge_branch_uses_resolve_strategy(self) -> None:
+        """merge_branch must invoke git with -s resolve before the branch name."""
+        from unittest.mock import call, patch
+        from agent_takt.gitutils import WorktreeManager
+
+        root = Path(tempfile.mkdtemp())
+        wm = WorktreeManager(root, root / ".takt" / "worktrees")
+        with (
+            patch.object(wm, "ensure_repository"),
+            patch.object(wm, "_run_git") as mock_git,
+        ):
+            wm.merge_branch("feature/b-test")
+
+        mock_git.assert_called_once()
+        args = mock_git.call_args[0]
+        self.assertIn("merge", args)
+        self.assertIn("--no-ff", args)
+        self.assertIn("-s", args)
+        resolve_idx = list(args).index("-s") + 1
+        self.assertEqual(args[resolve_idx], "resolve")
+        # branch name must appear after the strategy flag
+        branch_idx = list(args).index("feature/b-test")
+        self.assertGreater(branch_idx, resolve_idx)
+
+
 if __name__ == "__main__":
     unittest.main()

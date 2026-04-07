@@ -43,7 +43,7 @@ class TestDefaultConfig(unittest.TestCase):
         self.assertEqual(self.cfg.scheduler.lease_timeout_minutes, 30)
 
     def test_scheduler_max_corrective(self):
-        self.assertEqual(self.cfg.scheduler.max_corrective_attempts, 2)
+        self.assertEqual(self.cfg.scheduler.max_corrective_attempts, 5)
 
     def test_scheduler_corrective_suffix(self):
         self.assertEqual(self.cfg.scheduler.corrective_suffix, "corrective")
@@ -464,6 +464,33 @@ class TestAllowedToolsMergeOrder(unittest.TestCase):
         extra = cfg.backend("claude").allowed_tools_by_agent["developer"]
         for t in extra:
             self.assertIn(t, tools[len(defaults):])
+
+
+class TestSchedulerConfigDefaultMaxCorrective(unittest.TestCase):
+    """Verify max_corrective_attempts default is 5 across all construction paths."""
+
+    def test_scheduler_config_no_args_yields_5(self):
+        sched = SchedulerConfig()
+        self.assertEqual(sched.max_corrective_attempts, 5)
+
+    def test_default_config_scheduler_max_corrective_is_5(self):
+        cfg = default_config()
+        self.assertEqual(cfg.scheduler.max_corrective_attempts, 5)
+
+    def test_yaml_override_still_overrides(self):
+        """YAML-supplied max_corrective_attempts takes precedence over the new default."""
+        import tempfile
+        import textwrap
+        with tempfile.TemporaryDirectory() as tmp:
+            orch_dir = Path(tmp) / ".takt"
+            orch_dir.mkdir(parents=True, exist_ok=True)
+            (orch_dir / "config.yaml").write_text(textwrap.dedent("""\
+                common:
+                  scheduler:
+                    max_corrective_attempts: 3
+            """))
+            cfg = load_config(Path(tmp))
+            self.assertEqual(cfg.scheduler.max_corrective_attempts, 3)
 
 
 if __name__ == "__main__":
