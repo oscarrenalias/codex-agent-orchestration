@@ -198,6 +198,12 @@ class TestSchedulerNoModuleLevelConstants(unittest.TestCase):
     """Verify scheduler.py has no module-level constants for config values."""
 
     def _read_scheduler_source(self) -> str:
+        scheduler_pkg = REPO_ROOT / "src" / "agent_takt" / "scheduler"
+        if scheduler_pkg.is_dir():
+            return "\n".join(
+                f.read_text(encoding="utf-8")
+                for f in sorted(scheduler_pkg.glob("*.py"))
+            )
         return (REPO_ROOT / "src" / "agent_takt" / "scheduler.py").read_text(encoding="utf-8")
 
     def test_no_followup_suffixes_constant(self):
@@ -773,7 +779,14 @@ class TestSchedulerPassesConfigToPrompts(unittest.TestCase):
 
     def test_scheduler_process_calls_load_guardrail_with_config(self):
         """Verify the scheduler's _process passes config to load_guardrail_template."""
-        source = (REPO_ROOT / "src" / "agent_takt" / "scheduler.py").read_text(encoding="utf-8")
+        scheduler_pkg = REPO_ROOT / "src" / "agent_takt" / "scheduler"
+        if scheduler_pkg.is_dir():
+            source = "\n".join(
+                f.read_text(encoding="utf-8")
+                for f in sorted(scheduler_pkg.glob("*.py"))
+            )
+        else:
+            source = (REPO_ROOT / "src" / "agent_takt" / "scheduler.py").read_text(encoding="utf-8")
         # The scheduler should pass templates_dir and agent_types from config
         self.assertIn("templates_dir=self.config.templates_dir", source)
         self.assertIn("agent_types=self.config.agent_types", source)
@@ -784,7 +797,14 @@ class TestSchedulerPassesConfigToSkills(unittest.TestCase):
 
     def test_scheduler_passes_config_to_skills(self):
         """Verify the scheduler's _process passes config to prepare_isolated_execution_root."""
-        source = (REPO_ROOT / "src" / "agent_takt" / "scheduler.py").read_text(encoding="utf-8")
+        scheduler_pkg = REPO_ROOT / "src" / "agent_takt" / "scheduler"
+        if scheduler_pkg.is_dir():
+            source = "\n".join(
+                f.read_text(encoding="utf-8")
+                for f in sorted(scheduler_pkg.glob("*.py"))
+            )
+        else:
+            source = (REPO_ROOT / "src" / "agent_takt" / "scheduler.py").read_text(encoding="utf-8")
         self.assertIn("config=self.config", source)
         self.assertIn("runner_backend=self.runner.backend_name", source)
 

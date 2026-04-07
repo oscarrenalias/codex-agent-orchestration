@@ -6,7 +6,13 @@
 src/agent_takt/
   cli.py          CLI dispatch and output formatting
   config.py       YAML config loader + frozen dataclass models
-  scheduler.py    Orchestration loop: leases, conflicts, followups
+  scheduler/      Orchestration loop package: leases, conflicts, followups
+    __init__.py   Re-exports Scheduler, SchedulerReporter, SchedulerResult
+    core.py       Main Scheduler class and scheduling loop
+    execution.py  Bead execution and lease management
+    finalize.py   Bead finalization and status transitions
+    followups.py  Followup bead creation and scope syncing
+    reporter.py   SchedulerReporter: cycle summary formatting
   storage.py      Bead JSON persistence + telemetry artifacts
   models.py       Bead, Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
@@ -31,10 +37,14 @@ templates/agents/   Guardrail templates per agent type (mandatory)
 uv run pytest tests/ -n auto -q
 ```
 
-Tests run via pytest (with xdist for parallel execution). `FakeRunner` mocks agent execution. Target individual modules with:
+Tests run via pytest (with xdist for parallel execution). `FakeRunner` and `OrchestratorTests` base class are defined in `tests/helpers.py` and shared across all scheduler test modules. Target individual modules with:
 
 ```bash
-uv run pytest tests/test_orchestrator.py -v
+uv run pytest tests/test_scheduler_core.py -v
+uv run pytest tests/test_scheduler_execution.py -v
+uv run pytest tests/test_scheduler_finalize.py -v
+uv run pytest tests/test_scheduler_followups.py -v
+uv run pytest tests/test_scheduler_beads.py -v
 uv run pytest tests/test_tui.py -v
 ```
 
