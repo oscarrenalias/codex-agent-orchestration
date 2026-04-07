@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -29,10 +31,12 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from agent_takt.console import ConsoleReporter
 from agent_takt.onboarding import (
     InitAnswers,
     _language_specific_known_issues,
     collect_init_answers,
+    commit_scaffold,
     copy_asset_dir,
     copy_asset_file,
     create_specs_howto,
@@ -865,6 +869,153 @@ class TestScaffoldProjectTaktSkill(unittest.TestCase):
             scaffold_project(self.root, answers, stream_out=out)
         skill_path = self.root / ".claude" / "skills" / "takt" / "SKILL.md"
         self.assertTrue(skill_path.is_file(), "takt/SKILL.md not created by scaffold_project()")
+
+
+# ---------------------------------------------------------------------------
+# commit_scaffold
+# ---------------------------------------------------------------------------
+
+
+class TestCommitScaffold(unittest.TestCase):
+    """Tests for commit_scaffold(): git staging, committing, idempotency, and edge cases."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        # Initialise a real git repo so subprocess git commands work.
+        subprocess.run(["git", "init", str(self.root)], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "-C", str(self.root), "config", "user.email", "test@example.com"],
+            check=True, capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(self.root), "config", "user.name", "Test User"],
+            check=True, capture_output=True,
+        )
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _make_console(self) -> tuple["ConsoleReporter", io.StringIO]:
+        out = io.StringIO()
+        return ConsoleReporter(stream=out), out
+
+    def _setup_scaffold_files(self) -> None:
+        """Write the minimal set of files that commit_scaffold stages."""
+        (self.root / "templates" / "agents").mkdir(parents=True, exist_ok=True)
+        (self.root / "templates" / "agents" / "developer.md").write_text("dev")
+        (self.root / ".agents" / "skills").mkdir(parents=True, exist_ok=True)
+        (self.root / ".agents" / "skills" / "skill.md").write_text("skill")
+        (self.root / ".claude" / "skills").mkdir(parents=True, exist_ok=True)
+        (self.root / ".claude" / "skills" / "skill.md").write_text("skill")
+        (self.root / "docs" / "memory").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "memory" / "conventions.md").write_text("conventions")
+        (self.root / "specs").mkdir(parents=True, exist_ok=True)
+        (self.root / "specs" / "HOWTO.md").write_text("howto")
+        (self.root / ".takt").mkdir(parents=True, exist_ok=True)
+        (self.root / ".takt" / "config.yaml").write_text("fake: true")
+        (self.root / ".gitignore").write_text("node_modules/\n")
+
+    def test_happy_path_creates_commit(self):
+        """Fresh git init + scaffold files → commit_scaffold creates a git commit."""
+        self._setup_scaffold_files()
+        console, _ = self._make_console()
+        commit_scaffold(self.root, console)
+        result = subprocess.run(
+            ["git", "-C", str(self.root), "log", "--oneline"],
+            capture_output=True, text=True, check=True,
+        )
+        self.assertIn("chore: takt init scaffold", result.stdout)
+
+    def test_happy_path_commit_includes_gitkeep(self):
+        """commit_scaffold creates .takt/beads/.gitkeep and includes it in the commit."""
+        self._setup_scaffold_files()
+        console, _ = self._make_console()
+        commit_scaffold(self.root, console)
+        result = subprocess.run(
+            ["git", "-C", str(self.root), "show", "--stat", "HEAD"],
+            capture_output=True, text=True, check=True,
+        )
+        self.assertIn(".takt/beads/.gitkeep", result.stdout)
+
+    def test_happy_path_commit_includes_templates(self):
+        """The scaffold commit includes templates/ files."""
+        self._setup_scaffold_files()
+        console, _ = self._make_console()
+        commit_scaffold(self.root, console)
+        result = subprocess.run(
+            ["git", "-C", str(self.root), "show", "--stat", "HEAD"],
+            capture_output=True, text=True, check=True,
+        )
+        self.assertIn("templates/", result.stdout)
+
+    def test_idempotent_second_call_warns_not_raises(self):
+        """Second commit_scaffold with no new changes warns and does not raise."""
+        self._setup_scaffold_files()
+        console, _ = self._make_console()
+        commit_scaffold(self.root, console)
+        # Nothing has changed; second call should warn, not raise.
+        console2, out2 = self._make_console()
+        commit_scaffold(self.root, console2)
+        output = out2.getvalue()
+        self.assertIn("git commit skipped", output)
+
+    def test_idempotent_second_call_exits_zero(self):
+        """commit_scaffold returns normally (no exception) on second call with nothing to commit."""
+        self._setup_scaffold_files()
+        console, _ = self._make_console()
+        commit_scaffold(self.root, console)
+        # Should not raise on second call.
+        console2, _ = self._make_console()
+        try:
+            commit_scaffold(self.root, console2)
+        except Exception as exc:  # pragma: no cover
+            self.fail(f"commit_scaffold raised unexpectedly on idempotent call: {exc}")
+
+    def test_non_git_directory_warns_not_raises(self):
+        """commit_scaffold in a non-git directory warns and returns without raising."""
+        non_git = self.root / "not_a_repo"
+        non_git.mkdir()
+        console, out = self._make_console()
+        commit_scaffold(non_git, console)
+        output = out.getvalue()
+        self.assertIn("git add failed", output)
+
+    def test_gitignore_does_not_contain_beads_entry(self):
+        """update_gitignore must NOT add .takt/beads/ — beads must be tracked by git."""
+        update_gitignore(self.root)
+        content = (self.root / ".gitignore").read_text()
+        self.assertNotIn(".takt/beads/", content)
+
+    def test_worktree_contains_scaffold_files(self):
+        """After the scaffold commit, a git worktree add sees the committed scaffold files."""
+        self._setup_scaffold_files()
+        console, _ = self._make_console()
+        commit_scaffold(self.root, console)
+
+        wt_path = Path(self._tmp.name + "_wt")
+        try:
+            add_result = subprocess.run(
+                ["git", "-C", str(self.root), "worktree", "add", str(wt_path), "HEAD"],
+                capture_output=True, text=True, check=False,
+            )
+            if add_result.returncode != 0:
+                self.skipTest(f"git worktree add unavailable: {add_result.stderr.strip()}")
+            self.assertTrue((wt_path / ".takt" / "beads" / ".gitkeep").is_file(),
+                            ".takt/beads/.gitkeep missing in worktree")
+            self.assertTrue((wt_path / "specs" / "HOWTO.md").is_file(),
+                            "specs/HOWTO.md missing in worktree")
+            self.assertTrue((wt_path / ".takt" / "config.yaml").is_file(),
+                            ".takt/config.yaml missing in worktree")
+            self.assertTrue((wt_path / "templates").is_dir(),
+                            "templates/ missing in worktree")
+        finally:
+            subprocess.run(
+                ["git", "-C", str(self.root), "worktree", "remove", "--force", str(wt_path)],
+                capture_output=True, check=False,
+            )
+            if wt_path.exists():
+                shutil.rmtree(wt_path, ignore_errors=True)
 
 
 if __name__ == "__main__":
