@@ -10,11 +10,15 @@ so the helpers work correctly in both editable-install and installed-wheel conte
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from importlib.metadata import version as _pkg_version
 from pathlib import Path
 from typing import IO
 
@@ -76,6 +80,121 @@ def copy_asset_dir(src: Path, dest: Path, *, overwrite: bool = False) -> None:
             continue
         relative = item.relative_to(src)
         copy_asset_file(item, dest / relative, overwrite=overwrite)
+
+
+# ---------------------------------------------------------------------------
+# Asset manifest helpers
+# ---------------------------------------------------------------------------
+
+_MANIFEST_FILENAME = ".takt/assets-manifest.json"
+
+# Relative path prefixes for bundled asset roots tracked by the manifest.
+# docs/memory/, specs/, and CLAUDE.md are always user-owned and excluded.
+_BUNDLED_ASSET_PREFIXES = (
+    "templates/agents/",
+    ".agents/skills/",
+    ".claude/skills/",
+    ".takt/config.yaml",
+)
+
+# Guardrail templates are installed with placeholder substitution, so the
+# on-disk content differs from the bundled source.  Mark them user_owned at
+# init time so that ``takt upgrade`` never attempts to overwrite them.
+_USER_OWNED_PREFIXES = ("templates/agents/",)
+
+
+def _sha256_file(path: Path) -> str:
+    """Return the SHA-256 hex digest of *path*'s contents."""
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _is_user_owned(rel_path: str) -> bool:
+    """Return ``True`` if *rel_path* should be marked ``user_owned`` at install time."""
+    return any(rel_path.startswith(prefix) for prefix in _USER_OWNED_PREFIXES)
+
+
+def _empty_manifest() -> dict:
+    """Return an empty manifest structure (used when the manifest file is absent)."""
+    return {"takt_version": "", "installed_at": "", "assets": {}}
+
+
+def write_assets_manifest(project_root: Path, installed_files: list[Path]) -> Path:
+    """Compute SHA-256 hashes for *installed_files* and write ``.takt/assets-manifest.json``.
+
+    Only files whose project-relative paths fall under a bundled asset root
+    (``templates/agents/``, ``.agents/skills/``, ``.claude/skills/``,
+    ``.takt/config.yaml``) are recorded.  Files under ``docs/memory/``,
+    ``specs/``, or ``CLAUDE.md`` are always user-owned and intentionally
+    excluded from the manifest.
+
+    Guardrail templates (``templates/agents/``) are flagged ``user_owned: true``
+    at install time because placeholder substitution produces on-disk content
+    that differs from the bundled source; ``takt upgrade`` must never
+    overwrite them automatically.
+
+    Args:
+        project_root: Root directory of the target project.
+        installed_files: Absolute paths of files that were installed.  Each
+            path must lie inside *project_root*.
+
+    Returns:
+        The path to the written manifest file.
+    """
+    assets: dict[str, dict] = {}
+    for abs_path in installed_files:
+        if not abs_path.is_file():
+            continue
+        try:
+            rel = abs_path.relative_to(project_root)
+        except ValueError:
+            continue
+        rel_str = rel.as_posix()
+        # Only track bundled asset roots.
+        if not any(
+            rel_str.startswith(prefix) or rel_str == prefix.rstrip("/")
+            for prefix in _BUNDLED_ASSET_PREFIXES
+        ):
+            continue
+        assets[rel_str] = {
+            "sha256": _sha256_file(abs_path),
+            "source": "bundled",
+            "user_owned": _is_user_owned(rel_str),
+        }
+
+    manifest = {
+        "takt_version": _pkg_version("agent-takt"),
+        "installed_at": datetime.now(tz=timezone.utc).isoformat(),
+        "assets": assets,
+    }
+
+    manifest_path = project_root / _MANIFEST_FILENAME
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return manifest_path
+
+
+def read_assets_manifest(project_root: Path) -> dict:
+    """Load and parse ``.takt/assets-manifest.json``.
+
+    Args:
+        project_root: Root directory of the target project.
+
+    Returns:
+        The parsed manifest dictionary, or an empty manifest structure
+        (``{"takt_version": "", "installed_at": "", "assets": {}}``) when the
+        manifest file is absent or unreadable.
+    """
+    manifest_path = project_root / _MANIFEST_FILENAME
+    if not manifest_path.is_file():
+        return _empty_manifest()
+    try:
+        return json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return _empty_manifest()
 
 
 # ---------------------------------------------------------------------------
