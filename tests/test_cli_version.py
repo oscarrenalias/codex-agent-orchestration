@@ -9,6 +9,7 @@ Covers:
 """
 from __future__ import annotations
 
+import argparse
 import sys
 import unittest
 from importlib.metadata import version as _pkg_version
@@ -84,6 +85,38 @@ class TestExistingSubcommands(unittest.TestCase):
         parser = build_parser()
         args = parser.parse_args(["bead", "list"])
         self.assertEqual("bead", args.command)
+
+
+class TestHelpTextCoverage(unittest.TestCase):
+    """Every argument and flag must have a non-empty help string."""
+
+    def _collect_actions(self, parser):
+        """Recursively collect all actions from a parser and its subparsers."""
+        actions = list(parser._actions)
+        for action in parser._actions:
+            if hasattr(action, "_group_actions"):
+                actions.extend(action._group_actions)
+            if hasattr(action, "choices") and isinstance(action.choices, dict):
+                for sub in action.choices.values():
+                    if hasattr(sub, "_actions"):
+                        actions.extend(self._collect_actions(sub))
+        return actions
+
+    def test_all_arguments_have_help_text(self):
+        """No argument or flag should have an empty or missing help string."""
+        parser = build_parser()
+        actions = self._collect_actions(parser)
+        missing = []
+        for action in actions:
+            if action.help in (argparse.SUPPRESS, None, ""):
+                continue  # suppressed args are intentionally hidden
+            if not action.help or not action.help.strip():
+                missing.append(str(action.option_strings or action.dest))
+        self.assertEqual(
+            [],
+            missing,
+            f"Arguments with empty help text: {missing}",
+        )
 
 
 if __name__ == "__main__":
