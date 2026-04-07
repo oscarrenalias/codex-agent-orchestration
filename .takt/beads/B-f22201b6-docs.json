@@ -3,7 +3,7 @@
   "title": "Document Improve takt telemetry: per-bead breakdown and cost tracking",
   "agent_type": "documentation",
   "description": "Update docs for B-f22201b6",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-f22201b6",
   "dependencies": [
@@ -47,9 +47,12 @@
   },
   "block_reason": "Deferred due to file-scope conflict with active bead B-f22201b6-test",
   "conflict_risks": "No conflicts expected \u2014 all changes are confined to cli.py, which no other in-progress bead claims.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-f22201b6",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f22201b6",
+  "lease": {
+    "owner": "documentation:B-f22201b6-docs",
+    "expires_at": "2026-04-07T08:15:45.177030+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -65,7 +68,44 @@
       "agent_type": "documentation",
       "summary": "Deferred due to file-scope conflict with active bead B-f22201b6-test",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T07:45:45.773139+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-07T07:45:45.773164+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {}
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-f22201b6-docs",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "74b1b8cb463e41af3fe5b77be1d2f5b71332b8328ba1fa07bc1b78e2bc6c3552",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-f22201b6-docs/home",
+    "runner_backend": "claude"
+  }
 }
