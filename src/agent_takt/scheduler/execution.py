@@ -8,6 +8,7 @@ from ..models import (
     BEAD_BLOCKED,
     BEAD_DONE,
     BEAD_IN_PROGRESS,
+    BEAD_READY,
     ExecutionRecord,
     HandoffSummary,
     Lease,
@@ -207,6 +208,61 @@ class BeadExecutor:
         reporter: SchedulerReporter | None = None,
     ) -> None:
         self._finalizer.finalize(bead, agent_result, result, reporter=reporter)
+
+    # ------------------------------------------------------------------
+    # Blocked-bead corrective evaluation (called by Scheduler core loop)
+    # ------------------------------------------------------------------
+
+    def reevaluate_corrective_state(
+        self, bead: Bead, *, reporter: SchedulerReporter | None = None
+    ) -> None:
+        """Evaluate corrective bead lifecycle for a blocked bead.
+
+        Called by Scheduler._reevaluate_blocked for each blocked bead that has
+        passed the transient-error filter. Decides whether to requeue, create a
+        corrective child, or escalate to human.
+        """
+        corrective_children = self._followups._corrective_children(bead)
+        open_corrective = next(
+            (child for child in corrective_children if child.status in {BEAD_READY, BEAD_IN_PROGRESS}),
+            None,
+        )
+        if open_corrective is not None:
+            return
+        latest_done = next(
+            (child for child in reversed(corrective_children) if child.status == BEAD_DONE),
+            None,
+        )
+        if latest_done is not None:
+            if not self._followups._already_retried_after_corrective(bead, latest_done):
+                bead.status = BEAD_READY
+                bead.block_reason = ""
+                bead.metadata["last_corrective_retry_source"] = latest_done.bead_id
+                bead.metadata["last_corrective_retry_commit"] = str(latest_done.metadata.get("last_commit", ""))
+                self.storage.update_bead(
+                    bead,
+                    event="retried",
+                    summary=f"Requeued blocked bead after corrective bead {latest_done.bead_id} completed",
+                )
+                if reporter:
+                    reporter.bead_deferred(
+                        bead,
+                        f"Requeued after corrective bead {latest_done.bead_id} completed",
+                    )
+                return
+            if (
+                len(corrective_children) < self._followups.max_corrective_attempts
+                and self._followups._can_plan_corrective(bead)
+            ):
+                self._followups._create_corrective_bead(bead, reporter=reporter)
+            else:
+                self._followups._escalate_blocked_bead(bead, reporter=reporter)
+            return
+        if not corrective_children and self._followups._can_plan_corrective(bead):
+            self._followups._create_corrective_bead(bead, reporter=reporter)
+            return
+        if len(corrective_children) >= self._followups.max_corrective_attempts:
+            self._followups._escalate_blocked_bead(bead, reporter=reporter)
 
     # ------------------------------------------------------------------
     # Prompt / context helpers

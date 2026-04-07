@@ -8,7 +8,6 @@ from pathlib import Path
 from ..gitutils import WorktreeManager
 from ..models import (
     BEAD_BLOCKED,
-    BEAD_DONE,
     BEAD_IN_PROGRESS,
     BEAD_READY,
     ExecutionRecord,
@@ -154,41 +153,7 @@ class Scheduler:
                 if reporter:
                     reporter.bead_deferred(bead, "Requeued blocked bead after transient failure")
                 continue
-            corrective_children = self._executor._followups._corrective_children(bead)
-            open_corrective = next(
-                (child for child in corrective_children if child.status in {BEAD_READY, BEAD_IN_PROGRESS}),
-                None,
-            )
-            if open_corrective is not None:
-                continue
-            latest_done = next((child for child in reversed(corrective_children) if child.status == BEAD_DONE), None)
-            if latest_done is not None:
-                if not self._executor._followups._already_retried_after_corrective(bead, latest_done):
-                    bead.status = BEAD_READY
-                    bead.block_reason = ""
-                    bead.metadata["last_corrective_retry_source"] = latest_done.bead_id
-                    bead.metadata["last_corrective_retry_commit"] = str(latest_done.metadata.get("last_commit", ""))
-                    self.storage.update_bead(
-                        bead,
-                        event="retried",
-                        summary=f"Requeued blocked bead after corrective bead {latest_done.bead_id} completed",
-                    )
-                    if reporter:
-                        reporter.bead_deferred(
-                            bead,
-                            f"Requeued after corrective bead {latest_done.bead_id} completed",
-                        )
-                    continue
-                if len(corrective_children) < self.max_corrective_attempts and self._executor._followups._can_plan_corrective(bead):
-                    self._executor._followups._create_corrective_bead(bead, reporter=reporter)
-                else:
-                    self._executor._followups._escalate_blocked_bead(bead, reporter=reporter)
-                continue
-            if not corrective_children and self._executor._followups._can_plan_corrective(bead):
-                self._executor._followups._create_corrective_bead(bead, reporter=reporter)
-                continue
-            if len(corrective_children) >= self.max_corrective_attempts:
-                self._executor._followups._escalate_blocked_bead(bead, reporter=reporter)
+            self._executor.reevaluate_corrective_state(bead, reporter=reporter)
 
     def _repair_invalid_worker_agent_type(self, bead: Bead) -> bool:
         if bead.agent_type in self.runnable_reassign_agents:
@@ -214,23 +179,6 @@ class Scheduler:
                 bead.agent_type = candidate
                 return True
         return False
-
-    def _find_corrective_child(self, bead: Bead) -> Bead | None:
-        recorded = bead.metadata.get("auto_corrective_bead_id", "")
-        if recorded:
-            path = self.storage.bead_path(recorded)
-            if path.exists():
-                return self.storage.load_bead(recorded)
-        expected = f"{bead.bead_id}-{self.corrective_suffix}"
-        path = self.storage.bead_path(expected)
-        if path.exists():
-            return self.storage.load_bead(expected)
-        for candidate in self.storage.list_beads():
-            if candidate.parent_id != bead.bead_id:
-                continue
-            if candidate.metadata.get("auto_corrective_for") == bead.bead_id:
-                return candidate
-        return None
 
     def _find_conflict_reason(self, bead: Bead, active_beads: list[Bead]) -> str:
         for active in active_beads:
