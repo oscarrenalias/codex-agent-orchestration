@@ -1,0 +1,80 @@
+{
+  "bead_id": "B-c18540cf-review",
+  "title": "Review Extract run and merge command modules",
+  "agent_type": "review",
+  "description": "Review implementation for B-c18540cf",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-c18540cf",
+  "dependencies": [
+    "B-c18540cf",
+    "B-c18540cf-test",
+    "B-c18540cf-docs"
+  ],
+  "acceptance_criteria": [],
+  "linked_docs": [
+    "spec-3986e80d"
+  ],
+  "feature_root_id": "B-74969e02",
+  "execution_branch_name": "feature/b-74969e02",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-74969e02",
+  "expected_files": [
+    "src/agent_takt/cli/__init__.py",
+    "src/agent_takt/cli/commands/merge.py",
+    "src/agent_takt/cli/commands/run.py",
+    "src/agent_takt/cli/services.py"
+  ],
+  "expected_globs": [
+    "src/agent_takt/cli/commands/*.py"
+  ],
+  "touched_files": [
+    "src/agent_takt/cli/__init__.py",
+    "src/agent_takt/cli/commands/merge.py",
+    "src/agent_takt/cli/commands/run.py",
+    "src/agent_takt/cli/services.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/cli/__init__.py",
+    "src/agent_takt/cli/commands/merge.py",
+    "src/agent_takt/cli/commands/run.py",
+    "src/agent_takt/cli/services.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "Tests patching `agent_takt.cli.CliSchedulerReporter` for command_run integration tests will fail \u2014 patch target must be updated to `agent_takt.cli.commands.run.CliSchedulerReporter`.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T20:35:40.457199+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
