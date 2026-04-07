@@ -1,0 +1,63 @@
+{
+  "bead_id": "B-f22201b6",
+  "title": "Improve takt telemetry: per-bead breakdown and cost tracking",
+  "agent_type": "developer",
+  "description": "When 'takt telemetry --feature-root <id>' is used, the output shows aggregate stats but no per-bead breakdown. Additionally, cost_usd is never aggregated or displayed in the CLI output, even though it is tracked in telemetry artifacts and rendered in the TUI.\n\nChanges needed (all in src/agent_takt/cli.py):\n\n1. aggregate_telemetry() \u2014 sum cost_usd from telemetry artifacts (use _collect_bead_telemetry per bead) and include total_cost_usd and avg_cost_usd_per_bead in the returned dict.\n\n2. _format_telemetry_table() \u2014 when filters['feature_root'] is set, render a per-bead table showing: bead_id, agent_type, status, wall-clock duration, cost_usd for each bead in the filtered set. Pass the bead list into this function.\n\n3. command_telemetry() \u2014 pass the filtered bead list to _format_telemetry_table so it can render per-bead rows.\n\n4. Add cost lines to the aggregate section of _format_telemetry_table (total cost and avg cost per bead) in both scoped and unscoped views.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": null,
+  "dependencies": [],
+  "acceptance_criteria": [
+    "takt telemetry --feature-root <id> shows a per-bead table with bead_id, agent_type, status, duration, and cost_usd columns",
+    "takt telemetry (unscoped) shows total_cost_usd and avg_cost_usd_per_bead in the aggregate section",
+    "cost_usd values read from telemetry artifacts match what the TUI shows",
+    "takt telemetry --json includes cost fields in the aggregates block"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B-f22201b6",
+  "execution_branch_name": "feature/b-f22201b6",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f22201b6",
+  "expected_files": [
+    "src/agent_takt/cli.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T06:28:08.568808+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {}
+}
