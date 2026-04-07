@@ -3,7 +3,7 @@
   "title": "Split scheduler core coverage into tests/test_scheduler_core.py",
   "agent_type": "developer",
   "description": "Move `run_once()`, bead selection, conflict detection, and lease-management tests out of `tests/test_orchestrator.py` into `tests/test_scheduler_core.py`, keeping assertions intact.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
   "dependencies": [
@@ -29,37 +29,52 @@
   "expected_globs": [
     "tests/test_scheduler*.py"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_orchestrator.py",
+    "tests/test_scheduler_core.py"
+  ],
+  "changed_files": [
+    "tests/test_orchestrator.py",
+    "tests/test_scheduler_core.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Created tests/test_scheduler_core.py with 8 migrated tests: test_ready_beads_respect_dependencies, test_scheduler_defers_overlapping_claims, test_scheduler_allows_non_overlapping_claims_with_capacity, test_scheduler_handles_missing_scope_conservatively_within_same_feature_tree, test_same_feature_tree_non_overlapping_mutations_can_run_in_parallel, test_scheduler_run_once_feature_root_filter_runs_only_selected_tree, test_active_claims_report_in_progress_scope, test_descendants_inherit_feature_root_and_shared_worktree. Removed all 8 from tests/test_orchestrator.py (237 tests remain there).",
+    "remaining": "N/A \u2014 bead scope complete.",
+    "risks": "The 8 migrated tests represent the tightest subset of core.py coverage (loop, selection, conflicts, leases). Other scheduler tests (followups, finalization, correctives, execution) remain in test_orchestrator.py for future migration beads per the spec.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_orchestrator.py",
+      "tests/test_scheduler_core.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify all tests in tests/ pass (pytest tests/ -n auto -q), confirming no assertions were dropped and the new file imports correctly alongside test_orchestrator.py.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "expected_files": [
+      "tests/helpers.py",
+      "tests/test_orchestrator.py",
+      "tests/test_scheduler_core.py"
+    ],
+    "expected_globs": [
+      "tests/test_scheduler*.py"
+    ],
+    "touched_files": [
+      "tests/test_orchestrator.py",
+      "tests/test_scheduler_core.py"
+    ],
+    "conflict_risks": "None \u2014 this bead only modified test files.",
+    "design_decisions": "Selected 8 tests that map directly to core.py's responsibilities (run_once loop, bead selection, conflict detection, lease management). Tests for followup creation, finalization, correctives, and execution remain in test_orchestrator.py for future migration beads (test_scheduler_followups.py, test_scheduler_finalize.py, test_scheduler_execution.py) per the spec plan. test_scheduler_core.py uses SchedulerCoreTests(OrchestratorTests) to inherit the shared setUp/tearDown fixture, matching the pattern established by helpers.py.",
+    "test_coverage_notes": "Tester should run the full suite and confirm: (1) test_scheduler_core.py collects 8 tests and all pass, (2) test_orchestrator.py no longer contains the 8 migrated test names, (3) total test count matches original minus 0 (same assertions, just moved).",
+    "known_limitations": "Only the tightest core subset was migrated in this bead. The remaining scheduler tests in test_orchestrator.py (followups, finalize, execution, correctives) will be split in follow-on beads as described in the spec."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 this bead only modified test files.",
   "branch_name": "feature/b-f6706ed8",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f6706ed8",
-  "lease": {
-    "owner": "developer:B-8b2f7b01",
-    "expires_at": "2026-04-07T17:44:25.897562+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -101,6 +116,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-8b2f7b01/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T17:22:30.724180+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Created tests/test_scheduler_core.py with 8 scheduler core tests covering run_once(), bead selection, conflict detection, and lease management. Removed those same tests from tests/test_orchestrator.py.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -175,7 +197,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Created tests/test_scheduler_core.py with 8 scheduler core tests covering run_once(), bead selection, conflict detection, and lease management. Removed those same tests from tests/test_orchestrator.py.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 1.59487575,
+      "duration_ms": 479941,
+      "duration_api_ms": 469722,
+      "num_turns": 44,
+      "input_tokens": 40,
+      "output_tokens": 28584,
+      "cache_creation_tokens": 92807,
+      "cache_read_tokens": 2726565,
+      "stop_reason": "end_turn",
+      "session_id": "681e2a78-47a9-46ce-a206-e602c396c616",
+      "permission_denials": [],
+      "prompt_chars": 7195,
+      "prompt_lines": 149,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.59487575,
+        "duration_ms": 479941,
+        "duration_api_ms": 469722,
+        "num_turns": 44,
+        "input_tokens": 40,
+        "output_tokens": 28584,
+        "cache_creation_tokens": 92807,
+        "cache_read_tokens": 2726565,
+        "stop_reason": "end_turn",
+        "session_id": "681e2a78-47a9-46ce-a206-e602c396c616",
+        "permission_denials": [],
+        "prompt_chars": 7195,
+        "prompt_lines": 149,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "4f9f8e24d6af5dc57eb3e45d205f8e7af7d5d8fc"
   },
   "labels": []
 }
