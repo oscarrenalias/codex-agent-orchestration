@@ -3,7 +3,7 @@
   "title": "Validate scheduler package split and full test suite",
   "agent_type": "tester",
   "description": "Run targeted and full-suite validation for the package split, checking import compatibility, module/test size constraints, and end-to-end test parity after the scheduler and test decompositions land.",
-  "status": "ready",
+  "status": "blocked",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
   "dependencies": [
@@ -73,7 +73,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "Waiting for corrective bead B-09c5359d-corrective to fix test access paths before retry",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -85,6 +85,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T18:39:01.830137+00:00",
+      "event": "updated",
+      "agent_type": "tester",
+      "summary": "Bead updated via CLI",
       "details": {}
     }
   ],
