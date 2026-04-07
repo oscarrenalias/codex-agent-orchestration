@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-74969e02",
-  "dependencies": [],
+  "dependencies": [
+    "B-15b8cb14",
+    "B-d5497009"
+  ],
   "acceptance_criteria": [
     "`tests/test_orchestrator.py` is deleted only after its CLI coverage has been fully migrated.",
     "No intended CLI or scheduler test coverage is lost during deletion.",
