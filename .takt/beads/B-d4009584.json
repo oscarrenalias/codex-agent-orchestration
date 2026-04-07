@@ -6,7 +6,15 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-af3f17ad",
-  "dependencies": [],
+  "dependencies": [
+    "B-e69881cf",
+    "B-fa9835b8",
+    "B-91ecaadf",
+    "B-9e0bf6cf",
+    "B-e3832e51",
+    "B-1263a509",
+    "B-dcd4f97c"
+  ],
   "acceptance_criteria": [
     "Automated tests cover fresh init manifest generation and rerun behavior when the manifest already exists.",
     "Automated tests cover upgrade outcomes for updated, skipped, new, restored, disabled, and user-added asset cases plus config-key merge output.",
