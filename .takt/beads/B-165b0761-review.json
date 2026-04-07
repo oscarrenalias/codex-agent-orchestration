@@ -3,7 +3,7 @@
   "title": "Review takt init: commit scaffolded files to git after scaffold",
   "agent_type": "review",
   "description": "Review implementation for B-165b0761",
-  "status": "in_progress",
+  "status": "blocked",
   "bead_type": "task",
   "parent_id": "B-165b0761",
   "dependencies": [
@@ -21,44 +21,55 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "docs/onboarding.md",
     "src/agent_takt/onboarding.py",
-    "tests/test_onboarding.py"
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
   ],
   "changed_files": [
-    "docs/onboarding.md",
     "src/agent_takt/onboarding.py",
-    "tests/test_onboarding.py"
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/onboarding.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
-    "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
-    "block_reason": "",
-    "expected_files": [],
+    "completed": "Reviewed onboarding.py commit_scaffold implementation, TestCommitScaffold test suite, and docs/onboarding.md Automatic Git Commit section.",
+    "remaining": "Two issues must be fixed before approval: (1) remove or correct the --max-workers assertion in test_contains_runner; (2) correct the gitignore comment example in docs/onboarding.md.",
+    "risks": "The blocking test bug means the test suite fails in CI. The docs mismatch is low-risk but misleads operators configuring .gitignore manually.",
+    "verdict": "needs_changes",
+    "findings_count": 2,
+    "requires_followup": true,
+    "changed_files": [
+      "src/agent_takt/onboarding.py",
+      "tests/test_onboarding.py",
+      "docs/onboarding.md"
+    ],
+    "updated_docs": [
+      "docs/onboarding.md"
+    ],
+    "next_action": "Create a corrective bead to fix the two issues: (1) remove the spurious --max-workers assertion from test_contains_runner; (2) change the .gitignore example comment in docs/onboarding.md from `# orchestrator` to `# takt`.",
+    "next_agent": "developer",
+    "block_reason": "Finding 1 (BLOCKING): tests/test_onboarding.py line 331 \u2014 `self.assertIn(\"--max-workers 3\", yaml_text)` in TestGenerateConfigYaml.test_contains_runner. generate_config_yaml() only substitutes default_runner and test_command; max_workers is never written to the YAML, and default_config.yaml contains no --max-workers line. This assertion will always fail. Fix: either remove the assertion or (if the intent is to embed a max_workers reminder comment) update generate_config_yaml to inject one. The docs/onboarding.md design note says max_workers is intentionally NOT a config key, so the correct fix is to drop the assertion. Finding 2 (MINOR): docs/onboarding.md line 113 shows the .gitignore section header comment as `# orchestrator` but onboarding.py:591 writes `# takt`. Fix: change the example in docs to show `# takt`.",
+    "expected_files": [
+      "src/agent_takt/onboarding.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/onboarding.py",
+      "tests/test_onboarding.py",
+      "docs/onboarding.md"
+    ],
+    "conflict_risks": "No file-scope conflicts \u2014 only onboarding.py, tests/test_onboarding.py, and docs/onboarding.md are in scope.",
+    "design_decisions": "commit_scaffold correctly uses subprocess.run with check=False and returncode inspection, explicit -- separator before path list, capture_output=True, idempotent .gitkeep creation, and graceful warn-not-raise error handling \u2014 all matching the developer handoff design decisions.",
+    "test_coverage_notes": "TestCommitScaffold class has thorough coverage: happy path, .gitkeep inclusion, templates inclusion, idempotency (warns, does not raise), non-git directory resilience, .takt/beads/ not gitignored, and worktree visibility. Coverage is adequate once the spurious assertion is removed.",
+    "known_limitations": "generate_config_yaml does not embed a max_workers reminder comment in the generated YAML despite docs/onboarding.md implying one is written. This is a pre-existing documentation gap outside this bead's scope."
   },
-  "block_reason": "",
-  "conflict_risks": "No file-scope conflicts \u2014 only `onboarding.py` was modified.",
+  "block_reason": "Finding 1 (BLOCKING): tests/test_onboarding.py line 331 \u2014 `self.assertIn(\"--max-workers 3\", yaml_text)` in TestGenerateConfigYaml.test_contains_runner. generate_config_yaml() only substitutes default_runner and test_command; max_workers is never written to the YAML, and default_config.yaml contains no --max-workers line. This assertion will always fail. Fix: either remove the assertion or (if the intent is to embed a max_workers reminder comment) update generate_config_yaml to inject one. The docs/onboarding.md design note says max_workers is intentionally NOT a config key, so the correct fix is to drop the assertion. Finding 2 (MINOR): docs/onboarding.md line 113 shows the .gitignore section header comment as `# orchestrator` but onboarding.py:591 writes `# takt`. Fix: change the example in docs to show `# takt`.",
+  "conflict_risks": "No file-scope conflicts \u2014 only onboarding.py, tests/test_onboarding.py, and docs/onboarding.md are in scope.",
   "branch_name": "feature/b-165b0761",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-165b0761-review",
-    "expires_at": "2026-04-07T09:44:44.023150+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +110,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-165b0761-review/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T09:17:07.669543+00:00",
+      "event": "blocked",
+      "agent_type": "review",
+      "summary": "needs_changes: 1 blocking test bug (spurious --max-workers assertion) + 1 minor docs/code mismatch in .gitignore comment header",
+      "details": {}
     }
   ],
   "metadata": {
@@ -167,7 +185,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "blocked",
+      "summary": "needs_changes: 1 blocking test bug (spurious --max-workers assertion) + 1 minor docs/code mismatch in .gitignore comment header",
+      "verdict": "needs_changes",
+      "findings_count": 2,
+      "requires_followup": true,
+      "next_agent": "developer",
+      "block_reason": "Finding 1 (BLOCKING): tests/test_onboarding.py line 331 \u2014 `self.assertIn(\"--max-workers 3\", yaml_text)` in TestGenerateConfigYaml.test_contains_runner. generate_config_yaml() only substitutes default_runner and test_command; max_workers is never written to the YAML, and default_config.yaml contains no --max-workers line. This assertion will always fail. Fix: either remove the assertion or (if the intent is to embed a max_workers reminder comment) update generate_config_yaml to inject one. The docs/onboarding.md design note says max_workers is intentionally NOT a config key, so the correct fix is to drop the assertion. Finding 2 (MINOR): docs/onboarding.md line 113 shows the .gitignore section header comment as `# orchestrator` but onboarding.py:591 writes `# takt`. Fix: change the example in docs to show `# takt`."
+    },
+    "telemetry": {
+      "cost_usd": 0.4335915,
+      "duration_ms": 140220,
+      "duration_api_ms": 135596,
+      "num_turns": 13,
+      "input_tokens": 13,
+      "output_tokens": 7288,
+      "cache_creation_tokens": 51930,
+      "cache_read_tokens": 431650,
+      "stop_reason": "end_turn",
+      "session_id": "3626012f-9045-448e-8125-b0e3ca65a259",
+      "permission_denials": [],
+      "prompt_chars": 7255,
+      "prompt_lines": 150,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.4335915,
+        "duration_ms": 140220,
+        "duration_api_ms": 135596,
+        "num_turns": 13,
+        "input_tokens": 13,
+        "output_tokens": 7288,
+        "cache_creation_tokens": 51930,
+        "cache_read_tokens": 431650,
+        "stop_reason": "end_turn",
+        "session_id": "3626012f-9045-448e-8125-b0e3ca65a259",
+        "permission_denials": [],
+        "prompt_chars": 7255,
+        "prompt_lines": 150,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": []
 }
