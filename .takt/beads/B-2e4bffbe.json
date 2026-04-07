@@ -6,7 +6,13 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4bf759f3",
-  "dependencies": [],
+  "dependencies": [
+    "B-05615a16",
+    "B-27be2485",
+    "B-b376325d",
+    "B-e70e5b18",
+    "B-9e1fc964"
+  ],
   "acceptance_criteria": [
     "`onboarding/scaffold.py` contains the scaffold-oriented helpers listed in the spec.",
     "`scaffold_project` continues to work through the package entry point.",
