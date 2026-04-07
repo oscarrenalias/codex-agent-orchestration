@@ -31,8 +31,18 @@
   "expected_globs": [
     "src/agent_takt/onboarding/**"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_console.py",
+    "tests/test_onboarding_assets.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_onboarding_upgrade.py"
+  ],
+  "changed_files": [
+    "tests/test_console.py",
+    "tests/test_onboarding_assets.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_onboarding_upgrade.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
