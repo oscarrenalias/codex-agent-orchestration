@@ -3,7 +3,7 @@
   "title": "Document takt init: create specs/planned subfolder alongside done and drafts",
   "agent_type": "documentation",
   "description": "Update docs for B-d227aba7",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-d227aba7",
   "dependencies": [
@@ -19,40 +19,51 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "docs/onboarding.md",
     "src/agent_takt/onboarding.py"
   ],
   "changed_files": [
+    "docs/onboarding.md",
     "src/agent_takt/onboarding.py"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/onboarding.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Updated docs/onboarding.md: added specs/planned/ to the directory tree listing and to the staged-paths table description. The onboarding.py docstring was already updated by the developer bead.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None. The commit_scaffold function does not write a .gitkeep to specs/planned/, so the empty directory will not be tracked by git after takt init. This is a pre-existing gap in the implementation (out of scope for this docs bead).",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
+    "changed_files": [
+      "docs/onboarding.md",
+      "src/agent_takt/onboarding.py"
+    ],
+    "updated_docs": [
+      "docs/onboarding.md"
+    ],
     "next_action": "",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/onboarding.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
+    "touched_files": [
+      "docs/onboarding.md",
+      "src/agent_takt/onboarding.py"
+    ],
+    "conflict_risks": "None \u2014 docs/onboarding.md is not claimed by any other in-progress bead.",
     "design_decisions": "",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-d227aba7-test",
-  "conflict_risks": "None \u2014 single-line addition in an isolated block of onboarding.py.",
+  "block_reason": "",
+  "conflict_risks": "None \u2014 docs/onboarding.md is not claimed by any other in-progress bead.",
   "branch_name": "feature/b-165b0761",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-165b0761",
-  "lease": {
-    "owner": "documentation:B-d227aba7-docs",
-    "expires_at": "2026-04-07T18:53:07.219299+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -100,6 +111,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-d227aba7-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T18:24:27.873271+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated docs/onboarding.md to document specs/planned/ directory created by takt init",
+      "details": {}
     }
   ],
   "metadata": {
@@ -164,7 +182,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated docs/onboarding.md to document specs/planned/ directory created by takt init",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.2901777,
+      "duration_ms": 78468,
+      "duration_api_ms": 73688,
+      "num_turns": 13,
+      "input_tokens": 14,
+      "output_tokens": 3886,
+      "cache_creation_tokens": 30148,
+      "cache_read_tokens": 395969,
+      "stop_reason": "end_turn",
+      "session_id": "42b07429-47f6-48a6-b799-047dc4949355",
+      "permission_denials": [],
+      "prompt_chars": 6187,
+      "prompt_lines": 143,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.2901777,
+        "duration_ms": 78468,
+        "duration_api_ms": 73688,
+        "num_turns": 13,
+        "input_tokens": 14,
+        "output_tokens": 3886,
+        "cache_creation_tokens": 30148,
+        "cache_read_tokens": 395969,
+        "stop_reason": "end_turn",
+        "session_id": "42b07429-47f6-48a6-b799-047dc4949355",
+        "permission_denials": [],
+        "prompt_chars": 6187,
+        "prompt_lines": 143,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "b03bafb02c79f3527ad4260caab1d1b447b00fa8"
   },
   "labels": []
 }
