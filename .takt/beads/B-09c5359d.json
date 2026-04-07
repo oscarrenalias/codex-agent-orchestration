@@ -3,7 +3,7 @@
   "title": "Validate scheduler package split and full test suite",
   "agent_type": "tester",
   "description": "Run targeted and full-suite validation for the package split, checking import compatibility, module/test size constraints, and end-to-end test parity after the scheduler and test decompositions land.",
-  "status": "in_progress",
+  "status": "blocked",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
   "dependencies": [
@@ -53,48 +53,20 @@
     "tests/test_scheduler*.py"
   ],
   "touched_files": [
-    "src/agent_takt/scheduler.py",
-    "src/agent_takt/scheduler/__init__.py",
-    "src/agent_takt/scheduler/core.py",
-    "src/agent_takt/scheduler/execution.py",
-    "src/agent_takt/scheduler/finalize.py",
-    "src/agent_takt/scheduler/followups.py",
-    "src/agent_takt/scheduler/reporter.py",
-    "tests/helpers.py",
     "tests/test_config_wiring_phase3.py",
     "tests/test_model_override.py",
-    "tests/test_orchestrator.py",
-    "tests/test_scheduler_beads.py",
-    "tests/test_scheduler_core.py",
-    "tests/test_scheduler_execution.py",
-    "tests/test_scheduler_finalize.py",
-    "tests/test_scheduler_followups.py",
-    "uv.lock"
+    "tests/test_scheduler_followups.py"
   ],
   "changed_files": [
-    "src/agent_takt/scheduler.py",
-    "src/agent_takt/scheduler/__init__.py",
-    "src/agent_takt/scheduler/core.py",
-    "src/agent_takt/scheduler/execution.py",
-    "src/agent_takt/scheduler/finalize.py",
-    "src/agent_takt/scheduler/followups.py",
-    "src/agent_takt/scheduler/reporter.py",
-    "tests/helpers.py",
     "tests/test_config_wiring_phase3.py",
     "tests/test_model_override.py",
-    "tests/test_orchestrator.py",
-    "tests/test_scheduler_beads.py",
-    "tests/test_scheduler_core.py",
-    "tests/test_scheduler_execution.py",
-    "tests/test_scheduler_finalize.py",
-    "tests/test_scheduler_followups.py",
-    "uv.lock"
+    "tests/test_scheduler_followups.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "1. Verified `from agent_takt.scheduler import Scheduler, SchedulerReporter, SchedulerResult` resolves correctly. 2. Verified all scheduler source modules are \u2264500 lines (max: followups.py at 492). 3. Ran targeted test suite across the three known-failing files; confirmed 26 failures still present and unchanged from prior run.",
-    "remaining": "26 failing tests need developer fixes: (1) test_scheduler_followups.py (7 tests): add forwarding methods or expose `_executor._followups` delegation for `_populate_shared_followup_touched_files`, `_planner_owned_followup`, `_existing_followups_for` on Scheduler; (2) test_config_wiring_phase3.py (14 tests): update `_read_scheduler_source` to read `scheduler/__init__.py` or concatenate package files, expose `lease_timeout_minutes` on Scheduler, fix `_create_corrective_bead`/`_create_followups` call paths; (3) test_model_override.py (5 tests): fix `_create_followups` calls to use new delegation path.",
-    "risks": "All 26 failures are in test files that directly access private Scheduler methods relocated to sub-managers. These are not regressions in the production scheduler behavior \u2014 only test access paths are broken. The scheduler's public behavior (run_once, scheduling, followups, correctives) remains fully covered by tests/test_orchestrator.py and the new split test files which all pass.",
+    "completed": "Verified public imports (AC #1): PASS. Verified source module line counts \u2264500 (AC #2): PASS. Confirmed 26 test failures are identical to prior run \u2014 no developer fix has landed.",
+    "remaining": "Developer must fix the 26 failing tests: (1) test_scheduler_followups.py (7): add forwarding methods on Scheduler for _populate_shared_followup_touched_files, _planner_owned_followup, _existing_followups_for; (2) test_config_wiring_phase3.py (14): fix _read_scheduler_source to read scheduler package, expose lease_timeout_minutes, fix _create_corrective_bead/_create_followups delegation; (3) test_model_override.py (5): fix _create_followups access path.",
+    "risks": "All 26 failures are test access path regressions only \u2014 production scheduler behavior is unaffected. No new failures have appeared.",
     "verdict": "needs_changes",
     "findings_count": 26,
     "requires_followup": true,
@@ -104,9 +76,9 @@
       "tests/test_scheduler_followups.py"
     ],
     "updated_docs": [],
-    "next_action": "Developer bead must update test_scheduler_followups.py, test_config_wiring_phase3.py, and test_model_override.py to use the new delegation paths. Specifically: (1) add forwarding properties/methods on Scheduler for the 3 FollowupManager methods tested directly; or update tests to access via scheduler._executor._followups; (2) fix _read_scheduler_source() to read from the scheduler package path; (3) expose lease_timeout_minutes on Scheduler; (4) fix _create_followups/_create_corrective_bead access in tests.",
+    "next_action": "Developer bead must update test_scheduler_followups.py, test_config_wiring_phase3.py, and test_model_override.py to use the new delegation paths. Options: (1) add forwarding properties/methods on Scheduler for the FollowupManager methods tested directly; or (2) update tests to access via scheduler._executor._followups. Also fix _read_scheduler_source() to read from the scheduler package path, expose lease_timeout_minutes on Scheduler, and fix _create_followups/_create_corrective_bead access in tests.",
     "next_agent": "developer",
-    "block_reason": "26 failing tests: 7 in test_scheduler_followups.py (FollowupManager methods not forwarded through Scheduler), 14 in test_config_wiring_phase3.py (scheduler.py path hardcoded + lease_timeout_minutes missing + relocated method calls), 5 in test_model_override.py (_create_followups relocated). Full targeted run: 26 failed, 76 passed.",
+    "block_reason": "26 failing tests (unchanged from prior run, no developer fix landed): 7 in test_scheduler_followups.py (FollowupManager methods not forwarded through Scheduler), 14 in test_config_wiring_phase3.py (scheduler.py path hardcoded + lease_timeout_minutes missing + relocated method calls), 5 in test_model_override.py (_create_followups relocated). 76 tests pass.",
     "expected_files": [
       "src/agent_takt/scheduler/__init__.py",
       "src/agent_takt/scheduler/core.py",
@@ -132,19 +104,16 @@
       "tests/test_model_override.py",
       "tests/test_scheduler_followups.py"
     ],
-    "conflict_risks": "test_scheduler_followups.py, test_config_wiring_phase3.py, and test_model_override.py all need developer updates. No source file changes required for the fix.",
-    "design_decisions": "Line count constraint (AC #2, 600-line limit for test files) is exceeded by test_scheduler_followups.py (1165 lines) and test_scheduler_beads.py (791 lines). This is acknowledged as acceptable precedent per the bead's known_limitations field \u2014 these files cannot be split further without artificial fragmentation. Not blocking.",
-    "test_coverage_notes": "AC #1 (public imports): PASS. AC #2 (source module line counts \u2264500): PASS (max 492 for followups.py). AC #2 (test file line counts \u2264600): FAIL for test_scheduler_followups.py (1165) and test_scheduler_beads.py (791) \u2014 acknowledged acceptable in known_limitations. AC #3 (full suite passes): FAIL \u2014 26 regressions. AC #4 (regressions reported): DONE \u2014 all 26 failures precisely identified with root cause.",
-    "known_limitations": "Line count constraint exceeded by test_scheduler_followups.py (1165) and test_scheduler_beads.py (791) \u2014 acceptable per bead's known_limitations. The 26 failures are in test access paths only; underlying production scheduler behavior is not regressed."
+    "conflict_risks": "test_scheduler_followups.py, test_config_wiring_phase3.py, and test_model_override.py all need developer updates. No source file changes required.",
+    "design_decisions": "Line count constraint (AC #2, 600-line limit for test files) is exceeded by test_scheduler_followups.py (1165 lines) and test_scheduler_beads.py (791 lines). Acknowledged as acceptable precedent per the bead's known_limitations field.",
+    "test_coverage_notes": "AC #1 (public imports): PASS. AC #2 (source modules \u2264500 lines): PASS (max 492). AC #2 (test files \u2264600 lines): FAIL for test_scheduler_followups.py and test_scheduler_beads.py \u2014 acknowledged acceptable. AC #3 (full suite passes): FAIL \u2014 26 regressions. AC #4 (regressions reported): DONE.",
+    "known_limitations": "Line count exceeded by test_scheduler_followups.py (1165) and test_scheduler_beads.py (791) \u2014 acceptable per bead known_limitations. All 26 failures are test access path regressions only; production scheduler behavior is not regressed."
   },
-  "block_reason": "",
-  "conflict_risks": "test_scheduler_followups.py, test_config_wiring_phase3.py, and test_model_override.py all need developer updates. No source file changes required for the fix.",
+  "block_reason": "26 failing tests (unchanged from prior run, no developer fix landed): 7 in test_scheduler_followups.py (FollowupManager methods not forwarded through Scheduler), 14 in test_config_wiring_phase3.py (scheduler.py path hardcoded + lease_timeout_minutes missing + relocated method calls), 5 in test_model_override.py (_create_followups relocated). 76 tests pass.",
+  "conflict_risks": "test_scheduler_followups.py, test_config_wiring_phase3.py, and test_model_override.py all need developer updates. No source file changes required.",
   "branch_name": "feature/b-f6706ed8",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f6706ed8",
-  "lease": {
-    "owner": "tester:B-09c5359d",
-    "expires_at": "2026-04-07T18:53:07.445544+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -284,6 +253,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-09c5359d/repo/templates/agents/tester.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T18:25:36.817912+00:00",
+      "event": "blocked",
+      "agent_type": "tester",
+      "summary": "Re-ran targeted validation after developer handoff. No new developer commits are present on the feature branch. All 26 failures are identical to the previous tester run: private Scheduler methods relocated to sub-managers during the package split are not forwarded through Scheduler, breaking direct test access in test_scheduler_followups.py (7), test_config_wiring_phase3.py (14), and test_model_override.py (5). Public API imports pass. All scheduler source modules are \u2264500 lines.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -427,29 +403,29 @@
     },
     "last_agent_result": {
       "outcome": "blocked",
-      "summary": "Ran targeted validation for the scheduler package split. Public API imports pass, all scheduler source modules are \u2264500 lines. 26 test failures remain in test_scheduler_followups.py (7), test_config_wiring_phase3.py (14), and test_model_override.py (5) \u2014 all caused by private methods relocated from Scheduler to sub-managers during the package split that were not forwarded through the public Scheduler interface. Developer fixes required.",
+      "summary": "Re-ran targeted validation after developer handoff. No new developer commits are present on the feature branch. All 26 failures are identical to the previous tester run: private Scheduler methods relocated to sub-managers during the package split are not forwarded through Scheduler, breaking direct test access in test_scheduler_followups.py (7), test_config_wiring_phase3.py (14), and test_model_override.py (5). Public API imports pass. All scheduler source modules are \u2264500 lines.",
       "verdict": "needs_changes",
       "findings_count": 26,
       "requires_followup": true,
       "next_agent": "developer",
-      "block_reason": "26 failing tests: 7 in test_scheduler_followups.py (FollowupManager methods not forwarded through Scheduler), 14 in test_config_wiring_phase3.py (scheduler.py path hardcoded + lease_timeout_minutes missing + relocated method calls), 5 in test_model_override.py (_create_followups relocated). Full targeted run: 26 failed, 76 passed."
+      "block_reason": "26 failing tests (unchanged from prior run, no developer fix landed): 7 in test_scheduler_followups.py (FollowupManager methods not forwarded through Scheduler), 14 in test_config_wiring_phase3.py (scheduler.py path hardcoded + lease_timeout_minutes missing + relocated method calls), 5 in test_model_override.py (_create_followups relocated). 76 tests pass."
     },
     "telemetry": {
-      "cost_usd": 0.22115430000000003,
-      "duration_ms": 221203,
-      "duration_api_ms": 92351,
-      "num_turns": 8,
+      "cost_usd": 0.18230700000000002,
+      "duration_ms": 144436,
+      "duration_api_ms": 76190,
+      "num_turns": 6,
       "input_tokens": 8,
-      "output_tokens": 5466,
-      "cache_creation_tokens": 24166,
-      "cache_read_tokens": 161726,
+      "output_tokens": 3945,
+      "cache_creation_tokens": 20276,
+      "cache_read_tokens": 156910,
       "stop_reason": "end_turn",
-      "session_id": "3ba69718-4efc-4afd-9666-b948d548e5ea",
+      "session_id": "68493237-9028-4659-b255-dc956ab947c3",
       "permission_denials": [],
-      "prompt_chars": 22156,
-      "prompt_lines": 297,
+      "prompt_chars": 22236,
+      "prompt_lines": 277,
       "source": "provider",
-      "attempt": 2
+      "attempt": 3
     },
     "telemetry_history": [
       {
@@ -485,6 +461,23 @@
         "prompt_lines": 297,
         "source": "provider",
         "attempt": 2
+      },
+      {
+        "cost_usd": 0.18230700000000002,
+        "duration_ms": 144436,
+        "duration_api_ms": 76190,
+        "num_turns": 6,
+        "input_tokens": 8,
+        "output_tokens": 3945,
+        "cache_creation_tokens": 20276,
+        "cache_read_tokens": 156910,
+        "stop_reason": "end_turn",
+        "session_id": "68493237-9028-4659-b255-dc956ab947c3",
+        "permission_denials": [],
+        "prompt_chars": 22236,
+        "prompt_lines": 277,
+        "source": "provider",
+        "attempt": 3
       }
     ],
     "auto_corrective_bead_id": "B-09c5359d-corrective"
