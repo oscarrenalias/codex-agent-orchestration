@@ -3,7 +3,7 @@
   "title": "Extract onboarding upgrade evaluation module",
   "agent_type": "developer",
   "description": "Move upgrade decision logic, bundled catalog helpers, and manifest read/write functions into `onboarding/upgrade.py` while preserving existing behavior.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-4bf759f3",
   "dependencies": [
@@ -27,37 +27,51 @@
   "expected_globs": [
     "src/agent_takt/onboarding/**"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/onboarding/__init__.py",
+    "src/agent_takt/onboarding/upgrade.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/onboarding/__init__.py",
+    "src/agent_takt/onboarding/upgrade.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Created `src/agent_takt/onboarding/upgrade.py` with all upgrade evaluation, manifest helpers, and related types. Updated `__init__.py` to remove those sections and re-export the extracted symbols so `cli.py` callsites continue to work unchanged.",
+    "remaining": "N/A",
+    "risks": "None \u2014 all public symbols remain importable from `agent_takt.onboarding` as before; private helpers `_compute_bundled_catalog` and `_sha256_file` used by `cli.py` are also re-exported.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/onboarding/__init__.py",
+      "src/agent_takt/onboarding/upgrade.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify: (1) `evaluate_upgrade_actions` decision table logic for all action types; (2) `write_assets_manifest` / `read_assets_manifest` round-trip; (3) `cli.py` upgrade and asset-track commands import correctly from `.onboarding`; (4) no circular imports between `upgrade.py`, `assets.py`, and `config.py`.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "expected_files": [
+      "src/agent_takt/onboarding/upgrade.py",
+      "src/agent_takt/onboarding/__init__.py"
+    ],
+    "expected_globs": [
+      "src/agent_takt/onboarding/**"
+    ],
+    "touched_files": [
+      "src/agent_takt/onboarding/__init__.py",
+      "src/agent_takt/onboarding/upgrade.py"
+    ],
+    "conflict_risks": "None. `upgrade.py` only imports from `.._assets` (no onboarding siblings), avoiding circular imports. `__init__.py` imports `.upgrade` after `.assets`, `.config`, and `.prompts`, which is safe.",
+    "design_decisions": "Re-exported `_compute_bundled_catalog` and `_sha256_file` (private helpers) from `__init__.py` because `cli.py` imports them directly from `.onboarding`. The alternative \u2014 updating `cli.py` to import from `.onboarding.upgrade` \u2014 was rejected as out of scope for this bead. The upgrade module imports only from `.._assets`, so there is no circular dependency with `assets.py` or `config.py`.",
+    "test_coverage_notes": "Test the full decision table in `evaluate_upgrade_actions`: `update`, `unchanged`, `new`, `restored`, `skipped_user_owned`, `skipped_modified`, `disabled`, `user_added`. Test `write_assets_manifest` filters non-bundled paths and records correct SHA/version/timestamp. Test `read_assets_manifest` returns empty manifest on missing/corrupt file. Regression: verify `scaffold_project` still calls `write_assets_manifest` correctly via the re-export path.",
+    "known_limitations": "N/A"
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-27be2485",
-  "conflict_risks": "",
+  "block_reason": "",
+  "conflict_risks": "None. `upgrade.py` only imports from `.._assets` (no onboarding siblings), avoiding circular imports. `__init__.py` imports `.upgrade` after `.assets`, `.config`, and `.prompts`, which is safe.",
   "branch_name": "feature/b-4bf759f3",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4bf759f3",
-  "lease": {
-    "owner": "developer:B-b376325d",
-    "expires_at": "2026-04-07T20:00:46.817063+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -106,6 +120,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-b376325d/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T19:35:36.766625+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Created `onboarding/upgrade.py` containing all upgrade decision logic: manifest constants/helpers (`_MANIFEST_FILENAME`, `_BUNDLED_ASSET_PREFIXES`, `_USER_OWNED_PREFIXES`, `_sha256_file`, `_is_user_owned`, `_empty_manifest`), manifest I/O functions (`write_assets_manifest`, `read_assets_manifest`), upgrade types (`AssetActionType`, `AssetDecision`), and evaluation functions (`_compute_bundled_catalog`, `evaluate_upgrade_actions`). Updated `__init__.py` to import all extracted symbols from `.upgrade` and removed the now-redundant inline definitions and unused stdlib imports.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -178,7 +199,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Created `onboarding/upgrade.py` containing all upgrade decision logic: manifest constants/helpers (`_MANIFEST_FILENAME`, `_BUNDLED_ASSET_PREFIXES`, `_USER_OWNED_PREFIXES`, `_sha256_file`, `_is_user_owned`, `_empty_manifest`), manifest I/O functions (`write_assets_manifest`, `read_assets_manifest`), upgrade types (`AssetActionType`, `AssetDecision`), and evaluation functions (`_compute_bundled_catalog`, `evaluate_upgrade_actions`). Updated `__init__.py` to import all extracted symbols from `.upgrade` and removed the now-redundant inline definitions and unused stdlib imports.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.6522029999999999,
+      "duration_ms": 282544,
+      "duration_api_ms": 274694,
+      "num_turns": 17,
+      "input_tokens": 16,
+      "output_tokens": 17332,
+      "cache_creation_tokens": 51916,
+      "cache_read_tokens": 658300,
+      "stop_reason": "end_turn",
+      "session_id": "27a99da7-be55-4613-a68a-e4334e5e59dd",
+      "permission_denials": [],
+      "prompt_chars": 7311,
+      "prompt_lines": 153,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.6522029999999999,
+        "duration_ms": 282544,
+        "duration_api_ms": 274694,
+        "num_turns": 17,
+        "input_tokens": 16,
+        "output_tokens": 17332,
+        "cache_creation_tokens": 51916,
+        "cache_read_tokens": 658300,
+        "stop_reason": "end_turn",
+        "session_id": "27a99da7-be55-4613-a68a-e4334e5e59dd",
+        "permission_denials": [],
+        "prompt_chars": 7311,
+        "prompt_lines": 153,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "37638efa96a544391eb5ad02b2f54f5cef0c4a46"
   },
   "labels": []
 }
