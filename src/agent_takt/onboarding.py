@@ -57,7 +57,7 @@ def copy_asset_file(src: Path, dest: Path, *, overwrite: bool = False) -> None:
     shutil.copy2(src, dest)
 
 
-def copy_asset_dir(src: Path, dest: Path, *, overwrite: bool = False) -> None:
+def copy_asset_dir(src: Path, dest: Path, *, overwrite: bool = False) -> list[Path]:
     """Recursively copy a packaged asset directory into *dest*.
 
     The contents of *src* are merged into *dest* (i.e. *dest* itself is not
@@ -69,17 +69,26 @@ def copy_asset_dir(src: Path, dest: Path, *, overwrite: bool = False) -> None:
         dest: Destination directory.  Created if it does not exist.
         overwrite: When ``True``, existing destination files are overwritten.
 
+    Returns:
+        List of destination paths that were written (skipped files are not included).
+
     Raises:
         FileNotFoundError: If *src* does not exist or is not a directory.
     """
     if not src.is_dir():
         raise FileNotFoundError(f"Packaged asset directory not found: {src}")
     dest.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
     for item in src.rglob("*"):
         if item.is_dir():
             continue
         relative = item.relative_to(src)
-        copy_asset_file(item, dest / relative, overwrite=overwrite)
+        dest_file = dest / relative
+        existed = dest_file.exists()
+        copy_asset_file(item, dest_file, overwrite=overwrite)
+        if not existed or overwrite:
+            written.append(dest_file)
+    return written
 
 
 # ---------------------------------------------------------------------------
@@ -227,28 +236,34 @@ def install_templates(project_root: Path, *, overwrite: bool = False) -> list[Pa
     return written
 
 
-def install_agents_skills(project_root: Path, *, overwrite: bool = False) -> None:
+def install_agents_skills(project_root: Path, *, overwrite: bool = False) -> list[Path]:
     """Copy the bundled ``.agents/skills/`` catalog into *project_root*.
 
     Args:
         project_root: Root directory of the target project.
         overwrite: Overwrite existing skill files when ``True``.
+
+    Returns:
+        List of destination paths that were written.
     """
     src = packaged_agents_skills_dir()
     dest = project_root / ".agents" / "skills"
-    copy_asset_dir(src, dest, overwrite=overwrite)
+    return copy_asset_dir(src, dest, overwrite=overwrite)
 
 
-def install_claude_skills(project_root: Path, *, overwrite: bool = False) -> None:
+def install_claude_skills(project_root: Path, *, overwrite: bool = False) -> list[Path]:
     """Copy the bundled ``.claude/skills/`` catalog into *project_root*.
 
     Args:
         project_root: Root directory of the target project.
         overwrite: Overwrite existing skill files when ``True``.
+
+    Returns:
+        List of destination paths that were written.
     """
     src = packaged_claude_skills_dir()
     dest = project_root / ".claude" / "skills"
-    copy_asset_dir(src, dest, overwrite=overwrite)
+    return copy_asset_dir(src, dest, overwrite=overwrite)
 
 
 def install_default_config(project_root: Path, *, overwrite: bool = False) -> Path:
@@ -771,6 +786,7 @@ def commit_scaffold(project_root: Path, console: "ConsoleReporter") -> None:
         "docs/memory/",
         "specs/",
         ".takt/config.yaml",
+        ".takt/assets-manifest.json",
         ".takt/beads/.gitkeep",
         ".gitignore",
     ]
@@ -828,7 +844,10 @@ def scaffold_project(
     5. Seeds ``docs/memory/`` with generic entries.
     6. Updates ``.gitignore``.
     7. Creates ``specs/HOWTO.md`` and ``specs/done/`` directory.
-    8. Commits all scaffolded files to git via :func:`commit_scaffold`.
+    8. Writes ``.takt/assets-manifest.json`` recording installed asset paths and
+       SHA-256 hashes.  If the manifest already exists (i.e. this is a re-run),
+       the existing manifest is left untouched and a notice is printed instead.
+    9. Commits all scaffolded files to git via :func:`commit_scaffold`.
 
     Args:
         project_root: Root of the target git repository.
@@ -851,8 +870,10 @@ def scaffold_project(
 
     # 2. Write config.yaml
     config_path = project_root / ".takt" / "config.yaml"
+    config_written: list[Path] = []
     if not config_path.exists() or overwrite:
         config_path.write_text(generate_config_yaml(answers), encoding="utf-8")
+        config_written = [config_path]
         console.success("Wrote .takt/config.yaml")
     else:
         console.warn("Skipped .takt/config.yaml (already exists)")
@@ -865,9 +886,9 @@ def scaffold_project(
         console.warn("Skipped guardrail templates (already exist; use --overwrite to replace)")
 
     # 4. Copy skill catalogs
-    install_agents_skills(project_root, overwrite=overwrite)
+    written_agents_skills = install_agents_skills(project_root, overwrite=overwrite)
     console.success("Installed .agents/skills/ catalog")
-    install_claude_skills(project_root, overwrite=overwrite)
+    written_claude_skills = install_claude_skills(project_root, overwrite=overwrite)
     console.success("Installed .claude/skills/ catalog")
 
     # 5. Seed memory files
@@ -892,7 +913,23 @@ def scaffold_project(
     else:
         console.warn("Skipped specs/HOWTO.md (already exists)")
 
-    # 8. Commit all scaffolded files to git
+    # 8. Write assets manifest (skipped if one already exists — use `takt upgrade` instead)
+    manifest_path = project_root / _MANIFEST_FILENAME
+    if manifest_path.is_file():
+        console.warn(
+            "assets-manifest.json already exists \u2014 run 'takt upgrade' to update assets"
+        )
+    else:
+        all_installed = (
+            written_templates
+            + written_agents_skills
+            + written_claude_skills
+            + config_written
+        )
+        write_assets_manifest(project_root, all_installed)
+        console.success("Wrote .takt/assets-manifest.json")
+
+    # 9. Commit all scaffolded files to git
     commit_scaffold(project_root, console)
 
     console.emit(
