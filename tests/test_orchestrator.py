@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 import io
 import os
@@ -29,7 +30,7 @@ from agent_takt.cli import (
     command_summary,
     command_tui,
 )
-from agent_takt.config import SchedulerConfig
+from agent_takt.config import OrchestratorConfig, SchedulerConfig, default_config
 from agent_takt.console import ConsoleReporter
 from agent_takt.gitutils import GitError, WorktreeManager
 from agent_takt.graph import MAX_TITLE_LENGTH, render_bead_graph
@@ -1406,7 +1407,9 @@ class OrchestratorTests(unittest.TestCase):
             status=BEAD_DONE,
             metadata={"auto_corrective_for": bead.bead_id},
         )
-        scheduler = Scheduler(self.storage, FakeRunner(results={}), WorktreeManager(self.root, self.storage.worktrees_dir))
+        cfg = default_config()
+        cfg = dataclasses.replace(cfg, scheduler=dataclasses.replace(cfg.scheduler, max_corrective_attempts=2))
+        scheduler = Scheduler(self.storage, FakeRunner(results={}), WorktreeManager(self.root, self.storage.worktrees_dir), config=cfg)
         scheduler.run_once(max_workers=0)
         bead = self.storage.load_bead(bead.bead_id)
         self.assertTrue(bead.metadata.get("needs_human_intervention"))
