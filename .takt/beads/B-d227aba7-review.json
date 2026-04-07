@@ -3,7 +3,7 @@
   "title": "Review takt init: create specs/planned subfolder alongside done and drafts",
   "agent_type": "review",
   "description": "Review implementation for B-d227aba7",
-  "status": "in_progress",
+  "status": "blocked",
   "bead_type": "task",
   "parent_id": "B-d227aba7",
   "dependencies": [
@@ -21,44 +21,55 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "docs/onboarding.md",
     "src/agent_takt/onboarding.py",
-    "tests/test_onboarding.py"
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
   ],
   "changed_files": [
-    "docs/onboarding.md",
     "src/agent_takt/onboarding.py",
-    "tests/test_onboarding.py"
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/onboarding.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
-    "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
-    "block_reason": "",
-    "expected_files": [],
+    "completed": "Reviewed onboarding.py, tests/test_onboarding.py, and docs/onboarding.md against the bead scope.",
+    "remaining": "Fix commit_scaffold() to add specs/planned to gitkeep_dirs; add test assertion for specs/planned/.gitkeep.",
+    "risks": "Without the .gitkeep, specs/planned/ is untracked by git after takt init. An empty git-untracked directory is silently lost on checkout, breaking the scaffolded structure for new users.",
+    "verdict": "needs_changes",
+    "findings_count": 2,
+    "requires_followup": true,
+    "changed_files": [
+      "src/agent_takt/onboarding.py",
+      "tests/test_onboarding.py",
+      "docs/onboarding.md"
+    ],
+    "updated_docs": [
+      "docs/onboarding.md"
+    ],
+    "next_action": "Developer must add specs/planned to gitkeep_dirs in commit_scaffold() (onboarding.py:639) and add a test assertion that specs/planned/.gitkeep exists after scaffold_project().",
+    "next_agent": "developer",
+    "block_reason": "commit_scaffold() (onboarding.py:636-639) creates .gitkeep sentinels for specs/drafts/ and specs/done/ but omits specs/planned/. The directory is created by scaffold_project() at line 770 but will not be git-tracked after the scaffold commit. docs/onboarding.md:174 explicitly documents a .gitkeep in planned/. The test suite also lacks an assertion for specs/planned/.gitkeep.",
+    "expected_files": [
+      "src/agent_takt/onboarding.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
+    "touched_files": [
+      "src/agent_takt/onboarding.py",
+      "tests/test_onboarding.py",
+      "docs/onboarding.md"
+    ],
+    "conflict_risks": "None \u2014 single-line addition in the isolated gitkeep_dirs list of commit_scaffold().",
+    "design_decisions": "Fix is mechanical: add `project_root / \\\"specs\\\" / \\\"planned\\\"` to gitkeep_dirs in commit_scaffold() at onboarding.py:639, matching the existing pattern for specs/drafts and specs/done. Also add test assertion for specs/planned/.gitkeep in the existing scaffold test.",
+    "test_coverage_notes": "Tests confirm specs/planned/ directory creation and idempotency, but do not assert specs/planned/.gitkeep exists.",
     "known_limitations": ""
   },
-  "block_reason": "",
-  "conflict_risks": "None \u2014 single-line addition in an isolated block of onboarding.py.",
+  "block_reason": "commit_scaffold() (onboarding.py:636-639) creates .gitkeep sentinels for specs/drafts/ and specs/done/ but omits specs/planned/. The directory is created by scaffold_project() at line 770 but will not be git-tracked after the scaffold commit. docs/onboarding.md:174 explicitly documents a .gitkeep in planned/. The test suite also lacks an assertion for specs/planned/.gitkeep.",
+  "conflict_risks": "None \u2014 single-line addition in the isolated gitkeep_dirs list of commit_scaffold().",
   "branch_name": "feature/b-165b0761",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-d227aba7-review",
-    "expires_at": "2026-04-07T18:55:42.950442+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +110,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-d227aba7-review/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T18:26:57.662631+00:00",
+      "event": "blocked",
+      "agent_type": "review",
+      "summary": "needs_changes: specs/planned/.gitkeep not created in commit_scaffold(); tests don't cover the gitkeep sentinel",
+      "details": {}
     }
   ],
   "metadata": {
@@ -167,7 +185,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "blocked",
+      "summary": "needs_changes: specs/planned/.gitkeep not created in commit_scaffold(); tests don't cover the gitkeep sentinel",
+      "verdict": "needs_changes",
+      "findings_count": 2,
+      "requires_followup": true,
+      "next_agent": "developer",
+      "block_reason": "commit_scaffold() (onboarding.py:636-639) creates .gitkeep sentinels for specs/drafts/ and specs/done/ but omits specs/planned/. The directory is created by scaffold_project() at line 770 but will not be git-tracked after the scaffold commit. docs/onboarding.md:174 explicitly documents a .gitkeep in planned/. The test suite also lacks an assertion for specs/planned/.gitkeep."
+    },
+    "telemetry": {
+      "cost_usd": 0.23520045,
+      "duration_ms": 72975,
+      "duration_api_ms": 70011,
+      "num_turns": 9,
+      "input_tokens": 2451,
+      "output_tokens": 3905,
+      "cache_creation_tokens": 28173,
+      "cache_read_tokens": 212079,
+      "stop_reason": "end_turn",
+      "session_id": "bdad14bb-6306-437f-b653-280a0343bc4c",
+      "permission_denials": [],
+      "prompt_chars": 6910,
+      "prompt_lines": 150,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.23520045,
+        "duration_ms": 72975,
+        "duration_api_ms": 70011,
+        "num_turns": 9,
+        "input_tokens": 2451,
+        "output_tokens": 3905,
+        "cache_creation_tokens": 28173,
+        "cache_read_tokens": 212079,
+        "stop_reason": "end_turn",
+        "session_id": "bdad14bb-6306-437f-b653-280a0343bc4c",
+        "permission_denials": [],
+        "prompt_chars": 6910,
+        "prompt_lines": 150,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": []
 }
