@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-af3f17ad",
-  "dependencies": [],
+  "dependencies": [
+    "B-d4009584"
+  ],
   "acceptance_criteria": [
     "Docs explain when `.takt/assets-manifest.json` is created and why rerun init should be replaced with `takt upgrade`.",
     "Docs describe `takt upgrade`, `takt upgrade --dry-run`, and `takt asset {mark-owned,unmark-owned,list}` usage and expected outcomes.",
