@@ -100,6 +100,64 @@ For failed bead executions, the artifact's `error` field captures the failure co
 
 Successful executions set `error` to `null`.
 
+## `takt telemetry` CLI Output
+
+The `takt telemetry` command aggregates telemetry across beads. Use `--feature-root` to scope to a single feature tree.
+
+```bash
+uv run takt telemetry                          # all beads, plain text
+uv run takt telemetry --feature-root <id>      # scoped to one feature (enables per-bead table)
+uv run takt telemetry --json                   # JSON output
+uv run takt telemetry --feature-root <id> --json
+```
+
+### Aggregate Fields
+
+When output as JSON, the `aggregates` object includes:
+
+| Field | Description |
+|---|---|
+| `total_beads` | Total number of beads in scope |
+| `done_count` | Beads with status `done` |
+| `avg_wall_clock_seconds` | Mean wall-clock duration across all beads |
+| `p95_wall_clock_seconds` | 95th-percentile wall-clock duration |
+| `avg_turns` | Mean agent turn count |
+| `total_cost_usd` | Sum of `cost_usd` across all beads that have cost data (rounded to 4 decimal places) |
+| `avg_cost_usd_per_bead` | Mean `cost_usd` across beads with cost data (rounded to 4 decimal places) |
+
+Both cost fields are `null` when no beads in scope have `cost_usd` in their telemetry metadata.
+
+### Per-Bead JSON List
+
+Each entry in the `beads` array includes a `cost_usd` field (`null` when unavailable):
+
+```json
+{
+  "bead_id": "B-f22201b6",
+  "agent_type": "developer",
+  "status": "done",
+  "feature_root_id": "B-f22201b6",
+  "wall_clock_seconds": 120.5,
+  "cost_usd": 0.0312
+}
+```
+
+### Per-Bead Breakdown (Plain Text)
+
+When `--feature-root` is provided and output is plain text, a per-bead table is appended after the aggregate summary:
+
+```
+Per-bead breakdown:
+  bead_id               agent_type      status        duration   cost_usd
+  -----------------------------------------------------------------------
+  B-f22201b6            developer       done            120.5s    $0.0312
+  B-f22201b6-test       tester          done             45.2s    $0.0118
+  B-f22201b6-docs       documentation   done             22.1s    $0.0071
+  B-f22201b6-review     review          done             38.4s    $0.0095
+```
+
+Beads without cost or duration data show `-` in the respective column.
+
 ## Key Optimization Signals
 
 The telemetry data captured by the scheduler provides several signals useful for tuning agent performance and controlling costs.
