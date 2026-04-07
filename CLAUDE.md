@@ -24,7 +24,7 @@ src/agent_takt/
     formatting.py Bead list and claims plain-text formatting helpers (format_bead_list_plain, format_claims_plain)
     services.py   Service wiring (make_services, apply_operator_status_update, validate_operator_status_update)
     commands/     Command sub-packages; one module per command group
-      __init__.py Re-exports command_bead
+      __init__.py Re-exports command_bead, _validated_feature_root_id, _resolve_feature_root_id
       bead.py     bead sub-command handler (create, list, show, update, delete, label, unlabel, claims, graph)
       run.py      run command + CliSchedulerReporter (cycle progress reporter for CLI output)
       merge.py    merge command handler
