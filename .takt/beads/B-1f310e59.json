@@ -3,7 +3,7 @@
   "title": "Add help text to all takt subcommands and flags",
   "agent_type": "developer",
   "description": "The top-level 'takt --help' has good one-line descriptions for each command, but all subcommands and their flags are missing help text. Update build_parser() in src/agent_takt/cli.py to add: (1) help= strings on all positional arguments (spec_file, bead_id, etc.); (2) help= strings on all optional flags across every subcommand (plan, run, bead, handoff, retry, merge, summary, tui, telemetry, init); (3) help= strings on all bead sub-subcommand flags (create, show, update, delete, list, claims, graph). Match the tone and style of the existing top-level command descriptions. Do not change any behaviour \u2014 only argparse help strings.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": null,
   "dependencies": [],
@@ -43,9 +43,12 @@
   },
   "block_reason": "Deferred due to file-scope conflict with active bead B-ba88e1d0",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-1f310e59",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-1f310e59",
+  "lease": {
+    "owner": "developer:B-1f310e59",
+    "expires_at": "2026-04-07T06:11:19.194397+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -61,7 +64,46 @@
       "agent_type": "developer",
       "summary": "Deferred due to file-scope conflict with active bead B-ba88e1d0",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T05:41:20.038765+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-07T05:41:20.038782+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {}
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-1f310e59",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "38362370ab2540dd106fcb66f0a52813e498b3d981720c1925f3df2e3b4f91f3",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-1f310e59/home",
+    "runner_backend": "claude"
+  }
 }
