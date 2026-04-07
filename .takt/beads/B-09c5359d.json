@@ -3,7 +3,7 @@
   "title": "Validate scheduler package split and full test suite",
   "agent_type": "tester",
   "description": "Run targeted and full-suite validation for the package split, checking import compatibility, module/test size constraints, and end-to-end test parity after the scheduler and test decompositions land.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
   "dependencies": [
@@ -157,7 +157,7 @@
     "test_coverage_notes": "AC #1 (public imports): PASS. AC #2 (source module line counts \u2264500): PASS (max 492). AC #2 (test file line counts \u2264600): FAIL for test_scheduler_followups.py (1165) and test_scheduler_beads.py (791) \u2014 acknowledged as acceptable in known_limitations. AC #3 (full suite passes): FAIL \u2014 26 regressions. AC #4 (regressions fixed or reported): reported precisely.",
     "known_limitations": "Line count constraint (AC #2, 600-line limit for test files) is exceeded by test_scheduler_followups.py (1165) and test_scheduler_beads.py (791). This is acknowledged as acceptable precedent in the bead's known_limitations field and is not blocking."
   },
-  "block_reason": "26 failing tests: 7 in test_scheduler_followups.py (methods moved to FollowupManager not forwarded through Scheduler), 14 in test_config_wiring_phase3.py (same + scheduler.py path hardcoded + lease_timeout_minutes missing), 5 in test_model_override.py (_create_followups relocated). Full suite: 26 failed, 956 passed.",
+  "block_reason": "",
   "conflict_risks": "test_scheduler_followups.py, test_config_wiring_phase3.py, and test_model_override.py all need updates. No source file changes required.",
   "branch_name": "feature/b-f6706ed8",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f6706ed8",
@@ -215,6 +215,13 @@
       "event": "corrective_planned",
       "agent_type": "tester",
       "summary": "Created corrective bead B-09c5359d-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T18:19:14.352493+00:00",
+      "event": "retried",
+      "agent_type": "tester",
+      "summary": "Requeued blocked bead after transient infrastructure/auth error",
       "details": {}
     }
   ],
