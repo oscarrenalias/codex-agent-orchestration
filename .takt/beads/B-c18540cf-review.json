@@ -31,13 +31,17 @@
     "src/agent_takt/cli/__init__.py",
     "src/agent_takt/cli/commands/merge.py",
     "src/agent_takt/cli/commands/run.py",
-    "src/agent_takt/cli/services.py"
+    "src/agent_takt/cli/services.py",
+    "tests/test_cli_merge.py",
+    "tests/test_cli_run.py"
   ],
   "changed_files": [
     "src/agent_takt/cli/__init__.py",
     "src/agent_takt/cli/commands/merge.py",
     "src/agent_takt/cli/commands/run.py",
-    "src/agent_takt/cli/services.py"
+    "src/agent_takt/cli/services.py",
+    "tests/test_cli_merge.py",
+    "tests/test_cli_run.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
