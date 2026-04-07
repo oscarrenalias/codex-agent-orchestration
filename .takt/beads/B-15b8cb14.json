@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-74969e02",
-  "dependencies": [],
+  "dependencies": [
+    "B-a9267af6",
+    "B-c18540cf"
+  ],
   "acceptance_criteria": [
     "Bead CLI tests live in `tests/test_cli_bead.py`.",
     "Run CLI tests and `CliSchedulerReporter` coverage live in `tests/test_cli_run.py`.",
