@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-af3f17ad",
-  "dependencies": [],
+  "dependencies": [
+    "B-e69881cf",
+    "B-9e0bf6cf"
+  ],
   "acceptance_criteria": [
     "Helpers can determine whether a tracked file is unmodified, locally modified, missing, user-owned, or removed from the current bundle.",
     "Bundled assets removed from the new release are mapped to a `.disabled` action instead of deletion.",
