@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
-  "dependencies": [],
+  "dependencies": [
+    "B-09c5359d"
+  ],
   "acceptance_criteria": [
     "Docs no longer describe `src/agent_takt/scheduler.py` as a single monolithic file.",
     "Docs reference the scheduler package layout and the split scheduler test files accurately.",
