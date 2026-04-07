@@ -109,7 +109,7 @@ specs/
 `.gitignore` is updated automatically with entries for the runtime-only `.takt/` subdirectories. Specifically, `takt init` appends the following block (skipping any lines already present):
 
 ```
-# orchestrator
+# takt
 .takt/worktrees/
 .takt/telemetry/
 .takt/logs/
