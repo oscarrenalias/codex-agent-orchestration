@@ -21,9 +21,13 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "CLAUDE.md",
+    "docs/tui.md",
     "tests/test_merge_safety.py"
   ],
   "changed_files": [
+    "CLAUDE.md",
+    "docs/tui.md",
     "tests/test_merge_safety.py"
   ],
   "updated_docs": [],
