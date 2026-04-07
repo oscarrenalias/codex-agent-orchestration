@@ -1,3 +1,5 @@
+.DS_Store
+**/.DS_Store
 .venv/
 .uv-cache/
 __pycache__/
@@ -20,3 +22,6 @@ dist/
 # APM dependencies
 apm_modules/
 .claude/settings.local.json
+
+# orchestrator
+.takt/agent-runs/
