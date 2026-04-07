@@ -28,6 +28,7 @@
   "execution_branch_name": "feature/b-af3f17ad",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-af3f17ad",
   "expected_files": [
+    "src/agent_takt/cli.py",
     "src/agent_takt/onboarding.py",
     "tests/test_cli_init.py",
     "tests/test_cli_upgrade.py",
@@ -35,9 +36,11 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "src/agent_takt/cli.py",
     "src/agent_takt/onboarding.py"
   ],
   "changed_files": [
+    "src/agent_takt/cli.py",
     "src/agent_takt/onboarding.py"
   ],
   "updated_docs": [],
@@ -62,7 +65,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "Low \u2014 only `src/agent_takt/onboarding.py` touched. Sibling beads working on `cli.py` or other files in this feature tree are unaffected.\nNone \u2014 only `src/agent_takt/onboarding.py` was modified, which is the sole file in this bead's scope.",
+  "conflict_risks": "Low \u2014 only `src/agent_takt/onboarding.py` touched. Sibling beads working on `cli.py` or other files in this feature tree are unaffected.\nNone \u2014 only `src/agent_takt/onboarding.py` was modified, which is the sole file in this bead's scope.\nonboarding.py is also claimed by bead B-e69881cf (manifest schema helpers). That bead is still in ready status and may add write_assets_manifest/read_assets_manifest \u2014 both are already present in the current worktree, so merging should be clean. cli.py is also claimed by B-9e0bf6cf (CLI parser scaffolding) which is also still ready \u2014 the scaffold (parser + stub functions) is already in place, so no conflict expected.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
