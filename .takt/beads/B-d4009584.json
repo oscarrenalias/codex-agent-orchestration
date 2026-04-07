@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-d4009584",
+  "title": "Validate manifest, upgrade, and asset command behavior",
+  "agent_type": "tester",
+  "description": "Add and run focused automated tests covering init-time manifest creation, config merge semantics, upgrade decision handling, dry-run behavior, removed-bundle disabling, and asset ownership command flows.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-af3f17ad",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Automated tests cover fresh init manifest generation and rerun behavior when the manifest already exists.",
+    "Automated tests cover upgrade outcomes for updated, skipped, new, restored, disabled, and user-added asset cases plus config-key merge output.",
+    "Automated tests cover `mark-owned`, `unmark-owned`, `list`, and `--dry-run` behavior without relying on manual verification.",
+    "Test results clearly show the new feature behavior passes in the repository test suite."
+  ],
+  "linked_docs": [
+    "spec-539d4bbe"
+  ],
+  "feature_root_id": "B-af3f17ad",
+  "execution_branch_name": "feature/b-af3f17ad",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-af3f17ad",
+  "expected_files": [
+    "tests/test_onboarding.py",
+    "tests/test_cli_init.py",
+    "tests/test_cli_upgrade.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T12:58:21.062656+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
