@@ -1,0 +1,63 @@
+{
+  "bead_id": "B-8f3f4f65",
+  "title": "Document CLI package split for maintainers",
+  "agent_type": "documentation",
+  "description": "Record the structural refactor in the most relevant maintainer-facing documentation surface available in the repository, focusing on the new CLI package layout and where CLI tests now live. If no dedicated maintainer doc exists, capture the no-external-docs-needed conclusion in the reviewable documentation change.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-74969e02",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Maintainer-facing documentation reflects that CLI code now lives under `src/agent_takt/cli/` and CLI tests are split into dedicated files.",
+    "Documentation makes clear that the refactor is structural only and preserves public CLI behavior.",
+    "If the repository has no suitable docs surface, the bead produces the minimal repository-local documentation artifact or note needed to make that conclusion explicit."
+  ],
+  "linked_docs": [
+    "spec-3986e80d"
+  ],
+  "feature_root_id": "B-74969e02",
+  "execution_branch_name": "feature/b-74969e02",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-74969e02",
+  "expected_files": [],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T20:17:18.138990+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
