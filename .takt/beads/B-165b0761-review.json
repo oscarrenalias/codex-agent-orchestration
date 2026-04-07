@@ -3,7 +3,7 @@
   "title": "Review takt init: commit scaffolded files to git after scaffold",
   "agent_type": "review",
   "description": "Review implementation for B-165b0761",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-165b0761",
   "dependencies": [
@@ -65,7 +65,7 @@
     "test_coverage_notes": "TestCommitScaffold class has thorough coverage: happy path, .gitkeep inclusion, templates inclusion, idempotency (warns, does not raise), non-git directory resilience, .takt/beads/ not gitignored, and worktree visibility. Coverage is adequate once the spurious assertion is removed.",
     "known_limitations": "generate_config_yaml does not embed a max_workers reminder comment in the generated YAML despite docs/onboarding.md implying one is written. This is a pre-existing documentation gap outside this bead's scope."
   },
-  "block_reason": "Finding 1 (BLOCKING): tests/test_onboarding.py line 331 \u2014 `self.assertIn(\"--max-workers 3\", yaml_text)` in TestGenerateConfigYaml.test_contains_runner. generate_config_yaml() only substitutes default_runner and test_command; max_workers is never written to the YAML, and default_config.yaml contains no --max-workers line. This assertion will always fail. Fix: either remove the assertion or (if the intent is to embed a max_workers reminder comment) update generate_config_yaml to inject one. The docs/onboarding.md design note says max_workers is intentionally NOT a config key, so the correct fix is to drop the assertion. Finding 2 (MINOR): docs/onboarding.md line 113 shows the .gitignore section header comment as `# orchestrator` but onboarding.py:591 writes `# takt`. Fix: change the example in docs to show `# takt`.",
+  "block_reason": "",
   "conflict_risks": "No file-scope conflicts \u2014 only onboarding.py, tests/test_onboarding.py, and docs/onboarding.md are in scope.",
   "branch_name": "feature/b-165b0761",
   "worktree_path": "",
@@ -123,6 +123,13 @@
       "event": "corrective_planned",
       "agent_type": "review",
       "summary": "Created corrective bead B-165b0761-review-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T09:18:35.783887+00:00",
+      "event": "retried",
+      "agent_type": "review",
+      "summary": "Requeued blocked bead after corrective bead B-165b0761-review-corrective completed",
       "details": {}
     }
   ],
@@ -238,7 +245,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-165b0761-review-corrective"
+    "auto_corrective_bead_id": "B-165b0761-review-corrective",
+    "last_corrective_retry_source": "B-165b0761-review-corrective",
+    "last_corrective_retry_commit": "b00639678ce8353fd67c4cea9866b68459e98525"
   },
   "labels": []
 }
