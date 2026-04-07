@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4bf759f3",
-  "dependencies": [],
+  "dependencies": [
+    "B-05615a16",
+    "B-27be2485"
+  ],
   "acceptance_criteria": [
     "`onboarding/config.py` contains the config-generation and substitution functions listed in the spec.",
     "Any asset helper usage is routed through module imports instead of duplicated logic.",
