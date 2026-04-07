@@ -20,7 +20,13 @@ uv run takt tui                                   # interactive terminal UI
 src/agent_takt/
   cli.py          CLI dispatch and output formatting
   config.py       YAML config loader + frozen dataclass models
-  scheduler.py    Orchestration loop: leases, conflicts, followups (all params from config)
+  scheduler/      Orchestration loop package: leases, conflicts, followups (all params from config)
+    __init__.py   Re-exports Scheduler, SchedulerReporter, SchedulerResult
+    core.py       Main Scheduler class and scheduling loop
+    execution.py  Bead execution and lease management
+    finalize.py   Bead finalization and status transitions
+    followups.py  Followup bead creation and scope syncing
+    reporter.py   SchedulerReporter: cycle summary formatting
   storage.py      Bead JSON persistence under .takt/beads/ + telemetry artifacts
   models.py       Bead, Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
@@ -106,7 +112,7 @@ After `takt run` completes, the CLI prints a cycle summary and emits a JSON bloc
 
 ## Testing
 
-Tests run via pytest with `FakeRunner` mocking agent execution. Run with:
+Tests run via pytest with `FakeRunner` and `OrchestratorTests` from `tests/helpers.py` mocking agent execution. The scheduler tests are split across `test_scheduler_core.py`, `test_scheduler_execution.py`, `test_scheduler_finalize.py`, `test_scheduler_followups.py`, and `test_scheduler_beads.py`. Run with:
 
 ```bash
 uv run pytest tests/ -n auto -q
