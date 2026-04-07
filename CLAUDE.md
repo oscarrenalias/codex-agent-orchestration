@@ -145,6 +145,26 @@ uv run takt bead delete <id> --force  # delete regardless of status
 
 `bead delete` enforces: bead must exist, have no children, and be in a deletable status (`open`, `ready`, `blocked` without `--force`; `in_progress`, `done`, `handed_off` require `--force`). Deleting a feature root bead also removes the associated Git worktree and feature branch. Artifact directories (`.takt/agent-runs/<id>/`, `.takt/telemetry/<id>/`) are removed. A `bead_deleted` event is appended to `.takt/logs/events.jsonl`.
 
+### Labels
+
+Beads support free-form string labels for grouping and filtering.
+
+```bash
+# Create a bead with one or more labels
+uv run takt bead create --agent developer --title "My task" --description "..." --label urgent --label api
+
+# Add labels to an existing bead (idempotent — safe to repeat)
+uv run takt bead label <id> urgent api
+
+# Remove a single label
+uv run takt bead unlabel <id> urgent
+
+# Filter bead list to beads carrying ALL specified labels
+uv run takt bead list --label urgent --label api
+```
+
+Labels are stored as a `list[str]` on the `Bead` model. Adding a label that is already present is a no-op. The `--label` filter on `bead list` requires every specified label to match (AND semantics).
+
 ---
 
 ## Planning a Spec (Persisting Beads)
