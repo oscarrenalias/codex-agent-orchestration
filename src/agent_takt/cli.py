@@ -616,7 +616,7 @@ def _emit_merge_conflict_bead(
     )
     console.error(
         f"Created merge-conflict bead {conflict_bead.bead_id}. "
-        f"Resolve it then retry: orchestrator merge {retry_bead_id}"
+        f"Resolve it then retry: takt merge {retry_bead_id}"
     )
 
 
@@ -647,7 +647,7 @@ def command_merge(args: argparse.Namespace, storage: RepositoryStorage, console:
     if existing_conflict:
         console.error(
             f"Unresolved merge-conflict bead {existing_conflict.bead_id} exists for this feature. "
-            f"Resolve it first, then retry: orchestrator merge {args.bead_id}"
+            f"Resolve it first, then retry: takt merge {args.bead_id}"
         )
         return 1
 

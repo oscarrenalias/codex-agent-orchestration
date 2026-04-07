@@ -724,7 +724,6 @@ class TestInstallAgentsSkillsSpecManagement(unittest.TestCase):
 # scaffold_project — spec-management skill end-to-end
 # ---------------------------------------------------------------------------
 
-
 class TestScaffoldProjectSpecManagementSkill(unittest.TestCase):
     """Verify scaffold_project installs the spec-management skill using real package data."""
 
