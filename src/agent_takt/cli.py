@@ -259,6 +259,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="Use all defaults without prompting (useful for scripting)",
     )
 
+    upgrade_parser = subparsers.add_parser("upgrade", help="Upgrade takt-managed assets to the current version")
+    upgrade_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
+    upgrade_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="Print what would change without writing any files",
+    )
+
+    asset_parser = subparsers.add_parser("asset", help="Manage asset ownership in the takt manifest")
+    asset_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
+    asset_subparsers = asset_parser.add_subparsers(dest="asset_command", required=True)
+
+    mark_owned_parser = asset_subparsers.add_parser(
+        "mark-owned",
+        help="Mark assets matching a glob as user-owned (skipped by takt upgrade)",
+    )
+    mark_owned_parser.add_argument("glob", help="Glob pattern matching asset paths to mark as user-owned")
+
+    unmark_owned_parser = asset_subparsers.add_parser(
+        "unmark-owned",
+        help="Remove user-owned flag from assets matching a glob",
+    )
+    unmark_owned_parser.add_argument("glob", help="Glob pattern matching asset paths to unmark")
+
+    asset_subparsers.add_parser("list", help="List all tracked assets with modification status and ownership")
+
     return parser
 
 
@@ -1322,15 +1349,46 @@ def command_init(args: argparse.Namespace, console: ConsoleReporter) -> int:
     return 0
 
 
+def command_upgrade(args: argparse.Namespace, console: ConsoleReporter) -> int:
+    """Upgrade takt-managed assets to the current bundled version.
+
+    Reads `.takt/assets-manifest.json`, compares each tracked file against the
+    bundled catalog, and applies the upgrade decision table (update / skip /
+    new / restore).  Also performs a deep key-merge of `.takt/config.yaml`
+    against the bundled defaults.
+
+    Implementation is provided by a downstream bead; this stub ensures the
+    parser entry point and routing are in place.
+    """
+    console.error("takt upgrade is not yet implemented")
+    return 1
+
+
+def command_asset(args: argparse.Namespace, console: ConsoleReporter) -> int:
+    """Manage asset ownership entries in `.takt/assets-manifest.json`.
+
+    Dispatches to mark-owned, unmark-owned, or list sub-subcommands.
+
+    Implementation is provided by a downstream bead; this stub ensures the
+    parser entry point and routing are in place.
+    """
+    console.error(f"takt asset {args.asset_command} is not yet implemented")
+    return 1
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     root = Path(args.root or ".").resolve()
     console = ConsoleReporter()
 
-    # init does not need an existing .takt/ directory — handle before make_services
+    # Commands that do not need an existing .takt/ storage directory
     if args.command == "init":
         return command_init(args, console)
+    if args.command == "upgrade":
+        return command_upgrade(args, console)
+    if args.command == "asset":
+        return command_asset(args, console)
 
     storage, scheduler, planner = make_services(root, runner_backend=args.runner)
 
