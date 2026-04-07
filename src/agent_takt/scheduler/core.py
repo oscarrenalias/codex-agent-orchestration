@@ -5,10 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Protocol
 
-from .gitutils import GitError, WorktreeManager
-from .models import (
+from ..gitutils import GitError, WorktreeManager
+from ..models import (
     BEAD_BLOCKED,
     BEAD_DONE,
     BEAD_IN_PROGRESS,
@@ -22,11 +21,12 @@ from .models import (
     SchedulerResult,
     utc_now,
 )
-from .config import OrchestratorConfig, default_config
-from .prompts import load_guardrail_template
-from .runner import AgentRunner
-from .skills import prepare_isolated_execution_root
-from .storage import RepositoryStorage
+from ..config import OrchestratorConfig, default_config
+from ..prompts import load_guardrail_template
+from ..runner import AgentRunner
+from ..skills import prepare_isolated_execution_root
+from ..storage import RepositoryStorage
+from .reporter import SchedulerReporter
 
 
 REVIEW_TEST_VERDICT_COMPAT_MODE = True
@@ -83,7 +83,7 @@ class Scheduler:
         *,
         max_workers: int = 1,
         feature_root_id: str | None = None,
-        reporter: "SchedulerReporter | None" = None,
+        reporter: SchedulerReporter | None = None,
     ) -> SchedulerResult:
         result = SchedulerResult()
         expired = self.expire_stale_leases()
@@ -126,7 +126,7 @@ class Scheduler:
         self,
         *,
         feature_root_id: str | None,
-        reporter: "SchedulerReporter | None" = None,
+        reporter: SchedulerReporter | None = None,
     ) -> None:
         for bead in self.storage.list_beads():
             if bead.status != BEAD_BLOCKED or bead.lease is not None:
@@ -230,7 +230,7 @@ class Scheduler:
         self,
         bead: Bead,
         *,
-        reporter: "SchedulerReporter | None" = None,
+        reporter: SchedulerReporter | None = None,
     ) -> None:
         # A corrective developer bead can unblock its blocked tester/review parent
         # so the original verification pass reruns against the corrective commit.
@@ -298,7 +298,7 @@ class Scheduler:
                 return candidate
         return None
 
-    def _create_corrective_bead(self, bead: Bead, *, reporter: "SchedulerReporter | None" = None) -> Bead:
+    def _create_corrective_bead(self, bead: Bead, *, reporter: SchedulerReporter | None = None) -> Bead:
         next_agent = bead.handoff_summary.next_agent.strip()
         corrective_agent = next_agent if next_agent in MUTATING_AGENTS else "developer"
         touched_files = list(bead.touched_files or bead.changed_files or bead.expected_files)
@@ -347,7 +347,7 @@ class Scheduler:
             )
         return corrective
 
-    def _escalate_blocked_bead(self, bead: Bead, *, reporter: "SchedulerReporter | None" = None) -> None:
+    def _escalate_blocked_bead(self, bead: Bead, *, reporter: SchedulerReporter | None = None) -> None:
         if bead.metadata.get("needs_human_intervention"):
             return
         bead.metadata["needs_human_intervention"] = True
@@ -362,7 +362,7 @@ class Scheduler:
         if reporter:
             reporter.bead_deferred(bead, "Escalated to human after repeated blocked retries")
 
-    def _process(self, bead: Bead, result: SchedulerResult, *, reporter: "SchedulerReporter | None" = None) -> None:
+    def _process(self, bead: Bead, result: SchedulerResult, *, reporter: SchedulerReporter | None = None) -> None:
         workdir = self.storage.root
         runner_workdir = Path(workdir)
         execution_env: dict[str, str] | None = None
@@ -483,7 +483,7 @@ class Scheduler:
             agent_result.changed_files = sorted(dict.fromkeys([*agent_result.changed_files, *agent_result.touched_files]))
         self._finalize(bead, agent_result, result, reporter=reporter)
 
-    def _finalize(self, bead: Bead, agent_result: AgentRunResult, result: SchedulerResult, *, reporter: "SchedulerReporter | None" = None) -> None:
+    def _finalize(self, bead: Bead, agent_result: AgentRunResult, result: SchedulerResult, *, reporter: SchedulerReporter | None = None) -> None:
         bead.lease = None
         existing_touched_files = list(bead.touched_files)
         existing_changed_files = list(bead.changed_files)
@@ -1185,19 +1185,3 @@ class Scheduler:
         if not wildcard_positions:
             return pattern
         return pattern[:min(wildcard_positions)]
-
-
-class SchedulerReporter(Protocol):
-    def lease_expired(self, bead_id: str) -> None: ...
-
-    def bead_started(self, bead: Bead) -> None: ...
-
-    def worktree_ready(self, bead: Bead, branch_name: str, worktree_path: Path) -> None: ...
-
-    def bead_completed(self, bead: Bead, summary: str, created: list[Bead]) -> None: ...
-
-    def bead_deferred(self, bead: Bead, summary: str) -> None: ...
-
-    def bead_blocked(self, bead: Bead, summary: str) -> None: ...
-
-    def bead_failed(self, bead: Bead, summary: str) -> None: ...
