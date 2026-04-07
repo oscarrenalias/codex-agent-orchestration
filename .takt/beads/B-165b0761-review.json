@@ -157,6 +157,15 @@
       "agent_type": "review",
       "summary": "Worker started",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T09:19:09.797536+00:00",
+      "event": "guardrails_applied",
+      "agent_type": "review",
+      "summary": "Applied guardrails from .takt/agent-runs/B-165b0761-review/repo/templates/agents/review.md",
+      "details": {
+        "template_path": ".takt/agent-runs/B-165b0761-review/repo/templates/agents/review.md"
+      }
     }
   ],
   "metadata": {
@@ -177,7 +186,7 @@
       "agent_type": "review",
       "template_path": ".takt/agent-runs/B-165b0761-review/repo/templates/agents/review.md",
       "template_text": "# Review Guardrails\n\nPrimary responsibility: Inspect code, tests, docs, and acceptance criteria for correctness, completeness, and risk.\n\nAllowed actions:\n- Review only the changed files listed in the bead's touched_files and changed_files fields. Do not read unrelated files.\n- Validate acceptance criteria against the implementation and handoff state.\n- Block with a clear recommendation when the bead actually requires implementation work.\n\nEfficiency constraints:\n- Do not run the test suite. Testing is the tester agent's responsibility.\n- Focus on correctness, completeness, and risk \u2014 not style or formatting.\n- Keep the review concise. If there are no findings, say so and approve promptly.\n\nDisallowed actions:\n- Implement feature work, tests, or docs instead of reporting findings.\n- Rewrite architecture or silently fix issues discovered during review.\n- Mark incomplete work as accepted without evidence.\n\nExpected outputs:\n- Return JSON with `outcome` set to `completed` (reviews always complete; use `verdict` for pass/fail) and `summary` as a one-line description of the review result.\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Treat `verdict` as the review signoff decision: `approved` means the bead can complete, while `needs_changes` means the bead must block for follow-up work.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when no unresolved findings remain.\n- Use `verdict=needs_changes`, set `findings_count` to the unresolved finding count, set `requires_followup=true` unless there is a stronger explicit reason not to, and always include `block_reason` when any required fix remains.\n- Keep `completed`, `remaining`, and `risks` as free-form narrative context only. They inform operators, but they do not override the structured verdict or control scheduler state.\n- Review findings ordered by severity, or an explicit statement that no findings were discovered.\n- Clear blocked handoff details when the task belongs to another agent type.",
-      "captured_at": "2026-04-07T09:14:45.769311+00:00"
+      "captured_at": "2026-04-07T09:19:09.797507+00:00"
     },
     "worker_prompt_context": {
       "bead_id": "B-165b0761-review",
@@ -204,26 +213,38 @@
         "src/agent_takt/onboarding.py",
         "tests/test_onboarding.py"
       ],
-      "conflict_risks": "No file-scope conflicts \u2014 only `onboarding.py` was modified.",
+      "conflict_risks": "No file-scope conflicts \u2014 only onboarding.py, tests/test_onboarding.py, and docs/onboarding.md are in scope.",
       "handoff_summary": {
-        "completed": "",
-        "remaining": "",
-        "risks": "",
-        "verdict": "",
-        "findings_count": 0,
-        "requires_followup": false,
-        "changed_files": [],
-        "updated_docs": [],
-        "next_action": "",
-        "next_agent": "",
-        "block_reason": "",
-        "expected_files": [],
+        "completed": "Reviewed onboarding.py commit_scaffold implementation, TestCommitScaffold test suite, and docs/onboarding.md Automatic Git Commit section.",
+        "remaining": "Two issues must be fixed before approval: (1) remove or correct the --max-workers assertion in test_contains_runner; (2) correct the gitignore comment example in docs/onboarding.md.",
+        "risks": "The blocking test bug means the test suite fails in CI. The docs mismatch is low-risk but misleads operators configuring .gitignore manually.",
+        "verdict": "needs_changes",
+        "findings_count": 2,
+        "requires_followup": true,
+        "changed_files": [
+          "src/agent_takt/onboarding.py",
+          "tests/test_onboarding.py",
+          "docs/onboarding.md"
+        ],
+        "updated_docs": [
+          "docs/onboarding.md"
+        ],
+        "next_action": "Create a corrective bead to fix the two issues: (1) remove the spurious --max-workers assertion from test_contains_runner; (2) change the .gitignore example comment in docs/onboarding.md from `# orchestrator` to `# takt`.",
+        "next_agent": "developer",
+        "block_reason": "Finding 1 (BLOCKING): tests/test_onboarding.py line 331 \u2014 `self.assertIn(\"--max-workers 3\", yaml_text)` in TestGenerateConfigYaml.test_contains_runner. generate_config_yaml() only substitutes default_runner and test_command; max_workers is never written to the YAML, and default_config.yaml contains no --max-workers line. This assertion will always fail. Fix: either remove the assertion or (if the intent is to embed a max_workers reminder comment) update generate_config_yaml to inject one. The docs/onboarding.md design note says max_workers is intentionally NOT a config key, so the correct fix is to drop the assertion. Finding 2 (MINOR): docs/onboarding.md line 113 shows the .gitignore section header comment as `# orchestrator` but onboarding.py:591 writes `# takt`. Fix: change the example in docs to show `# takt`.",
+        "expected_files": [
+          "src/agent_takt/onboarding.py"
+        ],
         "expected_globs": [],
-        "touched_files": [],
-        "conflict_risks": "",
-        "design_decisions": "",
-        "test_coverage_notes": "",
-        "known_limitations": ""
+        "touched_files": [
+          "src/agent_takt/onboarding.py",
+          "tests/test_onboarding.py",
+          "docs/onboarding.md"
+        ],
+        "conflict_risks": "No file-scope conflicts \u2014 only onboarding.py, tests/test_onboarding.py, and docs/onboarding.md are in scope.",
+        "design_decisions": "commit_scaffold correctly uses subprocess.run with check=False and returncode inspection, explicit -- separator before path list, capture_output=True, idempotent .gitkeep creation, and graceful warn-not-raise error handling \u2014 all matching the developer handoff design decisions.",
+        "test_coverage_notes": "TestCommitScaffold class has thorough coverage: happy path, .gitkeep inclusion, templates inclusion, idempotency (warns, does not raise), non-git directory resilience, .takt/beads/ not gitignored, and worktree visibility. Coverage is adequate once the spurious assertion is removed.",
+        "known_limitations": "generate_config_yaml does not embed a max_workers reminder comment in the generated YAML despite docs/onboarding.md implying one is written. This is a pre-existing documentation gap outside this bead's scope."
       }
     },
     "last_agent_result": {
