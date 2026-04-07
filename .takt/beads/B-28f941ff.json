@@ -3,7 +3,7 @@
   "title": "Split scheduler execution coverage into tests/test_scheduler_execution.py",
   "agent_type": "developer",
   "description": "Move `_process()` coverage for worktree setup, skill isolation, guardrail loading, and agent invocation into `tests/test_scheduler_execution.py`.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
   "dependencies": [
@@ -27,37 +27,51 @@
   "expected_globs": [
     "tests/test_scheduler*.py"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_orchestrator.py",
+    "tests/test_scheduler_execution.py"
+  ],
+  "changed_files": [
+    "tests/test_orchestrator.py",
+    "tests/test_scheduler_execution.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Created `tests/test_scheduler_execution.py` with a `SchedulerExecutionTests` class extending `OrchestratorTests`. Migrated 12 tests covering worktree setup, git failure handling, agent invocation result persistence, guardrail metadata capture, and role-violation block handoff details. Removed all 12 tests from `tests/test_orchestrator.py`. Both files pass syntax checks.",
+    "remaining": "N/A",
+    "risks": "None \u2014 pure test migration with no changes to source code. All assertions preserved verbatim.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_orchestrator.py",
+      "tests/test_scheduler_execution.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester should verify all migrated tests pass in the new file and that the removed tests are no longer present in test_orchestrator.py.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "expected_files": [
+      "tests/test_orchestrator.py",
+      "tests/test_scheduler_execution.py"
+    ],
+    "expected_globs": [
+      "tests/test_scheduler*.py"
+    ],
+    "touched_files": [
+      "tests/test_orchestrator.py",
+      "tests/test_scheduler_execution.py"
+    ],
+    "conflict_risks": "None. Only test files were modified; no source code was touched.",
+    "design_decisions": "Migrated exactly the tests described in the bead: worktree setup (WorktreeManager branch/directory creation, UUID branch naming, hyphenated path), git failure blocking (git unavailable, auto-commit failure), feature worktree routing for review beads, git-detected touched file persistence, guardrail metadata capture, and role-violation blocked-bead handoff preservation. `test_cli_bead_show_exposes_guardrail_template_context` was deliberately left in `test_orchestrator.py` \u2014 it exercises the CLI layer (`command_bead`), not the raw execution path, and is more naturally grouped with the other CLI tests there.",
+    "test_coverage_notes": "Tester should run `uv run pytest tests/test_scheduler_execution.py tests/test_scheduler_core.py tests/test_orchestrator.py -n auto -q` to confirm all three files pass and that no tests are accidentally duplicated or lost.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None. Only test files were modified; no source code was touched.",
   "branch_name": "feature/b-f6706ed8",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f6706ed8",
-  "lease": {
-    "owner": "developer:B-28f941ff",
-    "expires_at": "2026-04-07T17:52:38.257860+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +113,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-28f941ff/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T17:27:06.550582+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Created `tests/test_scheduler_execution.py` with 12 execution-path tests migrated from `tests/test_orchestrator.py`. The new file covers worktree setup (5 tests), git failure blocking (2 tests), agent invocation result persistence (1 test), guardrail loading (3 tests), and role-violation blocked-bead handling (1 test). The legacy orchestrator file no longer carries these tests.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -171,7 +192,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Created `tests/test_scheduler_execution.py` with 12 execution-path tests migrated from `tests/test_orchestrator.py`. The new file covers worktree setup (5 tests), git failure blocking (2 tests), agent invocation result persistence (1 test), guardrail loading (3 tests), and role-violation blocked-bead handling (1 test). The legacy orchestrator file no longer carries these tests.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.6654463500000001,
+      "duration_ms": 262854,
+      "duration_api_ms": 255143,
+      "num_turns": 23,
+      "input_tokens": 19,
+      "output_tokens": 14470,
+      "cache_creation_tokens": 50084,
+      "cache_read_tokens": 754809,
+      "stop_reason": "end_turn",
+      "session_id": "f17c962d-625e-4e39-b404-a636adaf1ee0",
+      "permission_denials": [],
+      "prompt_chars": 7135,
+      "prompt_lines": 147,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.6654463500000001,
+        "duration_ms": 262854,
+        "duration_api_ms": 255143,
+        "num_turns": 23,
+        "input_tokens": 19,
+        "output_tokens": 14470,
+        "cache_creation_tokens": 50084,
+        "cache_read_tokens": 754809,
+        "stop_reason": "end_turn",
+        "session_id": "f17c962d-625e-4e39-b404-a636adaf1ee0",
+        "permission_denials": [],
+        "prompt_chars": 7135,
+        "prompt_lines": 147,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "fe5c8933149cd104967eeac30a761d24d05340b1"
   },
   "labels": []
 }
