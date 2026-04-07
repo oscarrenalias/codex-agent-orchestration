@@ -3,7 +3,7 @@
   "title": "Document Improve merge reliability: resolve strategy and configurable conflict cap",
   "agent_type": "documentation",
   "description": "Update docs for B-6f8234c0",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-6f8234c0",
   "dependencies": [
@@ -20,42 +20,54 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/config.py",
-    "src/agent_takt/gitutils.py"
+    "CLAUDE.md",
+    "docs/multi-backend-agents.md"
   ],
   "changed_files": [
-    "src/agent_takt/config.py",
-    "src/agent_takt/gitutils.py"
+    "CLAUDE.md",
+    "docs/multi-backend-agents.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md",
+    "docs/multi-backend-agents.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Updated two documentation files to reflect the raised corrective attempt cap (5) and the resolve merge strategy used in merge_branch.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None \u2014 changes are purely documentation; no runtime behavior altered.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "CLAUDE.md",
+      "docs/multi-backend-agents.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md",
+      "docs/multi-backend-agents.md"
+    ],
+    "next_action": "Proceed to review bead.",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/config.py",
+      "src/agent_takt/gitutils.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
+    "touched_files": [
+      "CLAUDE.md",
+      "docs/multi-backend-agents.md"
+    ],
+    "conflict_risks": "None \u2014 documentation-only changes with no overlap with sibling beads.",
+    "design_decisions": "merge_branch uses -s resolve to prefer fast three-way resolution over recursive, reducing spurious conflicts during feature merges. max_corrective_attempts raised to 5 to give transient-failure retries more headroom before escalating to the operator.",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-6f8234c0-test",
-  "conflict_risks": "None \u2014 changes are localized to merge invocation and a scalar default value; no shared state with sibling beads.",
+  "block_reason": "",
+  "conflict_risks": "None \u2014 documentation-only changes with no overlap with sibling beads.",
   "branch_name": "feature/b-6f8234c0",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-6f8234c0",
-  "lease": {
-    "owner": "documentation:B-6f8234c0-docs",
-    "expires_at": "2026-04-07T06:02:56.286833+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -103,6 +115,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-6f8234c0-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-07T05:33:54.818635+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated max_corrective_attempts default from 2 to 5 in CLAUDE.md and docs/multi-backend-agents.md; merge_branch now uses -s resolve strategy (no doc prose needed \u2014 internal git detail).",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,6 +188,51 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated max_corrective_attempts default from 2 to 5 in CLAUDE.md and docs/multi-backend-agents.md; merge_branch now uses -s resolve strategy (no doc prose needed \u2014 internal git detail).",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.21675989999999998,
+      "duration_ms": 55707,
+      "duration_api_ms": 48277,
+      "num_turns": 12,
+      "input_tokens": 13,
+      "output_tokens": 2792,
+      "cache_creation_tokens": 21776,
+      "cache_read_tokens": 310603,
+      "stop_reason": "end_turn",
+      "session_id": "3cb86112-e2a9-4116-9970-197419d9985b",
+      "permission_denials": [],
+      "prompt_chars": 6329,
+      "prompt_lines": 146,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.21675989999999998,
+        "duration_ms": 55707,
+        "duration_api_ms": 48277,
+        "num_turns": 12,
+        "input_tokens": 13,
+        "output_tokens": 2792,
+        "cache_creation_tokens": 21776,
+        "cache_read_tokens": 310603,
+        "stop_reason": "end_turn",
+        "session_id": "3cb86112-e2a9-4116-9970-197419d9985b",
+        "permission_denials": [],
+        "prompt_chars": 6329,
+        "prompt_lines": 146,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   }
 }
