@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
-  "dependencies": [],
+  "dependencies": [
+    "B-e4af76c0"
+  ],
   "acceptance_criteria": [
     "`src/agent_takt/scheduler/core.py` contains only the intended core-loop responsibilities.",
     "No scheduler package module exceeds 500 lines.",
