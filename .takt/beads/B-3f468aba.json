@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-9b67fe9f",
-  "dependencies": [],
+  "dependencies": [
+    "B-d2482bc2"
+  ],
   "acceptance_criteria": [
     "Rendering helpers such as `render_tree_panel()`, `render_detail_panel()`, `format_detail_panel()`, and `format_help_overlay()` are relocated to `src/agent_takt/tui/render.py`.",
     "Rendering imports follow the intended dependency direction and remain cycle-free.",
