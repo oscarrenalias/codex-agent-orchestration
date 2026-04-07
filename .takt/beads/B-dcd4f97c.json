@@ -1,0 +1,66 @@
+{
+  "bead_id": "B-dcd4f97c",
+  "title": "Implement asset ownership management commands",
+  "agent_type": "developer",
+  "description": "Implement `command_asset()` subcommands for `mark-owned`, `unmark-owned`, and `list`, updating manifest ownership flags by glob and reporting tracked asset ownership and modification status consistently with upgrade logic.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-af3f17ad",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`mark-owned` sets `user_owned: true` for all matched tracked assets and leaves unmatched paths untouched.",
+    "`unmark-owned` clears `user_owned` for matched tracked assets so bundled upgrade behavior resumes.",
+    "`list` prints tracked assets with ownership and modification status consistent with the manifest and current file state.",
+    "Asset ownership commands preserve user-added tracked files as `source: user` and `user_owned: true`."
+  ],
+  "linked_docs": [
+    "spec-539d4bbe"
+  ],
+  "feature_root_id": "B-af3f17ad",
+  "execution_branch_name": "feature/b-af3f17ad",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-af3f17ad",
+  "expected_files": [
+    "src/agent_takt/cli.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T12:58:20.729679+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
