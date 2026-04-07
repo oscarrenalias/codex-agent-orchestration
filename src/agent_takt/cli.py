@@ -1015,6 +1015,15 @@ def _bead_turns(storage: RepositoryStorage, bead_id: str) -> int | None:
     return total if found_any else None
 
 
+def _bead_cost_usd(bead: Bead) -> float | None:
+    """Return cost_usd for a bead from its lightweight telemetry metadata."""
+    tel = bead.metadata.get("telemetry") if bead.metadata else None
+    if tel is None:
+        return None
+    cost = tel.get("cost_usd")
+    return float(cost) if cost is not None else None
+
+
 def _percentile(values: list[float], p: float) -> float | None:
     """Compute the p-th percentile of a sorted list of values (linear interpolation)."""
     if not values:
@@ -1042,6 +1051,7 @@ def aggregate_telemetry(
     by_agent_type: Counter[str] = Counter()
     wall_clock_values: list[float] = []
     turns_values: list[int] = []
+    cost_usd_values: list[float] = []
     retry_count = 0
     corrective_count = 0
     merge_conflict_count = 0
@@ -1059,6 +1069,10 @@ def aggregate_telemetry(
         turns = _bead_turns(storage, bead.bead_id)
         if turns is not None:
             turns_values.append(turns)
+
+        cost = _bead_cost_usd(bead)
+        if cost is not None:
+            cost_usd_values.append(cost)
 
         if bead.retries > 0:
             retry_count += 1
@@ -1080,6 +1094,8 @@ def aggregate_telemetry(
     avg_wc = sum(wall_clock_values) / len(wall_clock_values) if wall_clock_values else None
     p95_wc = _percentile(wall_clock_values, 95)
     avg_turns = sum(turns_values) / len(turns_values) if turns_values else None
+    total_cost = sum(cost_usd_values) if cost_usd_values else None
+    avg_cost = total_cost / len(cost_usd_values) if cost_usd_values else None
 
     return {
         "total_beads": total,
@@ -1093,10 +1109,12 @@ def aggregate_telemetry(
         "merge_conflict_bead_count": merge_conflict_count,
         "timeout_block_count": timeout_block_count,
         "transient_block_count": transient_block_count,
+        "total_cost_usd": round(total_cost, 4) if total_cost is not None else None,
+        "avg_cost_usd_per_bead": round(avg_cost, 4) if avg_cost is not None else None,
     }
 
 
-def _format_telemetry_table(data: dict, console: ConsoleReporter) -> None:
+def _format_telemetry_table(data: dict, console: ConsoleReporter, beads: list | None = None) -> None:
     """Render aggregated telemetry as a human-readable plain-text report."""
     filters = data["filters"]
     agg = data["aggregates"]
@@ -1155,6 +1173,38 @@ def _format_telemetry_table(data: dict, console: ConsoleReporter) -> None:
     lines.append(f"Merge-conflict    : {agg['merge_conflict_bead_count']}")
     lines.append(f"Timeout blocks    : {agg['timeout_block_count']}")
     lines.append(f"Transient blocks  : {agg['transient_block_count']}")
+
+    total_cost = agg.get("total_cost_usd")
+    avg_cost = agg.get("avg_cost_usd_per_bead")
+    lines.append(f"Total cost        : {f'${total_cost:.4f}' if total_cost is not None else 'N/A'}")
+    lines.append(f"Avg cost/bead     : {f'${avg_cost:.4f}' if avg_cost is not None else 'N/A'}")
+
+    if beads and filters.get("feature_root"):
+        lines.append("")
+        lines.append("Per-bead breakdown:")
+        col_w = {"bead_id": 20, "agent_type": 14, "status": 12, "duration": 10, "cost_usd": 10}
+        header_row = (
+            f"  {'bead_id':<{col_w['bead_id']}}"
+            f"  {'agent_type':<{col_w['agent_type']}}"
+            f"  {'status':<{col_w['status']}}"
+            f"  {'duration':>{col_w['duration']}}"
+            f"  {'cost_usd':>{col_w['cost_usd']}}"
+        )
+        sep = "  " + "-" * (sum(col_w.values()) + 2 * (len(col_w) - 1))
+        lines.append(header_row)
+        lines.append(sep)
+        for b in beads:
+            wc = _bead_wall_clock_seconds(b)
+            cost = _bead_cost_usd(b)
+            dur_str = f"{wc:.1f}s" if wc is not None else "-"
+            cost_str = f"${cost:.4f}" if cost is not None else "-"
+            lines.append(
+                f"  {b.bead_id:<{col_w['bead_id']}}"
+                f"  {b.agent_type:<{col_w['agent_type']}}"
+                f"  {b.status:<{col_w['status']}}"
+                f"  {dur_str:>{col_w['duration']}}"
+                f"  {cost_str:>{col_w['cost_usd']}}"
+            )
 
     console.emit("\n".join(lines))
 
@@ -1218,6 +1268,7 @@ def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, cons
                 "status": b.status,
                 "feature_root_id": b.feature_root_id,
                 "wall_clock_seconds": _bead_wall_clock_seconds(b),
+                "cost_usd": _bead_cost_usd(b),
             }
             for b in beads
         ],
@@ -1226,7 +1277,7 @@ def command_telemetry(args: argparse.Namespace, storage: RepositoryStorage, cons
     if getattr(args, "output_json", False):
         console.dump_json(result)
     else:
-        _format_telemetry_table(result, console)
+        _format_telemetry_table(result, console, beads=beads if args.feature_root else None)
 
     return 0
 
