@@ -3,7 +3,7 @@
   "title": "Review takt init: create specs/planned subfolder alongside done and drafts",
   "agent_type": "review",
   "description": "Review implementation for B-d227aba7",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-d227aba7",
   "dependencies": [
@@ -65,7 +65,7 @@
     "test_coverage_notes": "Tests confirm specs/planned/ directory creation and idempotency, but do not assert specs/planned/.gitkeep exists.",
     "known_limitations": ""
   },
-  "block_reason": "commit_scaffold() (onboarding.py:636-639) creates .gitkeep sentinels for specs/drafts/ and specs/done/ but omits specs/planned/. The directory is created by scaffold_project() at line 770 but will not be git-tracked after the scaffold commit. docs/onboarding.md:174 explicitly documents a .gitkeep in planned/. The test suite also lacks an assertion for specs/planned/.gitkeep.",
+  "block_reason": "",
   "conflict_risks": "None \u2014 single-line addition in the isolated gitkeep_dirs list of commit_scaffold().",
   "branch_name": "feature/b-165b0761",
   "worktree_path": "",
@@ -123,6 +123,13 @@
       "event": "corrective_planned",
       "agent_type": "review",
       "summary": "Created corrective bead B-d227aba7-review-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T18:28:35.733565+00:00",
+      "event": "retried",
+      "agent_type": "review",
+      "summary": "Requeued blocked bead after corrective bead B-d227aba7-review-corrective completed",
       "details": {}
     }
   ],
@@ -238,7 +245,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-d227aba7-review-corrective"
+    "auto_corrective_bead_id": "B-d227aba7-review-corrective",
+    "last_corrective_retry_source": "B-d227aba7-review-corrective",
+    "last_corrective_retry_commit": "f7a1f8f504eac207ef54c4929d49060e18bc3683"
   },
   "labels": []
 }
