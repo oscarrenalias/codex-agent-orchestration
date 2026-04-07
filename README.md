@@ -87,6 +87,11 @@ takt merge <bead_id>                     # merge a done feature
 takt merge <bead_id> --skip-rebase       # skip merge-main preflight
 takt merge <bead_id> --skip-tests        # skip test gate
 takt tui                                 # interactive terminal UI
+takt upgrade                             # upgrade takt-managed assets to current bundled version
+takt upgrade --dry-run                   # preview what upgrade would change without writing
+takt asset list                          # show all tracked assets and their status
+takt asset mark-owned <glob>             # protect matching assets from future upgrades
+takt asset unmark-owned <glob>           # re-enable upgrade management for matching assets
 ```
 
 ### Creating Beads Directly

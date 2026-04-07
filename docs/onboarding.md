@@ -77,12 +77,13 @@ After a successful run the following structure is added to your repository:
 
 ```
 .takt/
-  config.yaml          # Generated from your prompt answers; edit to customise
-  beads/               # Bead JSON state (version-controlled)
-  logs/                # Event log (runtime, gitignored)
-  worktrees/           # Feature worktrees (runtime, gitignored)
-  telemetry/           # Telemetry artifacts (runtime, gitignored)
-  agent-runs/          # Per-bead agent outputs (runtime, gitignored)
+  config.yaml              # Generated from your prompt answers; edit to customise
+  assets-manifest.json     # SHA-256 fingerprints of all installed bundled assets
+  beads/                   # Bead JSON state (version-controlled)
+  logs/                    # Event log (runtime, gitignored)
+  worktrees/               # Feature worktrees (runtime, gitignored)
+  telemetry/               # Telemetry artifacts (runtime, gitignored)
+  agent-runs/              # Per-bead agent outputs (runtime, gitignored)
 
 templates/
   agents/              # Guardrail templates: planner.md, developer.md, tester.md, …
@@ -105,6 +106,22 @@ specs/
   done/                # Archive directory for completed specs
   drafts/              # Working directory for draft specs
 ```
+
+### The Assets Manifest
+
+`takt init` records a SHA-256 fingerprint of every bundled file it installs into `.takt/assets-manifest.json`. This manifest is the reference point that `takt upgrade` uses to determine what has changed between takt versions.
+
+Each tracked entry records three fields:
+
+| Field | Description |
+|-------|-------------|
+| `sha256` | SHA-256 of the file as installed |
+| `source` | `"bundled"` (installed by takt) or `"user"` (added directly by you) |
+| `user_owned` | `true` means the file will never be overwritten by `takt upgrade` |
+
+**Guardrail templates** (`templates/agents/*.md`) are marked `user_owned: true` at install time because `takt init` substitutes project-specific placeholders into them. Their on-disk content always differs from the bundled source, so automatic upgrades would overwrite your customisations. You can customise them freely without risk of a future `takt upgrade` reverting your changes.
+
+If the manifest already exists when you run `takt init` again (for example to add a new file), the manifest is left untouched and a notice is printed directing you to run `takt upgrade` instead.
 
 `.gitignore` is updated automatically with entries for the runtime-only `.takt/` subdirectories. Specifically, `takt init` appends the following block (skipping any lines already present):
 
@@ -177,16 +194,102 @@ The following paths are staged and committed:
 
 If nothing has changed (e.g. `--overwrite` was not passed and all files already existed), git will report nothing to commit and the commit step is skipped with a warning — this is expected and harmless.
 
+## Keeping Assets Up to Date
+
+When you update the `agent-takt` package, bundled skill files and other assets may have changed. Running `takt init` again is **not** the right way to pick up these changes — it skips files that already exist and would silently leave you on older versions.
+
+Use `takt upgrade` instead:
+
+```bash
+takt upgrade
+```
+
+This reads `.takt/assets-manifest.json`, compares every tracked file against the current bundled catalog, and applies the appropriate action for each file.
+
+### What `takt upgrade` Does
+
+| Condition | Action | Output label |
+|-----------|--------|--------------|
+| File unchanged since install; bundle matches disk | Skip silently | `[up-to-date]` in dry-run only |
+| File unchanged since install; bundle has a newer version | Overwrite with bundle | `[updated]` |
+| File present in bundle but absent from manifest (new in this release) | Install | `[new]` |
+| File tracked in manifest, still in bundle, but deleted from disk | Restore from bundle | `[restored]` |
+| File tracked in manifest but **removed** from the current bundle | Rename to `.disabled` | `[disabled — removed from bundle]` |
+| File on disk under a bundled prefix, not in manifest or bundle | Record in manifest as user-owned | `[tracked — user-owned]` |
+| `user_owned: true` in manifest | Skip unconditionally | `[skipped — user-owned]` |
+| Disk SHA differs from manifest SHA (you edited the file) | Skip | `[skipped — locally modified]` |
+
+Files you have edited locally are never overwritten. If the bundle has a newer version of a file you have modified, it is skipped and listed at the end of the output so you can review the difference manually.
+
+After a successful run, `upgraded_at` is written into the manifest.
+
+### Dry-Run Mode
+
+To preview what an upgrade would do without writing any files:
+
+```bash
+takt upgrade --dry-run
+```
+
+Dry-run prints the full action plan — including `[up-to-date]` entries that are silently skipped in normal mode — but makes no changes to disk and does not update the manifest.
+
+### Config Key Merging
+
+`takt upgrade` also performs a non-destructive merge of `.takt/config.yaml`. Any keys present in the bundled default config that are missing from your file are added with their default values. Keys you have already set are never overwritten. New keys are reported in a separate "Config additions" section at the end of the output.
+
+### Removed Bundled Assets
+
+When takt removes a file from the bundled catalog in a new release, `takt upgrade` renames the on-disk copy to `<filename>.disabled` rather than deleting it. This prevents silent data loss if you had customised the file. Review `.disabled` files after upgrading and delete them once you are satisfied the change is intentional.
+
+### Asset Ownership
+
+Use `takt asset mark-owned` to tell the upgrade command to permanently skip a file, even if the bundle has a newer version:
+
+```bash
+# Protect all skill files from automatic upgrades
+takt asset mark-owned ".agents/skills/**"
+
+# Protect a single guardrail template
+takt asset mark-owned "templates/agents/developer.md"
+```
+
+Ownership is stored in `.takt/assets-manifest.json`. Once marked, the file receives the `[skipped — user-owned]` treatment on every future `takt upgrade` run.
+
+To re-enable upgrade management for a file:
+
+```bash
+takt asset unmark-owned ".agents/skills/core/**"
+```
+
+Note: Files with `source: user` (files you added directly, not installed by takt) always remain user-owned and cannot be unmarked.
+
+### Listing Asset Status
+
+To see the current status of all tracked assets:
+
+```bash
+takt asset list
+```
+
+This prints a table with four columns:
+
+| Column | Description |
+|--------|-------------|
+| `PATH` | Project-relative path |
+| `STATUS` | Current upgrade status (up-to-date, update available, locally modified, etc.) |
+| `SOURCE` | `bundled` (installed by takt) or `user` (added by you) |
+| `OWNED` | `yes` if `user_owned: true`; `no` otherwise |
+
 ## Post-Init Project Ownership
 
-After `takt init` copies assets into your repository, **those files belong to your project**. The agent-takt package is no longer involved in managing them. This means:
+After `takt init` copies assets into your repository, **those files belong to your project**. This means:
 
-- **Templates** (`templates/agents/*.md`) — edit these to tune agent guardrails for your stack. Changes take effect on the next scheduler run.
-- **Skills** (`.agents/skills/` and `.claude/skills/`) — add, remove, or modify skill definitions to control what tools agents are allowed to use.
-- **Memory files** (`docs/memory/conventions.md`, `docs/memory/known-issues.md`) — keep these up to date as your project evolves. Agents read them at runtime for project-specific context.
-- **Config** (`.takt/config.yaml`) — adjust runner settings, timeouts, test commands, and parallel worker count here.
+- **Templates** (`templates/agents/*.md`) — edit these to tune agent guardrails for your stack. Changes take effect on the next scheduler run. Templates are marked `user_owned: true` in the manifest and are never overwritten by `takt upgrade`.
+- **Skills** (`.agents/skills/` and `.claude/skills/`) — add, remove, or modify skill definitions to control what tools agents are allowed to use. To protect a skill you have customised from being overwritten, run `takt asset mark-owned "<glob>"`.
+- **Memory files** (`docs/memory/conventions.md`, `docs/memory/known-issues.md`) — keep these up to date as your project evolves. Agents read them at runtime for project-specific context. These files are not tracked in the manifest and are never touched by `takt upgrade`.
+- **Config** (`.takt/config.yaml`) — adjust runner settings, timeouts, test commands, and parallel worker count here. `takt upgrade` will add missing keys from new releases but will not overwrite values you have set.
 
-Running `takt init --overwrite` will re-copy bundled defaults on top of any local changes, so avoid that after you have customised your files.
+Running `takt init --overwrite` will re-copy bundled defaults on top of any local changes, so avoid that after you have customised your files. Use `takt upgrade` for routine asset updates after a package upgrade.
 
 ## Verifying the Setup
 
