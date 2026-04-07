@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4bf759f3",
-  "dependencies": [],
+  "dependencies": [
+    "B-77df944c",
+    "B-3069c65a"
+  ],
   "acceptance_criteria": [
     "Review confirms the public API is preserved and no onboarding source module exceeds 500 lines.",
     "Review confirms no onboarding test file exceeds 600 lines and `tests/test_onboarding.py` has been removed.",
