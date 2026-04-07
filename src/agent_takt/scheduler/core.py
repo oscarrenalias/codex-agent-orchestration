@@ -155,6 +155,30 @@ class Scheduler:
                 continue
             self._executor.reevaluate_corrective_state(bead, reporter=reporter)
 
+    # ------------------------------------------------------------------
+    # Delegation shims — preserve the original Scheduler attribute surface
+    # Tests and callers that access these via `scheduler.*` still work.
+    # ------------------------------------------------------------------
+
+    @property
+    def lease_timeout_minutes(self) -> int:
+        return self._executor.lease_timeout_minutes
+
+    def _create_followups(self, bead: Bead, agent_result) -> list:
+        return self._executor._followups._create_followups(bead, agent_result)
+
+    def _create_corrective_bead(self, bead: Bead, *, reporter=None) -> Bead:
+        return self._executor._followups._create_corrective_bead(bead, reporter=reporter)
+
+    def _populate_shared_followup_touched_files(self, bead: Bead) -> None:
+        return self._executor._followups._populate_shared_followup_touched_files(bead)
+
+    def _planner_owned_followup(self, bead: Bead, agent_type: str):
+        return self._executor._followups._planner_owned_followup(bead, agent_type)
+
+    def _existing_followups_for(self, bead: Bead, *, include_planner_owned: bool = True) -> dict:
+        return self._executor._followups._existing_followups_for(bead, include_planner_owned=include_planner_owned)
+
     def _repair_invalid_worker_agent_type(self, bead: Bead) -> bool:
         if bead.agent_type in self.runnable_reassign_agents:
             return False
