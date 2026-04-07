@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-3ed05825",
+  "title": "Create TUI Package Skeleton And Compatibility Export",
+  "agent_type": "developer",
+  "description": "Introduce the `src/agent_takt/tui/` package structure, move the public entry point to package form, and preserve the `run_tui` import surface through `__init__.py` without changing runtime behavior.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-9b67fe9f",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`src/agent_takt/tui/__init__.py` exists and re-exports the public entry point needed for `from agent_takt.tui import run_tui`.",
+    "The package layout is established without introducing circular imports.",
+    "Any temporary wiring needed for the later extractions is limited to package bootstrap and compatibility exports."
+  ],
+  "linked_docs": [
+    "spec-e923fc0e"
+  ],
+  "feature_root_id": "B-9b67fe9f",
+  "execution_branch_name": "feature/b-9b67fe9f",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9b67fe9f",
+  "expected_files": [
+    "src/agent_takt/tui.py",
+    "src/agent_takt/tui/__init__.py"
+  ],
+  "expected_globs": [
+    "src/agent_takt/tui/*.py"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T22:20:39.881310+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
