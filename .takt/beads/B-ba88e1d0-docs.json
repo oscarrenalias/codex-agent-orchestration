@@ -69,7 +69,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-1f310e59",
+  "block_reason": "Deferred due to file-scope conflict with active bead B-ba88e1d0-test",
   "conflict_risks": "Resolved. No remaining file-scope conflicts expected. The scheduler.py and tui.py files were intentionally NOT changed \u2014 the feature branch's \"takt\" versions are correct; main's regressions to \"orchestrator\" were rejected.",
   "branch_name": "",
   "worktree_path": "",
@@ -88,6 +88,13 @@
       "event": "deferred",
       "agent_type": "documentation",
       "summary": "Deferred due to file-scope conflict with active bead B-1f310e59",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T06:13:29.357257+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "Deferred due to file-scope conflict with active bead B-ba88e1d0-test",
       "details": {}
     }
   ],
