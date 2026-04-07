@@ -3,7 +3,7 @@
   "title": "Implement config key deep-merge helper",
   "agent_type": "developer",
   "description": "Add `merge_config_keys()` in onboarding to merge missing bundled defaults into the user's `.takt/config.yaml` without overwriting existing values, while returning dotted key paths that were added.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-af3f17ad",
   "dependencies": [
@@ -49,9 +49,12 @@
   },
   "block_reason": "Deferred due to file-scope conflict with active bead B-fa9835b8",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-af3f17ad",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-af3f17ad",
+  "lease": {
+    "owner": "developer:B-91ecaadf",
+    "expires_at": "2026-04-07T13:40:23.946994+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -67,8 +70,47 @@
       "agent_type": "developer",
       "summary": "Deferred due to file-scope conflict with active bead B-fa9835b8",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T13:10:24.744218+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-07T13:10:24.744245+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-91ecaadf",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "38362370ab2540dd106fcb66f0a52813e498b3d981720c1925f3df2e3b4f91f3",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-91ecaadf/home",
+    "runner_backend": "claude"
+  },
   "labels": []
 }
