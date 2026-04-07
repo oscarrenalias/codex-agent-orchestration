@@ -1,0 +1,73 @@
+{
+  "bead_id": "B-d227aba7-review-corrective",
+  "title": "Corrective fix for B-d227aba7-review: Review takt init: create specs/planned subfolder alongside done and drafts",
+  "agent_type": "developer",
+  "description": "Blocked reason: commit_scaffold() (onboarding.py:636-639) creates .gitkeep sentinels for specs/drafts/ and specs/done/ but omits specs/planned/. The directory is created by scaffold_project() at line 770 but will not be git-tracked after the scaffold commit. docs/onboarding.md:174 explicitly documents a .gitkeep in planned/. The test suite also lacks an assertion for specs/planned/.gitkeep.\n\nRemaining work: Fix commit_scaffold() to add specs/planned to gitkeep_dirs; add test assertion for specs/planned/.gitkeep.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-d227aba7-review",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-d227aba7-review.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B-165b0761",
+  "execution_branch_name": "feature/b-165b0761",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-165b0761",
+  "expected_files": [
+    "src/agent_takt/onboarding.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "src/agent_takt/onboarding.py",
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
+  ],
+  "changed_files": [
+    "src/agent_takt/onboarding.py",
+    "tests/test_onboarding.py",
+    "docs/onboarding.md"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "None \u2014 single-line addition in the isolated gitkeep_dirs list of commit_scaffold().",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T18:26:58.630955+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-d227aba7-review"
+  },
+  "labels": []
+}
