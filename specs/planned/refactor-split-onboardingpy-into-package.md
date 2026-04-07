@@ -1,16 +1,18 @@
 ---
 name: "Refactor: split onboarding.py into package"
 id: spec-4bbbb88b
-description: Split onboarding.py (1182 lines) into a focused package with separate modules for asset installation, upgrade evaluation, config generation, prompt collection, and scaffold orchestration. Split test_onboarding.py accordingly.
-dependencies:
+description: "Split onboarding.py (1182 lines) into a focused package with separate modules for asset installation, upgrade evaluation, config generation, prompt collection, and scaffold orchestration. Split test_onboarding.py accordingly."
+dependencies: null
 priority: medium
 complexity: medium
-status: draft
-tags: [refactoring, onboarding]
+status: planned
+tags:
+- refactoring
+- onboarding
 scope:
-  in: src/agent_takt/onboarding.py, tests/test_onboarding.py
-  out: cli.py, scheduler.py, tui.py
-feature_root_id:
+  in: "src/agent_takt/onboarding.py, tests/test_onboarding.py"
+  out: "cli.py, scheduler.py, tui.py"
+feature_root_id: null
 ---
 # Refactor: split onboarding.py into package
 
