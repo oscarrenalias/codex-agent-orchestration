@@ -44,7 +44,7 @@ class TestCliMerge(_OrchestratorBase):
         root.branch_name = "feature/b0001"
         self.storage.save_bead(root)
         console = ConsoleReporter(stream=io.StringIO())
-        with patch("agent_takt.cli.WorktreeManager.merge_branch") as merge_branch:
+        with patch("agent_takt.cli.commands.merge.WorktreeManager.merge_branch") as merge_branch:
             exit_code = command_merge(Namespace(bead_id=child.bead_id, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b0001")
@@ -55,7 +55,7 @@ class TestCliMerge(_OrchestratorBase):
         self.storage.save_bead(bead)
         prefix = bead.bead_id[:4]
         console = ConsoleReporter(stream=io.StringIO())
-        with patch("agent_takt.cli.WorktreeManager.merge_branch") as merge_branch:
+        with patch("agent_takt.cli.commands.merge.WorktreeManager.merge_branch") as merge_branch:
             exit_code = command_merge(Namespace(bead_id=prefix, skip_rebase=True, skip_tests=True), self.storage, console)
         self.assertEqual(0, exit_code)
         merge_branch.assert_called_once_with("feature/b-test")

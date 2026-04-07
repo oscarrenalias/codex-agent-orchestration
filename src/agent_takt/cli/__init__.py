@@ -4,12 +4,20 @@ import argparse
 from pathlib import Path
 
 from ..console import ConsoleReporter
+from .formatting import LIST_PLAIN_COLUMNS
 from .parser import build_parser
-from .services import make_services
+from .services import apply_operator_status_update, make_services
 from .commands import command_bead
-from .commands.run import command_run
+from .commands.run import CliSchedulerReporter, command_run
 from .commands.merge import command_merge
-from .commands.telemetry import command_telemetry
+from .commands.telemetry import (
+    _bead_cost_usd,
+    _bead_wall_clock_seconds,
+    _filter_beads_by_days,
+    _format_telemetry_table,
+    aggregate_telemetry,
+    command_telemetry,
+)
 from .commands.init import command_init, command_upgrade
 from .commands.misc import (
     command_plan,
