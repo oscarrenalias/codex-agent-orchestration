@@ -1,6 +1,6 @@
 # Takt
 
-![agent-takt](docs/assets/takt.png)
+![agent-takt](docs/assets/takt-hero.png)
 
 **Takt** is an agentic system for orchestrating specialized AI coding workers (Codex or Claude Code) against a Git-native task graph.
 
