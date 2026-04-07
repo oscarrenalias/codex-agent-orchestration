@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4bf759f3",
-  "dependencies": [],
+  "dependencies": [
+    "B-27be2485"
+  ],
   "acceptance_criteria": [
     "Asset installation coverage is moved into `tests/test_onboarding_assets.py`.",
     "The migrated tests still exercise the same behaviors as before.",
