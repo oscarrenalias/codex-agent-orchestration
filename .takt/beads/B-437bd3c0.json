@@ -26,8 +26,32 @@
     "src/agent_takt/cli/**/*.py",
     "tests/test_cli_*.py"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "docs/development.md",
+    "tests/test_cli_plan.py",
+    "tests/test_cli_summary.py",
+    "tests/test_cli_tui.py",
+    "tests/test_graph.py",
+    "tests/test_orchestrator.py",
+    "tests/test_planner.py",
+    "tests/test_prompts.py",
+    "tests/test_schemas.py",
+    "tests/test_storage.py",
+    "tests/test_tui.py"
+  ],
+  "changed_files": [
+    "docs/development.md",
+    "tests/test_cli_plan.py",
+    "tests/test_cli_summary.py",
+    "tests/test_cli_tui.py",
+    "tests/test_graph.py",
+    "tests/test_orchestrator.py",
+    "tests/test_planner.py",
+    "tests/test_prompts.py",
+    "tests/test_schemas.py",
+    "tests/test_storage.py",
+    "tests/test_tui.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
