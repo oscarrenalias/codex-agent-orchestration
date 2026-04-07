@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-165b0761-review: Review takt init: commit scaffolded files to git after scaffold",
   "agent_type": "developer",
   "description": "Blocked reason: Finding 1 (BLOCKING): tests/test_onboarding.py line 331 \u2014 `self.assertIn(\"--max-workers 3\", yaml_text)` in TestGenerateConfigYaml.test_contains_runner. generate_config_yaml() only substitutes default_runner and test_command; max_workers is never written to the YAML, and default_config.yaml contains no --max-workers line. This assertion will always fail. Fix: either remove the assertion or (if the intent is to embed a max_workers reminder comment) update generate_config_yaml to inject one. The docs/onboarding.md design note says max_workers is intentionally NOT a config key, so the correct fix is to drop the assertion. Finding 2 (MINOR): docs/onboarding.md line 113 shows the .gitignore section header comment as `# orchestrator` but onboarding.py:591 writes `# takt`. Fix: change the example in docs to show `# takt`.\n\nRemaining work: Two issues must be fixed before approval: (1) remove or correct the --max-workers assertion in test_contains_runner; (2) correct the gitignore comment example in docs/onboarding.md.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-165b0761-review",
   "dependencies": [],
@@ -53,9 +53,12 @@
   },
   "block_reason": "Deferred due to file-scope conflict with active bead B-26b47b35-docs",
   "conflict_risks": "No file-scope conflicts \u2014 only onboarding.py, tests/test_onboarding.py, and docs/onboarding.md are in scope.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-165b0761",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-165b0761",
+  "lease": {
+    "owner": "developer:B-165b0761-review-corrective",
+    "expires_at": "2026-04-07T09:48:02.183086+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -71,10 +74,48 @@
       "agent_type": "developer",
       "summary": "Deferred due to file-scope conflict with active bead B-26b47b35-docs",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T09:18:03.156555+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-07T09:18:03.156588+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
   "metadata": {
-    "auto_corrective_for": "B-165b0761-review"
+    "auto_corrective_for": "B-165b0761-review",
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-165b0761-review-corrective",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "38362370ab2540dd106fcb66f0a52813e498b3d981720c1925f3df2e3b4f91f3",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-165b0761-review-corrective/home",
+    "runner_backend": "claude"
   },
   "labels": []
 }
