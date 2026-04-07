@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4bf759f3",
-  "dependencies": [],
+  "dependencies": [
+    "B-4bf759f3"
+  ],
   "acceptance_criteria": [
     "`src/agent_takt/onboarding/__init__.py` exists and re-exports `scaffold_project`.",
     "Imports that previously targeted `agent_takt.onboarding` continue to resolve.",
