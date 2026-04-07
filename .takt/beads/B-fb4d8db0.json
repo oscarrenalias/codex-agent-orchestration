@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
-  "dependencies": [],
+  "dependencies": [
+    "B-3ef6d06e"
+  ],
   "acceptance_criteria": [
     "Finalization logic currently owned by `_finalize()` lives in `src/agent_takt/scheduler/finalize.py`.",
     "State transitions, telemetry writes, and commit behavior remain unchanged.",
