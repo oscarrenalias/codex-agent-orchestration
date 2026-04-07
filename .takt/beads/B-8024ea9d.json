@@ -1,0 +1,72 @@
+{
+  "bead_id": "B-8024ea9d",
+  "title": "Create scheduler package scaffold and public re-exports",
+  "agent_type": "developer",
+  "description": "Replace `src/agent_takt/scheduler.py` with a `src/agent_takt/scheduler/` package, move the current implementation into package modules as a starting point, and preserve `from agent_takt.scheduler import Scheduler` compatibility through `__init__.py` re-exports.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-f6706ed8",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`src/agent_takt/scheduler/` exists as the import target for `agent_takt.scheduler`.",
+    "`src/agent_takt/scheduler/__init__.py` re-exports `Scheduler`, `SchedulerReporter`, and `SchedulerResult`.",
+    "The package scaffold preserves existing imports without changing runtime behavior.",
+    "No circular import is introduced by the initial package conversion."
+  ],
+  "linked_docs": [
+    "specs/drafts/refactor-split-schedulerpy-into-package.md",
+    "CLAUDE.md"
+  ],
+  "feature_root_id": "B-f6706ed8",
+  "execution_branch_name": "feature/b-f6706ed8",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f6706ed8",
+  "expected_files": [
+    "src/agent_takt/scheduler.py",
+    "src/agent_takt/scheduler/__init__.py",
+    "src/agent_takt/scheduler/core.py",
+    "src/agent_takt/scheduler/reporter.py"
+  ],
+  "expected_globs": [
+    "src/agent_takt/scheduler/*.py"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-07T15:36:29.089643+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
