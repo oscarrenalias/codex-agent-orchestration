@@ -44,7 +44,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "Deferred due to file-scope conflict with active bead B-165b0761",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -63,6 +63,13 @@
       "event": "updated",
       "agent_type": "developer",
       "summary": "Bead updated via CLI",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T09:06:55.144819+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "Deferred due to file-scope conflict with active bead B-165b0761",
       "details": {}
     }
   ],
