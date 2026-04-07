@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-74969e02",
-  "dependencies": [],
+  "dependencies": [
+    "B-c18540cf",
+    "B-c95f044b"
+  ],
   "acceptance_criteria": [
     "Merge CLI tests live in `tests/test_cli_merge.py`.",
     "Telemetry CLI tests live in `tests/test_cli_telemetry.py`.",
