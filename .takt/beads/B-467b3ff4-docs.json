@@ -3,7 +3,7 @@
   "title": "Document Resolve merge conflicts for Fix remaining 'orchestrator' references in CLI output and onboarding",
   "agent_type": "documentation",
   "description": "Update docs for B-467b3ff4",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-467b3ff4",
   "dependencies": [
@@ -50,9 +50,12 @@
   },
   "block_reason": "Deferred due to file-scope conflict with active bead B-467b3ff4-test",
   "conflict_risks": "None \u2014 conflicts resolved.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-aa3e7707",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-aa3e7707",
+  "lease": {
+    "owner": "documentation:B-467b3ff4-docs",
+    "expires_at": "2026-04-07T06:48:06.720493+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -82,7 +85,44 @@
       "agent_type": "documentation",
       "summary": "Deferred due to file-scope conflict with active bead B-467b3ff4-test",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T06:18:07.183236+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-07T06:18:07.183261+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {}
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-467b3ff4-docs",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "74b1b8cb463e41af3fe5b77be1d2f5b71332b8328ba1fa07bc1b78e2bc6c3552",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-467b3ff4-docs/home",
+    "runner_backend": "claude"
+  }
 }
