@@ -3,7 +3,7 @@
   "title": "Test takt init: generated config.yaml missing allowed_tools_default and allowed_tools_by_agent",
   "agent_type": "tester",
   "description": "Validate implementation for B-26b47b35",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-26b47b35",
   "dependencies": [
@@ -47,9 +47,12 @@
   },
   "block_reason": "Deferred due to file-scope conflict with active bead B-165b0761-docs",
   "conflict_risks": "None \u2014 only `onboarding.py` was modified, which has no sibling bead overlap.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-165b0761",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-165b0761",
+  "lease": {
+    "owner": "tester:B-26b47b35-test",
+    "expires_at": "2026-04-07T09:44:43.449730+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -72,8 +75,45 @@
       "agent_type": "tester",
       "summary": "Deferred due to file-scope conflict with active bead B-165b0761-docs",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-07T09:14:44.492663+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-07T09:14:44.492696+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-26b47b35-test",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/tester-validation",
+      "capability/test-execution",
+      "task/defect-bead-creation",
+      "task/regression-triage",
+      "memory"
+    ],
+    "skill_bundle_hash": "5d0493850b7f5c3d30b4fe0fee8a3df33885b671d7886196699030806008f81d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-26b47b35-test/home",
+    "runner_backend": "claude"
+  },
   "labels": []
 }
