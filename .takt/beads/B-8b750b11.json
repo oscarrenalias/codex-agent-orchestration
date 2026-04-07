@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-f6706ed8",
-  "dependencies": [],
+  "dependencies": [
+    "B-09c5359d",
+    "B-09067767"
+  ],
   "acceptance_criteria": [
     "Review confirms the package split preserves scheduler behavior and public imports.",
     "Review confirms source and test splits match the spec boundaries and avoid circular imports.",
