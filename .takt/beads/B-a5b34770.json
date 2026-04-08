@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-33e002c4",
-  "dependencies": [],
+  "dependencies": [
+    "B-27b78d71"
+  ],
   "acceptance_criteria": [
     "`build_recovery_prompt(original_bead, prose_output, git_diff)` exists in `prompts.py`.",
     "The generated prompt includes bead title, bead description, prose output, git diff, inline output schema, and a JSON-only instruction.",
