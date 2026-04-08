@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-790f671f",
+  "title": "Replace static status bar with live scheduler counts",
+  "agent_type": "developer",
+  "description": "Update the TUI status bar to show live counts for running, ready, and blocked beads plus the scheduler auto/manual mode, replacing the current static summary string.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-52f6cdc6",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`src/agent_takt/tui/app.py` renders status text in the form `N running | N ready | N blocked | S:auto/manual`.",
+    "The counts are derived from current bead state on each refresh and stay synchronized with scheduler mode state already tracked by the app.",
+    "The status bar change does not introduce an additional countdown or refresh-only timer display."
+  ],
+  "linked_docs": [
+    "specs/drafts/tui-observability-live-workers-status-bar-and-bead-state-clarity.md",
+    "docs/tui.md"
+  ],
+  "feature_root_id": "B-52f6cdc6",
+  "execution_branch_name": "feature/b-52f6cdc6",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-52f6cdc6",
+  "expected_files": [
+    "src/agent_takt/tui/app.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T15:27:15.753752+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
