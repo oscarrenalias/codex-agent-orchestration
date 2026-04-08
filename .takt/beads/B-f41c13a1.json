@@ -3,7 +3,7 @@
   "title": "Resolve merge conflicts for Reactive Scheduler Execution Root",
   "agent_type": "developer",
   "description": "Test gate timed out for feature/b-ff6a7e64.\n\nCommand: uv run pytest tests/ -n auto -q\nTimeout: 1800s",
-  "status": "in_progress",
+  "status": "blocked",
   "bead_type": "merge-conflict",
   "parent_id": "B-ff6a7e64",
   "dependencies": [],
@@ -14,8 +14,12 @@
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
   "expected_files": [],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/scheduler/core.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/scheduler/core.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
@@ -24,28 +28,29 @@
     "verdict": "",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/scheduler/core.py"
+    ],
     "updated_docs": [],
     "next_action": "",
     "next_agent": "",
-    "block_reason": "",
+    "block_reason": "Agent timed out after 1500 seconds",
     "expected_files": [],
     "expected_globs": [],
-    "touched_files": [],
+    "touched_files": [
+      "src/agent_takt/scheduler/core.py"
+    ],
     "conflict_risks": "",
     "design_decisions": "",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
-  "conflict_risks": "Test/merge failure",
+  "block_reason": "Agent timed out after 1500 seconds",
+  "conflict_risks": "",
   "branch_name": "feature/b-ff6a7e64",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
-  "lease": {
-    "owner": "developer:B-f41c13a1",
-    "expires_at": "2026-04-08T13:05:19.290476+00:00"
-  },
-  "retries": 0,
+  "lease": null,
+  "retries": 1,
   "execution_history": [
     {
       "timestamp": "2026-04-08T11:40:17.446221+00:00",
@@ -86,6 +91,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-f41c13a1/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T13:00:20.789693+00:00",
+      "event": "failed",
+      "agent_type": "developer",
+      "summary": "Worker execution failed: Agent timed out after 1500 seconds",
+      "details": {}
     }
   ],
   "metadata": {
@@ -145,6 +157,15 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
+    },
+    "last_agent_result": {
+      "outcome": "failed",
+      "summary": "Worker execution failed: Agent timed out after 1500 seconds",
+      "verdict": "",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": "Agent timed out after 1500 seconds"
     }
   },
   "labels": [],
