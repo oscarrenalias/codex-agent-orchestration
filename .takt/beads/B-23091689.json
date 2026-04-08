@@ -1,0 +1,77 @@
+{
+  "bead_id": "B-23091689",
+  "title": "Review Bead Priority Delivery",
+  "agent_type": "review",
+  "description": "Review the combined model, scheduler, CLI, test, and documentation changes for correctness, regression risk, and adherence to the scoped feature boundaries.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-f13fc273",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Review confirms priority ordering is limited to the eligible scheduler pool and does not bypass dependencies.",
+    "Review confirms CLI validation and persistence semantics match the spec, including normal-to-None behavior.",
+    "Review confirms shared tests and docs cover the delivered behavior and any residual risks are documented.",
+    "Review produces a clear signoff decision or actionable defects."
+  ],
+  "linked_docs": [
+    "spec-91e606be"
+  ],
+  "feature_root_id": "B-f13fc273",
+  "execution_branch_name": "feature/b-f13fc273",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f13fc273",
+  "expected_files": [
+    "src/agent_takt/models.py",
+    "src/agent_takt/scheduler/core.py",
+    "src/agent_takt/cli/parser.py",
+    "src/agent_takt/cli/commands/bead.py",
+    "src/agent_takt/cli/formatting.py",
+    "src/agent_takt/storage.py",
+    "tests/test_cli_bead.py",
+    "tests/test_scheduler_core.py",
+    "tests/test_scheduler_beads.py",
+    "tests/test_storage.py",
+    "docs/development.md",
+    "docs/onboarding.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T05:14:43.103147+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
