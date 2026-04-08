@@ -25,6 +25,24 @@ from .reporter import SchedulerReporter
 
 
 class Scheduler:
+    """Orchestrates bead dispatch across one or more worker threads.
+
+    A single ``run_once()`` call constitutes one scheduler *cycle*.  Within a
+    cycle the scheduler continuously fills available worker slots as running
+    beads complete — it does not stop after the first batch.  This reactive
+    loop means that a bead unlocked by a dependency completing mid-cycle can be
+    started in the same cycle, without waiting for the next ``run_once()`` call.
+
+    Slot-filling and deferral logic live in ``_select_beads_for_dispatch()``.
+    Bead execution is delegated to ``BeadExecutor`` (``scheduler/execution.py``).
+    Followup creation, corrective retries, and recovery bead creation are
+    handled by ``BeadFinalizer`` (``scheduler/finalize.py``) and
+    ``FollowupManager`` (``scheduler/followups.py``).
+
+    Progress events are reported through ``SchedulerReporter``; pass ``None``
+    to suppress all reporting.
+    """
+
     def __init__(
         self,
         storage: RepositoryStorage,
@@ -76,6 +94,37 @@ class Scheduler:
         feature_root_id: str | None = None,
         reporter: SchedulerReporter | None = None,
     ) -> SchedulerResult:
+        """Execute one scheduler cycle and return a summary of what happened.
+
+        The cycle proceeds as follows:
+
+        1. **Expire stale leases** — any bead whose lease has passed its
+           ``expires_at`` timestamp is reset to READY and reported via
+           ``reporter.lease_expired()``.
+        2. **Re-evaluate blocked beads** — blocked beads are inspected for
+           transient errors and corrective/recovery state changes.
+        3. **Continuous slot-fill loop** — a ``ThreadPoolExecutor`` with
+           ``max_workers`` threads is used.  Each iteration of the inner loop:
+
+           a. Fills all free worker slots by calling
+              ``_select_beads_for_dispatch()``, which skips beads with
+              unresolved dependencies or file-scope conflicts and calls
+              ``reporter.bead_deferred()`` for each skipped bead (at most once
+              per bead per cycle).
+           b. Waits (``FIRST_COMPLETED``) for at least one running bead to
+              finish.
+           c. After each completion, re-evaluates blocked beads so that
+              correctives or newly satisfied dependencies can be picked up in
+              the same cycle.
+           d. Loops back to fill newly freed slots immediately.
+
+           The loop exits only when no bead is running *and* no bead can be
+           dispatched.
+
+        Returns a :class:`~agent_takt.models.SchedulerResult` with lists of
+        ``started``, ``completed``, ``blocked``, ``correctives_created``, and
+        ``deferred`` bead IDs plus ``final_state`` counts.
+        """
         result = SchedulerResult()
         expired = self.expire_stale_leases()
         if reporter:
