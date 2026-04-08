@@ -5,7 +5,7 @@ description: "TUI rendering improvements — live elapsed timers on running bead
 dependencies: spec-f4a943a4
 priority: medium
 complexity: medium
-status: planned
+status: done
 tags: []
 scope:
   in: null
