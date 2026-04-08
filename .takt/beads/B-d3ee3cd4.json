@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-d3ee3cd4",
+  "title": "Document investigator usage and report conventions",
+  "agent_type": "documentation",
+  "description": "Add operator-facing documentation for when to use the new `investigator` agent type, its report file convention, and the expected structured report shape and CLI usage example.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-a296a479",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Docs explain the purpose of investigator beads versus developer/review/planner/documentation beads.",
+    "Docs state that reports live under `docs/investigator/<slug>.md` and summarize the required report sections.",
+    "Docs include or paraphrase the intended `takt bead create --agent investigator` usage pattern."
+  ],
+  "linked_docs": [
+    "specs/drafts/investigator-bead-type-for-open-ended-codebase-analysis.md"
+  ],
+  "feature_root_id": "B-a296a479",
+  "execution_branch_name": "feature/b-a296a479",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a296a479",
+  "expected_files": [
+    "docs/multi-backend-agents.md",
+    "docs/development.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T18:58:28.901376+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
