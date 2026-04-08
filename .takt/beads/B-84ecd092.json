@@ -3,7 +3,7 @@
   "title": "Add investigator guardrails, templates, and skill allowlist",
   "agent_type": "developer",
   "description": "Create the investigator guardrail template and minimal role skill, then wire the skill allowlist and bundled template assets so the new agent type can run with read-only constraints plus a single declared report file.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-a296a479",
   "dependencies": [
@@ -25,44 +25,78 @@
     "src/agent_takt/skills.py",
     "src/agent_takt/prompts.py",
     "templates/agents/investigator.md",
-    ".agents/skills/role/investigator.md",
+    ".agents/skills/role/investigator/SKILL.md",
     "src/agent_takt/_data/templates/agents/investigator.md",
     "src/agent_takt/_data/agents_skills/role/investigator/SKILL.md",
     "tests/test_assets.py",
     "tests/test_prompts.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    ".agents/skills/role/investigator/SKILL.md",
+    "src/agent_takt/_data/agents_skills/role/investigator/SKILL.md",
+    "src/agent_takt/_data/templates/agents/investigator.md",
+    "src/agent_takt/skills.py",
+    "templates/agents/investigator.md",
+    "tests/test_assets.py"
+  ],
+  "changed_files": [
+    ".agents/skills/role/investigator/SKILL.md",
+    "src/agent_takt/_data/agents_skills/role/investigator/SKILL.md",
+    "src/agent_takt/_data/templates/agents/investigator.md",
+    "src/agent_takt/skills.py",
+    "templates/agents/investigator.md",
+    "tests/test_assets.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "All six deliverables implemented and committed: templates/agents/investigator.md (root guardrail), src/agent_takt/_data/templates/agents/investigator.md (bundled copy), .agents/skills/role/investigator/SKILL.md (role skill), src/agent_takt/_data/agents_skills/role/investigator/SKILL.md (bundled copy), AGENT_SKILL_ALLOWLIST entry in skills.py (base-orchestrator + role/investigator + memory), and investigator added to test_templates_contain_all_agent_types in test_assets.py.",
+    "remaining": "None \u2014 this bead is fully implemented. test_prompts.py already exercises investigator via BUILT_IN_AGENT_TYPES iteration (no changes needed there).",
+    "risks": "None identified. The template starts with `# Investigator Guardrails` which satisfies the heading assertion in test_prompts.py. Both bundled assets resolve correctly via packaged_templates_dir() and packaged_agents_skills_dir().",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      ".agents/skills/role/investigator/SKILL.md",
+      "src/agent_takt/_data/agents_skills/role/investigator/SKILL.md",
+      "src/agent_takt/_data/templates/agents/investigator.md",
+      "src/agent_takt/skills.py",
+      "templates/agents/investigator.md",
+      "tests/test_assets.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should validate: (1) test_assets.py passes including the new investigator entry in test_templates_contain_all_agent_types, (2) test_prompts.py passes for the investigator subtest in test_load_guardrail_template and test_worker_prompt_references_every_builtin_template_file, (3) OrchestratorTests setUp copies investigator.md without error, (4) skills._skill_path resolves role/investigator from both project and bundled fallback.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/skills.py",
+      "src/agent_takt/prompts.py",
+      "templates/agents/investigator.md",
+      ".agents/skills/role/investigator/SKILL.md",
+      "src/agent_takt/_data/templates/agents/investigator.md",
+      "src/agent_takt/_data/agents_skills/role/investigator/SKILL.md",
+      "tests/test_assets.py",
+      "tests/test_prompts.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      ".agents/skills/role/investigator/SKILL.md",
+      "src/agent_takt/_data/agents_skills/role/investigator/SKILL.md",
+      "src/agent_takt/_data/templates/agents/investigator.md",
+      "src/agent_takt/skills.py",
+      "templates/agents/investigator.md",
+      "tests/test_assets.py"
+    ],
+    "conflict_risks": "None. All new files are in previously unused paths. The only modifications to existing files (skills.py, test_assets.py) are additive.",
+    "design_decisions": "1. Allowlist entry limited to base-orchestrator + role/investigator + memory (no capability or task skills) \u2014 investigator is read-only and doesn't need code-edit, test-execution, or docs-edit. Memory is included so the investigator can reference project context. 2. Template content is identical between root (templates/agents/) and bundled (_data/templates/agents/) copies \u2014 same pattern used by all other agent types. 3. Template heading is `# Investigator Guardrails` (not `# Investigator Agent Guardrails`) to match the standard non-recovery convention validated in test_prompts.py. 4. test_prompts.py required no changes \u2014 it already iterates BUILT_IN_AGENT_TYPES which includes investigator; the setUp in OrchestratorTests copies templates for all built-in types, so the new template file is all that was needed.",
+    "test_coverage_notes": "Tester should verify: (a) test_assets.py::TestPackagedAssetsExistOnDisk::test_templates_contain_all_agent_types now checks investigator and passes; (b) test_prompts.py::PromptsTests::test_load_guardrail_template_returns_path_and_trimmed_contents_for_each_builtin_agent passes for investigator subtest (heading check + no trailing newline); (c) test_prompts.py::PromptsTests::test_worker_prompt_references_every_builtin_template_file passes for investigator; (d) skills.allowed_skill_ids('investigator') returns the expected three-entry tuple; (e) bundled fallback for role/investigator works when project skill dir is absent (mirrors existing TestSkillsFallbackToBundled pattern).",
+    "known_limitations": "N/A \u2014 implementation is complete as specified. The investigator output schema variant (findings/recommendations/risk_areas/report_path fields) was implemented in prior beads (B-e57b817b, B-30488ad5, B-a4b4dee5); this bead adds only the guardrail and skill layer."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None. All new files are in previously unused paths. The only modifications to existing files (skills.py, test_assets.py) are additive.",
   "branch_name": "feature/b-a296a479",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a296a479",
-  "lease": {
-    "owner": "developer:B-84ecd092",
-    "expires_at": "2026-04-08T19:39:54.458058+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -104,6 +138,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-84ecd092/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T19:16:32.358067+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Created investigator guardrail template, role skill, bundled copies of both, wired the AGENT_SKILL_ALLOWLIST entry, and extended the test_assets.py coverage for the new agent type.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -181,7 +222,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Created investigator guardrail template, role skill, bundled copies of both, wired the AGENT_SKILL_ALLOWLIST entry, and extended the test_assets.py coverage for the new agent type.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.9466542000000001,
+      "duration_ms": 385532,
+      "duration_api_ms": 288248,
+      "num_turns": 35,
+      "input_tokens": 33,
+      "output_tokens": 14263,
+      "cache_creation_tokens": 51989,
+      "cache_read_tokens": 1509841,
+      "stop_reason": "end_turn",
+      "session_id": "ac23497d-2be3-47e3-b40e-ae4da3c3a4d6",
+      "permission_denials": [],
+      "prompt_chars": 7586,
+      "prompt_lines": 152,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.9466542000000001,
+        "duration_ms": 385532,
+        "duration_api_ms": 288248,
+        "num_turns": 35,
+        "input_tokens": 33,
+        "output_tokens": 14263,
+        "cache_creation_tokens": 51989,
+        "cache_read_tokens": 1509841,
+        "stop_reason": "end_turn",
+        "session_id": "ac23497d-2be3-47e3-b40e-ae4da3c3a4d6",
+        "permission_denials": [],
+        "prompt_chars": 7586,
+        "prompt_lines": 152,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
