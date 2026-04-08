@@ -5,7 +5,7 @@ description: "When an agent completes real work but emits prose instead of a JSO
 dependencies: null
 priority: medium
 complexity: medium
-status: planned
+status: done
 tags:
 - scheduler
 - recovery
