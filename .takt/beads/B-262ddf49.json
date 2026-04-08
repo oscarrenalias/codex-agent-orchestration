@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-33e002c4",
-  "dependencies": [],
+  "dependencies": [
+    "B-b383988e",
+    "B-11151c55"
+  ],
   "acceptance_criteria": [
     "Review confirms the recovery path does not consume corrective attempts for no-structured-output blocks.",
     "Review confirms successful recovery correctly completes the original bead and preserves downstream scheduler behavior.",
