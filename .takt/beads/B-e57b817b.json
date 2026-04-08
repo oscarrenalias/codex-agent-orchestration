@@ -3,7 +3,7 @@
   "title": "Add investigator output schema variant and report-result plumbing",
   "agent_type": "developer",
   "description": "Implement investigator-specific structured output handling in runner/model plumbing so investigator beads require findings, recommendations, risk areas, and report path while omitting mutation/review-only fields.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-a296a479",
   "dependencies": [
@@ -28,37 +28,51 @@
     "tests/test_schemas.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/prompts.py",
+    "tests/test_schemas.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/prompts.py",
+    "tests/test_schemas.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "INVESTIGATOR_OUTPUT_SCHEMA defined in runner.py with required fields: outcome, summary, findings, recommendations, risk_areas, report_path. _worker_schema_for() selects schema by agent_type. _payload_to_run_result() adapts investigator payload to AgentRunResult. AgentRunResult has findings/recommendations/risk_areas/report_path optional fields. prompts.py render_agent_output_requirements handles investigator case. 7 new schema tests in test_schemas.py all passing.",
+    "remaining": "N/A \u2014 bead scope complete. Guardrail template and role skill for investigator are handled by B-84ecd092. Followup exclusion was handled by B-30488ad5.",
+    "risks": "The sibling bead B-30488ad5 already committed core schema/model changes while this bead was in-progress; coordination via feature worktree worked correctly. No conflicts \u2014 the changes are additive and non-overlapping with that bead's final state.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/prompts.py",
+      "tests/test_schemas.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester bead (B-1e33035d) can now validate investigator schema, prompt output requirements, and payload-to-result mapping.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/models.py",
+      "src/agent_takt/runner.py",
+      "src/agent_takt/prompts.py",
+      "tests/test_schemas.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/prompts.py",
+      "tests/test_schemas.py"
+    ],
+    "conflict_risks": "models.py and runner.py were modified by the sibling bead B-30488ad5 which ran concurrently. Those changes are already in the feature branch HEAD; no conflict remains. prompts.py was also partially updated by B-30488ad5 (BUILT_IN_AGENT_TYPES), and this bead adds the render_agent_output_requirements investigator branch on top \u2014 clean additive change.",
+    "design_decisions": "Used a separate INVESTIGATOR_OUTPUT_SCHEMA object (same pattern as PLANNER_OUTPUT_SCHEMA) rather than a conditional within AGENT_OUTPUT_SCHEMA. This keeps the schemas clean and independently testable. _worker_schema_for() provides the dispatch point; _payload_to_run_result() handles the field-set mismatch between investigator payloads and AgentRunResult, avoiding a TypeError from splatting an investigator payload into the standard dataclass. Investigator-specific fields on AgentRunResult are optional with empty-string defaults so they never interfere with standard worker flows.",
+    "test_coverage_notes": "Tester should verify: (1) _worker_schema_for returns INVESTIGATOR_OUTPUT_SCHEMA for 'investigator' and AGENT_OUTPUT_SCHEMA for all other types; (2) _payload_to_run_result correctly maps investigator payload fields including the optional block_reason; (3) a valid investigator AgentRunResult has empty verdict/changed_files/next_agent and populated findings/recommendations/risk_areas/report_path; (4) AGENT_OUTPUT_SCHEMA is not mutated by the investigator additions; (5) render_agent_output_requirements for 'investigator' mentions findings/recommendations/risk_areas/report_path and excludes verdict.",
+    "known_limitations": "The inline AGENT_OUTPUT_SCHEMA copy in prompts.py (used for recovery prompts) was not updated with an investigator variant \u2014 recovery agents produce standard structured output for the original bead, so the recovery path is unaffected. If investigators ever need a recovery path, the recovery prompt builder would need updating."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "models.py and runner.py were modified by the sibling bead B-30488ad5 which ran concurrently. Those changes are already in the feature branch HEAD; no conflict remains. prompts.py was also partially updated by B-30488ad5 (BUILT_IN_AGENT_TYPES), and this bead adds the render_agent_output_requirements investigator branch on top \u2014 clean additive change.",
   "branch_name": "feature/b-a296a479",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a296a479",
-  "lease": {
-    "owner": "developer:B-e57b817b",
-    "expires_at": "2026-04-08T19:34:06.217075+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -100,6 +114,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-e57b817b/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T19:09:46.512684+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added INVESTIGATOR_OUTPUT_SCHEMA to runner.py with required fields (findings, recommendations, risk_areas, report_path) and no verdict/changed_files/next_agent. Added _worker_schema_for and _payload_to_run_result helpers for schema dispatch. Added investigator fields to AgentRunResult. Updated prompts.py with investigator-specific output requirements. Added 7 new schema tests covering valid payloads, excluded fields, outcome enum, and regression guard on AGENT_OUTPUT_SCHEMA. The sibling bead B-30488ad5 had already landed the models.py/runner.py changes; this bead contributes the prompt-side requirements text and the schema tests.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -173,7 +194,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added INVESTIGATOR_OUTPUT_SCHEMA to runner.py with required fields (findings, recommendations, risk_areas, report_path) and no verdict/changed_files/next_agent. Added _worker_schema_for and _payload_to_run_result helpers for schema dispatch. Added investigator fields to AgentRunResult. Updated prompts.py with investigator-specific output requirements. Added 7 new schema tests covering valid payloads, excluded fields, outcome enum, and regression guard on AGENT_OUTPUT_SCHEMA. The sibling bead B-30488ad5 had already landed the models.py/runner.py changes; this bead contributes the prompt-side requirements text and the schema tests.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 1.0996763999999999,
+      "duration_ms": 321544,
+      "duration_api_ms": 272083,
+      "num_turns": 45,
+      "input_tokens": 44,
+      "output_tokens": 15562,
+      "cache_creation_tokens": 54846,
+      "cache_read_tokens": 2201473,
+      "stop_reason": "end_turn",
+      "session_id": "d9b6cb1b-6d0c-4b7f-bc40-cd68a48edc2f",
+      "permission_denials": [],
+      "prompt_chars": 7491,
+      "prompt_lines": 148,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.0996763999999999,
+        "duration_ms": 321544,
+        "duration_api_ms": 272083,
+        "num_turns": 45,
+        "input_tokens": 44,
+        "output_tokens": 15562,
+        "cache_creation_tokens": 54846,
+        "cache_read_tokens": 2201473,
+        "stop_reason": "end_turn",
+        "session_id": "d9b6cb1b-6d0c-4b7f-bc40-cd68a48edc2f",
+        "permission_denials": [],
+        "prompt_chars": 7491,
+        "prompt_lines": 148,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "34f0e2cbfc7e2cd2ba6768cd00a43f576f4bfd90"
   },
   "labels": [],
   "recovery_for": null,
