@@ -9,7 +9,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from agent_takt.runner import AGENT_OUTPUT_SCHEMA, PLANNER_OUTPUT_SCHEMA
+from agent_takt.runner import AGENT_OUTPUT_SCHEMA, INVESTIGATOR_OUTPUT_SCHEMA, PLANNER_OUTPUT_SCHEMA
 
 
 class SchemaTests(unittest.TestCase):
@@ -46,6 +46,61 @@ class SchemaTests(unittest.TestCase):
             sorted(agent_type_schema["enum"]),
             ["developer", "documentation", "planner", "recovery", "review", "tester"],
         )
+
+
+class InvestigatorSchemaTests(unittest.TestCase):
+
+    def test_investigator_schema_requires_investigation_fields(self) -> None:
+        required = INVESTIGATOR_OUTPUT_SCHEMA["required"]
+        for field in ("outcome", "summary", "findings", "recommendations", "risk_areas", "report_path"):
+            self.assertIn(field, required)
+
+    def test_investigator_schema_excludes_worker_only_fields(self) -> None:
+        props = INVESTIGATOR_OUTPUT_SCHEMA["properties"]
+        for excluded in ("verdict", "changed_files", "next_agent"):
+            self.assertNotIn(excluded, props)
+
+    def test_investigator_schema_outcome_enum(self) -> None:
+        outcome_schema = INVESTIGATOR_OUTPUT_SCHEMA["properties"]["outcome"]
+        self.assertIn("enum", outcome_schema)
+        self.assertEqual(sorted(outcome_schema["enum"]), ["blocked", "completed"])
+
+    def test_investigator_schema_is_no_additional_properties(self) -> None:
+        self.assertTrue(INVESTIGATOR_OUTPUT_SCHEMA.get("additionalProperties") is False)
+
+    def test_investigator_schema_valid_payload_has_all_required_fields(self) -> None:
+        valid_payload = {
+            "outcome": "completed",
+            "summary": "Investigated the scheduler package.",
+            "findings": "Several complexity hotspots identified.",
+            "recommendations": "Extract helper utilities.",
+            "risk_areas": "High cyclomatic complexity in core.py.",
+            "report_path": "docs/investigator/scheduler-audit.md",
+        }
+        required = INVESTIGATOR_OUTPUT_SCHEMA["required"]
+        for field in required:
+            self.assertIn(field, valid_payload)
+
+    def test_investigator_schema_blocked_outcome_is_valid(self) -> None:
+        blocked_payload = {
+            "outcome": "blocked",
+            "summary": "Cannot proceed.",
+            "findings": "Access denied.",
+            "recommendations": "Fix permissions.",
+            "risk_areas": "N/A",
+            "report_path": "docs/investigator/blocked.md",
+            "block_reason": "Missing read access to secrets dir.",
+        }
+        required = INVESTIGATOR_OUTPUT_SCHEMA["required"]
+        for field in required:
+            self.assertIn(field, blocked_payload)
+        self.assertIn("block_reason", INVESTIGATOR_OUTPUT_SCHEMA["properties"])
+
+    def test_standard_schema_still_has_verdict_and_changed_files(self) -> None:
+        """Regression: ensure AGENT_OUTPUT_SCHEMA is not affected by the investigator variant."""
+        self.assertIn("verdict", AGENT_OUTPUT_SCHEMA["properties"])
+        self.assertIn("changed_files", AGENT_OUTPUT_SCHEMA["properties"])
+        self.assertIn("next_agent", AGENT_OUTPUT_SCHEMA["properties"])
 
 
 if __name__ == "__main__":
