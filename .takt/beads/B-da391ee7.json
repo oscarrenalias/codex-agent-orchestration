@@ -3,7 +3,7 @@
   "title": "Document Bead Priority Operator Workflow",
   "agent_type": "documentation",
   "description": "Update operator-facing documentation to describe bead priority semantics, the create/set-priority CLI surfaces, and the scheduler rule that priority only affects ordering among already-eligible beads.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-f13fc273",
   "dependencies": [
@@ -27,33 +27,38 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "tests/test_cli_bead.py",
-    "tests/test_scheduler_core.py",
-    "tests/test_storage.py",
-    "uv.lock"
+    "docs/development.md"
   ],
   "changed_files": [
-    "tests/test_cli_bead.py",
-    "tests/test_scheduler_core.py",
-    "tests/test_storage.py",
-    "uv.lock"
+    "docs/development.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/development.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Added a \"Bead Priority\" section to docs/development.md immediately before the existing \"Conflict-Aware Scope\" section. The section documents: supported values (high / normal), setting priority at creation (--priority flag), changing priority post-creation (set-priority subcommand), scheduler ordering semantics (eligible-beads ordering only, no dependency bypass, no scope-conflict override), and CLI display behaviour (PRIORITY column in bead list --plain).",
+    "remaining": "No remaining documentation work. docs/onboarding.md was assessed and has no natural placement for bead scheduling concepts; it was left unchanged.",
+    "risks": "None.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
+    "changed_files": [
+      "docs/development.md"
+    ],
+    "updated_docs": [
+      "docs/development.md"
+    ],
+    "next_action": "No follow-up required.",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "docs/development.md",
+      "docs/onboarding.md"
+    ],
     "expected_globs": [],
-    "touched_files": [],
+    "touched_files": [
+      "docs/development.md"
+    ],
     "conflict_risks": "",
     "design_decisions": "",
     "test_coverage_notes": "",
@@ -63,10 +68,7 @@
   "conflict_risks": "",
   "branch_name": "feature/b-f13fc273",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f13fc273",
-  "lease": {
-    "owner": "documentation:B-da391ee7",
-    "expires_at": "2026-04-08T06:10:45.390535+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -107,6 +109,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-da391ee7/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T05:42:13.810571+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Added Bead Priority section to docs/development.md covering supported values, CLI syntax for create and set-priority, and scheduler ordering semantics.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -182,7 +191,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added Bead Priority section to docs/development.md covering supported values, CLI syntax for create and set-priority, and scheduler ordering semantics.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.24738224999999997,
+      "duration_ms": 81620,
+      "duration_api_ms": 78186,
+      "num_turns": 11,
+      "input_tokens": 9,
+      "output_tokens": 4536,
+      "cache_creation_tokens": 30339,
+      "cache_read_tokens": 218480,
+      "stop_reason": "end_turn",
+      "session_id": "9a99c17f-f63f-41ee-b063-d278a802c169",
+      "permission_denials": [],
+      "prompt_chars": 6548,
+      "prompt_lines": 150,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.24738224999999997,
+        "duration_ms": 81620,
+        "duration_api_ms": 78186,
+        "num_turns": 11,
+        "input_tokens": 9,
+        "output_tokens": 4536,
+        "cache_creation_tokens": 30339,
+        "cache_read_tokens": 218480,
+        "stop_reason": "end_turn",
+        "session_id": "9a99c17f-f63f-41ee-b063-d278a802c169",
+        "permission_denials": [],
+        "prompt_chars": 6548,
+        "prompt_lines": 150,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "1e8d752b0fabd43c26a68b0371a6776fcebacead"
   },
   "labels": []
 }
