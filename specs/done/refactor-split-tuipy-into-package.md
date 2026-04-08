@@ -5,7 +5,7 @@ description: "Split tui.py (2230 lines) into a focused package with separate mod
 dependencies: null
 priority: medium
 complexity: medium
-status: planned
+status: done
 tags:
 - refactoring
 - tui
