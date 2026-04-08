@@ -87,7 +87,7 @@ uv run pytest tests/test_cli_version.py -v
 
 Guardrail templates live in `templates/agents/` and are mandatory — a missing template fails the bead with `FileNotFoundError`. The built-in set:
 
-- `planner.md`, `developer.md`, `tester.md`, `documentation.md`, `review.md`
+- `planner.md`, `developer.md`, `tester.md`, `documentation.md`, `review.md`, `recovery.md`, `investigator.md`
 
 At runtime, `build_worker_prompt()` injects an `Agent guardrails:` section and appends the serialized bead context. The applied template is stored under `metadata.guardrails` and `execution_history` for audit.
 
