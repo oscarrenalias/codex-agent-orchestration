@@ -3,7 +3,7 @@
   "title": "Document updated TUI observability cues",
   "agent_type": "documentation",
   "description": "Refresh the TUI operator documentation so it describes the live status bar, in-progress elapsed timers, stale lease indicator, and current-cycle deferred visibility introduced by this feature.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-52f6cdc6",
   "dependencies": [
@@ -25,51 +25,51 @@
   "execution_branch_name": "feature/b-52f6cdc6",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-52f6cdc6",
   "expected_files": [
-    "docs/tui.md",
-    "src/agent_takt/tui/app.py",
-    "src/agent_takt/tui/render.py",
-    "src/agent_takt/tui/state.py"
+    "docs/tui.md"
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/tui/app.py",
-    "src/agent_takt/tui/render.py",
-    "src/agent_takt/tui/state.py"
+    "docs/tui.md"
   ],
   "changed_files": [
-    "src/agent_takt/tui/app.py",
-    "src/agent_takt/tui/render.py",
-    "src/agent_takt/tui/state.py"
+    "docs/tui.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/tui.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "docs/tui.md updated with three targeted changes: (1) status bar description now shows the live `{N} running | {N} ready | {N} blocked | S:{mode}` format; (2) new \"In-progress row indicators\" subsection documents the elapsed timer `(Xm YYs)` and stale lease ` stale?` suffix elements; (3) new \"Deferred bead indicator\" subsection documents `\u2298 deferred` as current-cycle-only.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None. All changes are documentation-only and align with the implemented behaviour in render.py, state.py, and app.py.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
+    "changed_files": [
+      "docs/tui.md"
+    ],
+    "updated_docs": [
+      "docs/tui.md"
+    ],
     "next_action": "",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "docs/tui.md"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
+    "touched_files": [
+      "docs/tui.md"
+    ],
+    "conflict_risks": "No conflicts expected. docs/tui.md is not claimed by any sibling bead.",
     "design_decisions": "",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "state.py was not in the original `expected_files` list, but the change is additive (new field only) with no risk to sibling beads modifying the same area.\nNo conflicts expected. Only `app.py` was modified; `state.py`'s `status_panel_text()` method is no longer called from `_update_status_panel()` but remains intact for any other callers.\nChanges are isolated to `render.py`. The new `deferred_bead_ids` parameter is keyword-only with default `None`, so no existing callers break. No conflicts expected with sibling beads unless they also modify `render_tree_panel`.",
+  "conflict_risks": "No conflicts expected. docs/tui.md is not claimed by any sibling bead.",
   "branch_name": "feature/b-52f6cdc6",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-52f6cdc6",
-  "lease": {
-    "owner": "documentation:B-b6df813b",
-    "expires_at": "2026-04-08T16:17:06.531543+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -110,6 +110,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-b6df813b/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T15:48:49.999310+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated docs/tui.md to document live status bar, in-progress elapsed timers, stale lease indicator, and current-cycle deferred bead marker.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -189,7 +196,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated docs/tui.md to document live status bar, in-progress elapsed timers, stale lease indicator, and current-cycle deferred bead marker.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.35599905,
+      "duration_ms": 95972,
+      "duration_api_ms": 90463,
+      "num_turns": 16,
+      "input_tokens": 14,
+      "output_tokens": 5127,
+      "cache_creation_tokens": 37243,
+      "cache_read_tokens": 464636,
+      "stop_reason": "end_turn",
+      "session_id": "56086931-1304-4cbc-94f3-ceb3e08052ed",
+      "permission_denials": [],
+      "prompt_chars": 7400,
+      "prompt_lines": 155,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.35599905,
+        "duration_ms": 95972,
+        "duration_api_ms": 90463,
+        "num_turns": 16,
+        "input_tokens": 14,
+        "output_tokens": 5127,
+        "cache_creation_tokens": 37243,
+        "cache_read_tokens": 464636,
+        "stop_reason": "end_turn",
+        "session_id": "56086931-1304-4cbc-94f3-ceb3e08052ed",
+        "permission_denials": [],
+        "prompt_chars": 7400,
+        "prompt_lines": 155,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
