@@ -191,6 +191,21 @@ Labels are stored as a `list[str]` on the `Bead` model. Adding a label that is a
 
 ---
 
+## Creating a spec
+
+Use the provided "skill-spec-management" skill to manage the spec lifecycle. Please refer to the skill for more information, do not manage spec lifecycle on your own, use the provided skill.
+
+When a skill has been created, teh following sections are strongly recommended to be part of it:
+
+1. **Objective** — One paragraph: what problem this solves and why it matters
+2. **Problems to Fix** — Numbered list of specific issues, with current state described concretely
+3. **Changes** — What to build: new files, modified files, new behaviours. Be prescriptive — include function signatures, field names, config keys, CLI flags where known
+4. **Files to Modify** — Table: file path → what changes
+5. **Acceptance Criteria** — Bullet list of verifiable conditions the implementation must satisfy
+6. **Pending Decisions** — Any open questions that must be resolved before planning. Mark resolved decisions inline (strikethrough + resolution)
+
+---
+
 ## Planning a Spec (Persisting Beads)
 
 ```bash
