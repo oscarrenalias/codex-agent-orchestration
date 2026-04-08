@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-ff6a7e64",
-  "dependencies": [],
+  "dependencies": [
+    "B-78ac2abf"
+  ],
   "acceptance_criteria": [
     "The scheduler reporter contract documents the purpose of bead_deferred(bead, reason).",
     "Scheduler behavior documentation reflects continuous slot filling within a single run cycle.",
