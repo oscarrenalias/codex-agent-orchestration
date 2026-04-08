@@ -1,11 +1,11 @@
 ---
-name: Reactive Scheduler: Continuous Slot Fill and Deferral Logging
+name: "Reactive Scheduler: Continuous Slot Fill and Deferral Logging"
 id: spec-f4a943a4
 description: Reactive continuous slot-fill scheduler and deferral reason logging — no TUI changes
 dependencies: null
 priority: null
 complexity: null
-status: draft
+status: planned
 tags: []
 scope:
   in: null
