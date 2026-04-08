@@ -6,7 +6,13 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-33e002c4",
-  "dependencies": [],
+  "dependencies": [
+    "B-a5b34770",
+    "B-df94e873",
+    "B-5585770a",
+    "B-a2b5a99b",
+    "B-b383988e"
+  ],
   "acceptance_criteria": [
     "Documentation explains that no-structured-output failures now create recovery beads automatically instead of requiring a manual retry first.",
     "Documentation notes that retry skips duplicate recovery creation when a recovery bead already exists.",
