@@ -8,6 +8,7 @@ from pathlib import Path
 from ..gitutils import WorktreeManager
 from ..models import (
     BEAD_BLOCKED,
+    BEAD_DONE,
     BEAD_IN_PROGRESS,
     BEAD_READY,
     ExecutionRecord,
@@ -154,6 +155,16 @@ class Scheduler:
         ready = [bead for bead in ready if bead.bead_id not in in_flight_ids]
         ready.sort(key=lambda b: 0 if b.priority == "high" else 1)
 
+        # Emit deferral events for READY beads whose dependencies are not yet done.
+        # These are excluded from the ready list but still warrant a structured reason.
+        if reporter:
+            self._report_dependency_deferrals(
+                in_flight_ids=in_flight_ids,
+                feature_root_id=feature_root_id,
+                reporter=reporter,
+                deferred_this_cycle=deferred_this_cycle,
+            )
+
         # Merge storage-active beads with in-flight beads for conflict detection.
         # In-flight beads may not yet be marked in_progress in storage.
         active = self.storage.active_beads()
@@ -275,9 +286,48 @@ class Scheduler:
         for active in active_beads:
             if active.bead_id == bead.bead_id:
                 continue
-            if self._beads_conflict(bead, active):
-                return f"Deferred due to file-scope conflict with active bead {active.bead_id}"
+            if not self._beads_conflict(bead, active):
+                continue
+            same_feature_tree = (
+                self.storage.feature_root_id_for(bead) == self.storage.feature_root_id_for(active)
+            )
+            if same_feature_tree and (not bead.has_scope() or not active.has_scope()):
+                return f"worktree in use by in-progress {active.bead_id} (no file scope defined)"
+            return f"file-scope conflict with in-progress {active.bead_id}"
         return ""
+
+    def _report_dependency_deferrals(
+        self,
+        *,
+        in_flight_ids: set[str],
+        feature_root_id: str | None,
+        reporter: SchedulerReporter,
+        deferred_this_cycle: set[str],
+    ) -> None:
+        """Emit bead_deferred events for READY beads blocked on unsatisfied dependencies."""
+        for bead in self.storage.list_beads():
+            if bead.status != BEAD_READY or bead.lease is not None:
+                continue
+            if feature_root_id and self.storage.feature_root_id_for(bead) != feature_root_id:
+                continue
+            if bead.bead_id in in_flight_ids:
+                continue
+            if bead.bead_id in deferred_this_cycle:
+                continue
+            if self.storage.dependency_satisfied(bead):
+                continue
+            unsatisfied = [dep_id for dep_id in bead.dependencies if not self._dep_is_done(dep_id)]
+            if not unsatisfied:
+                continue
+            reason = "dependency not done: " + ", ".join(unsatisfied)
+            deferred_this_cycle.add(bead.bead_id)
+            reporter.bead_deferred(bead, reason)
+
+    def _dep_is_done(self, dep_id: str) -> bool:
+        try:
+            return self.storage.load_bead(dep_id).status == BEAD_DONE
+        except Exception:
+            return False
 
     def _beads_conflict(self, bead: Bead, active: Bead) -> bool:
         same_feature_tree = self.storage.feature_root_id_for(bead) == self.storage.feature_root_id_for(active)
