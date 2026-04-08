@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-52f6cdc6",
-  "dependencies": [],
+  "dependencies": [
+    "B-8150a4da"
+  ],
   "acceptance_criteria": [
     "`src/agent_takt/tui/app.py` renders status text in the form `N running | N ready | N blocked | S:auto/manual`.",
     "The counts are derived from current bead state on each refresh and stay synchronized with scheduler mode state already tracked by the app.",
