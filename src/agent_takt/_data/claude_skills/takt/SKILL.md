@@ -1,6 +1,6 @@
 ---
 name: takt
-description: Manage a takt-orchestrated project — beads, specs, scheduler, merges, and common workflows for the operator's Claude Code assistant.
+description: 'MANDATORY: Read this entire skill before taking any action on a takt project. Defines all required CLI commands (always `uv run takt ...`), bead lifecycle rules, spec management, scheduler operation, and merge workflow. Contains a list of forbidden operations — violating them corrupts pipeline state. Non-compliance is not acceptable.'
 tools: Read, Write, Edit, Glob, Grep, Bash
 user-invocable: false
 ---
