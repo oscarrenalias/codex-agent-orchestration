@@ -25,13 +25,21 @@
   "execution_branch_name": "feature/b-ff6a7e64",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
   "expected_files": [
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_cli_run.py",
     "tests/test_scheduler_core.py",
     "tests/test_scheduler_execution.py",
-    "tests/test_cli_run.py"
+    "uv.lock"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/scheduler/core.py",
+    "uv.lock"
+  ],
+  "changed_files": [
+    "src/agent_takt/scheduler/core.py",
+    "uv.lock"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
@@ -54,7 +62,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "B-5d9cffda also modifies `src/agent_takt/scheduler/core.py` (adding `bead_deferred` call sites and reporter changes). It should rebase on this bead's commit to avoid conflicts.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
