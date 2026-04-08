@@ -3,7 +3,7 @@
   "title": "Resolve merge conflicts for Reactive Scheduler Execution Root",
   "agent_type": "developer",
   "description": "Test gate timed out for feature/b-ff6a7e64.\n\nCommand: uv run pytest tests/ -n auto -q\nTimeout: 1800s",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "merge-conflict",
   "parent_id": "B-ff6a7e64",
   "dependencies": [],
@@ -12,7 +12,9 @@
   "feature_root_id": "B-ff6a7e64",
   "execution_branch_name": "feature/b-ff6a7e64",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
-  "expected_files": [],
+  "expected_files": [
+    "src/agent_takt/scheduler/core.py"
+  ],
   "expected_globs": [],
   "touched_files": [
     "src/agent_takt/scheduler/core.py"
@@ -22,37 +24,36 @@
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
-    "findings_count": 0,
+    "completed": "Added `if max_workers < 1: return result` before `ThreadPoolExecutor` in `run_once()`. Committed to `feature/b-ff6a7e64`.",
+    "remaining": "None. The fix is complete and committed.",
+    "risks": "None known. The guard is a single early-return that preserves existing sentinel behaviour.",
+    "verdict": "approved",
+    "findings_count": 1,
     "requires_followup": false,
     "changed_files": [
       "src/agent_takt/scheduler/core.py"
     ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
-    "block_reason": "Agent timed out after 1500 seconds",
-    "expected_files": [],
+    "next_action": "Re-run the test gate via `takt merge`.",
+    "next_agent": "tester",
+    "block_reason": "",
+    "expected_files": [
+      "src/agent_takt/scheduler/core.py"
+    ],
     "expected_globs": [],
     "touched_files": [
       "src/agent_takt/scheduler/core.py"
     ],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "conflict_risks": "None \u2014 only `core.py` was modified, single-line guard addition with no overlap risk.",
+    "design_decisions": "The `max_workers=0` sentinel was a pre-existing contract in the test suite (12+ callsites in `test_scheduler_followups.py`). Rather than change all tests, the guard was added at the top of the execution path \u2014 after `_reevaluate_blocked` is called but before the `ThreadPoolExecutor` is created \u2014 so callers with `max_workers=0` still get the reevaluation pass they expect and return an empty `SchedulerResult`.",
+    "test_coverage_notes": "Tester should verify that: (1) all `run_once(max_workers=0)` callsites in `test_scheduler_followups.py` now pass (they were previously crashing with `ValueError`), and (2) the reactive slot-fill loop still works correctly for `max_workers >= 1` (no regression in `test_scheduler_core.py`).",
+    "known_limitations": "N/A \u2014 the fix is complete as specified."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only `core.py` was modified, single-line guard addition with no overlap risk.",
   "branch_name": "feature/b-ff6a7e64",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
-  "lease": {
-    "owner": "developer:B-f41c13a1",
-    "expires_at": "2026-04-08T13:30:58.153224+00:00"
-  },
+  "lease": null,
   "retries": 1,
   "execution_history": [
     {
@@ -141,6 +142,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-f41c13a1/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T13:03:35.917657+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added `max_workers < 1` early-return guard in `Scheduler.run_once()` before the `ThreadPoolExecutor` block. The reactive scheduler refactor introduced `ThreadPoolExecutor(max_workers=max_workers)`, but `ThreadPoolExecutor` raises `ValueError` when `max_workers=0`. Many scheduler tests (especially in `test_scheduler_followups.py`) use `run_once(max_workers=0)` as a legacy sentinel meaning \"run `_reevaluate_blocked` only, do not dispatch\". The guard restores that contract.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -208,14 +216,50 @@
       }
     },
     "last_agent_result": {
-      "outcome": "failed",
-      "summary": "Worker execution failed: Agent timed out after 1500 seconds",
-      "verdict": "",
-      "findings_count": 0,
+      "outcome": "completed",
+      "summary": "Added `max_workers < 1` early-return guard in `Scheduler.run_once()` before the `ThreadPoolExecutor` block. The reactive scheduler refactor introduced `ThreadPoolExecutor(max_workers=max_workers)`, but `ThreadPoolExecutor` raises `ValueError` when `max_workers=0`. Many scheduler tests (especially in `test_scheduler_followups.py`) use `run_once(max_workers=0)` as a legacy sentinel meaning \"run `_reevaluate_blocked` only, do not dispatch\". The guard restores that contract.",
+      "verdict": "approved",
+      "findings_count": 1,
       "requires_followup": false,
-      "next_agent": "",
-      "block_reason": "Agent timed out after 1500 seconds"
-    }
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.3651597,
+      "duration_ms": 154939,
+      "duration_api_ms": 146247,
+      "num_turns": 15,
+      "input_tokens": 230,
+      "output_tokens": 8451,
+      "cache_creation_tokens": 33616,
+      "cache_read_tokens": 372149,
+      "stop_reason": "end_turn",
+      "session_id": "a3c86192-e91f-429a-86b1-f28fd520286a",
+      "permission_denials": [],
+      "prompt_chars": 7091,
+      "prompt_lines": 148,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.3651597,
+        "duration_ms": 154939,
+        "duration_api_ms": 146247,
+        "num_turns": 15,
+        "input_tokens": 230,
+        "output_tokens": 8451,
+        "cache_creation_tokens": 33616,
+        "cache_read_tokens": 372149,
+        "stop_reason": "end_turn",
+        "session_id": "a3c86192-e91f-429a-86b1-f28fd520286a",
+        "permission_denials": [],
+        "prompt_chars": 7091,
+        "prompt_lines": 148,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
