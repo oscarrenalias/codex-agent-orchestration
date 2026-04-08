@@ -3,7 +3,7 @@
   "title": "Resolve merge conflicts for Reactive Scheduler Execution Root",
   "agent_type": "developer",
   "description": "Test gate timed out for feature/b-ff6a7e64.\n\nCommand: uv run pytest tests/ -n auto -q\nTimeout: 1800s",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "merge-conflict",
   "parent_id": "B-ff6a7e64",
   "dependencies": [],
@@ -49,7 +49,10 @@
   "conflict_risks": "",
   "branch_name": "feature/b-ff6a7e64",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
-  "lease": null,
+  "lease": {
+    "owner": "developer:B-f41c13a1",
+    "expires_at": "2026-04-08T13:30:58.153224+00:00"
+  },
   "retries": 1,
   "execution_history": [
     {
@@ -104,6 +107,30 @@
       "event": "retried",
       "agent_type": "developer",
       "summary": "Requeued blocked bead after transient infrastructure/auth error",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-08T13:00:59.337219+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-08T13:00:59.337253+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
       "details": {}
     }
   ],
