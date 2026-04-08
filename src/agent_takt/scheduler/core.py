@@ -103,7 +103,13 @@ class Scheduler:
            ``reporter.lease_expired()``.
         2. **Re-evaluate blocked beads** — blocked beads are inspected for
            transient errors and corrective/recovery state changes.
-        3. **Continuous slot-fill loop** — a ``ThreadPoolExecutor`` with
+        3. **Guard: skip dispatch when max_workers < 1** — if *max_workers* is
+           less than 1 (the legacy ``max_workers=0`` sentinel), the function
+           returns after steps 1–2 without entering the slot-fill loop.
+           ``ThreadPoolExecutor`` requires at least one worker thread, so
+           passing 0 is a supported way to run only lease expiry and blocked
+           bead re-evaluation without dispatching any new work.
+        4. **Continuous slot-fill loop** — a ``ThreadPoolExecutor`` with
            ``max_workers`` threads is used.  Each iteration of the inner loop:
 
            a. Fills all free worker slots by calling
