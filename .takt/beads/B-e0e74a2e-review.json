@@ -3,7 +3,7 @@
   "title": "Review Fix 5 scheduler followup tests broken by reactive slot-fill",
   "agent_type": "review",
   "description": "Review implementation for B-e0e74a2e",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-e0e74a2e",
   "dependencies": [
@@ -51,9 +51,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None. Only test file modified; no production source changes.",
-  "branch_name": "",
+  "branch_name": "feature/b-ff6a7e64",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-e0e74a2e-review",
+    "expires_at": "2026-04-08T14:05:05.228576+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -62,9 +65,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-08T13:35:06.439063+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-08T13:35:06.439099+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-e0e74a2e-review",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "e0f8257068960243661f5dc4f9b787fa5f59361a751574191832721af8c0dd84",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-e0e74a2e-review/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
