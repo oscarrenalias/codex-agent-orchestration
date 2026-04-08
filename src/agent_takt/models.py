@@ -210,6 +210,11 @@ class AgentRunResult:
     design_decisions: str = ""
     test_coverage_notes: str = ""
     known_limitations: str = ""
+    # Investigator-specific fields (populated only for investigator beads)
+    findings: str = ""
+    recommendations: str = ""
+    risk_areas: str = ""
+    report_path: str = ""
     telemetry: dict[str, Any] | None = None
 
 
