@@ -87,6 +87,25 @@ def _elapsed_badge(bead: Bead) -> str:
         return ""
 
 
+def _stale_badge(bead: Bead) -> str:
+    """Return stale lease indicator for in-progress beads with expired leases.
+
+    Returns ' stale?' if the bead is in_progress and its lease expires_at is in the past.
+    Returns empty string otherwise.
+    """
+    if bead.status != BEAD_IN_PROGRESS:
+        return ""
+    if bead.lease is None:
+        return ""
+    try:
+        expires_dt = datetime.fromisoformat(bead.lease.expires_at)
+        if datetime.now(timezone.utc) > expires_dt:
+            return " stale?"
+    except (ValueError, TypeError):
+        pass
+    return ""
+
+
 def format_detail_panel(bead: Bead | None, subtree_telemetry: dict | None = None) -> str:
     if bead is None:
         return "No bead selected."
