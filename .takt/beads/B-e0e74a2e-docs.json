@@ -3,7 +3,7 @@
   "title": "Document Fix 5 scheduler followup tests broken by reactive slot-fill",
   "agent_type": "documentation",
   "description": "Update docs for B-e0e74a2e",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-e0e74a2e",
   "dependencies": [
@@ -19,40 +19,47 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "tests/test_scheduler_followups.py"
+    "CLAUDE.md"
   ],
   "changed_files": [
-    "tests/test_scheduler_followups.py"
+    "CLAUDE.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Added one paragraph to the Corrective beads entry in CLAUDE.md explaining that the reactive slot-fill loop may dispatch newly requeued parents and newly created correctives in the same scheduler cycle, and that test authors must pre-configure FakeRunner and use assertIn accordingly.",
+    "remaining": "None.",
+    "risks": "None. Only CLAUDE.md was modified; no runtime code changed.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "CLAUDE.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md"
+    ],
+    "next_action": "Proceed to review bead.",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "tests/test_scheduler_followups.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
+    "touched_files": [
+      "CLAUDE.md"
+    ],
+    "conflict_risks": "None. Only CLAUDE.md modified; no overlap with other in-progress beads.",
     "design_decisions": "",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-e0e74a2e-test",
-  "conflict_risks": "None. Only test file modified; no production source changes.",
+  "block_reason": "",
+  "conflict_risks": "None. Only CLAUDE.md modified; no overlap with other in-progress beads.",
   "branch_name": "feature/b-ff6a7e64",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
-  "lease": {
-    "owner": "documentation:B-e0e74a2e-docs",
-    "expires_at": "2026-04-08T14:03:32.062602+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -100,6 +107,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-e0e74a2e-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T13:34:54.493876+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated CLAUDE.md Corrective beads entry to document reactive slot-fill same-cycle dispatch behavior and test-authoring implications.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -164,7 +178,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated CLAUDE.md Corrective beads entry to document reactive slot-fill same-cycle dispatch behavior and test-authoring implications.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.22038285,
+      "duration_ms": 79103,
+      "duration_api_ms": 71440,
+      "num_turns": 14,
+      "input_tokens": 86,
+      "output_tokens": 3811,
+      "cache_creation_tokens": 23403,
+      "cache_read_tokens": 250662,
+      "stop_reason": "end_turn",
+      "session_id": "604a69b9-7136-4eca-9fe0-3449eb0fde03",
+      "permission_denials": [],
+      "prompt_chars": 6183,
+      "prompt_lines": 143,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.22038285,
+        "duration_ms": 79103,
+        "duration_api_ms": 71440,
+        "num_turns": 14,
+        "input_tokens": 86,
+        "output_tokens": 3811,
+        "cache_creation_tokens": 23403,
+        "cache_read_tokens": 250662,
+        "stop_reason": "end_turn",
+        "session_id": "604a69b9-7136-4eca-9fe0-3449eb0fde03",
+        "permission_denials": [],
+        "prompt_chars": 6183,
+        "prompt_lines": 143,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "497879ae52b87f815426c761b6a14c0b130b8298"
   },
   "labels": [],
   "recovery_for": null,
