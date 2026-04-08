@@ -16,6 +16,7 @@ from agent_takt.models import (
     BEAD_READY,
     AgentRunResult,
     Lease,
+    BEAD_BLOCKED,
 )
 from agent_takt.scheduler import Scheduler
 from agent_takt.storage import RepositoryStorage
@@ -292,6 +293,74 @@ class SchedulerCoreTests(OrchestratorTests):
         result = scheduler.run_once(max_workers=1)
         self.assertEqual([high1.bead_id], result.started)
         self.assertNotIn(high2.bead_id, result.started)
+
+    def test_high_priority_bead_deferred_due_to_conflict_normal_bead_runs(self) -> None:
+        """A conflicting high-priority bead is deferred; the non-conflicting normal bead runs."""
+        # An already-in-progress bead holds the conflicting scope
+        in_progress = self.storage.create_bead(
+            title="In-progress bead",
+            agent_type="developer",
+            description="running",
+            expected_files=["src/conflict.py"],
+        )
+        in_progress.status = BEAD_IN_PROGRESS
+        in_progress.lease = Lease(owner="developer:running", expires_at="2099-01-01T00:00:00+00:00")
+        self.storage.save_bead(in_progress)
+
+        normal = self.storage.create_bead(
+            title="Normal priority task",
+            agent_type="developer",
+            description="safe files",
+            expected_files=["src/normal.py"],
+        )
+        high_conflicting = self.storage.create_bead(
+            title="High priority conflicting task",
+            agent_type="developer",
+            description="conflicts with in-progress",
+            expected_files=["src/conflict.py"],
+            priority="high",
+        )
+        runner = FakeRunner(
+            results={
+                normal.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=normal.expected_files),
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once(max_workers=1)
+        # High-priority bead is deferred due to conflict
+        self.assertIn(high_conflicting.bead_id, result.deferred)
+        # Normal-priority bead runs because it has no conflict
+        self.assertIn(normal.bead_id, result.started)
+        self.assertIn(normal.bead_id, result.completed)
+
+    def test_multi_worker_selects_both_high_and_normal_priority_when_capacity_allows(self) -> None:
+        """With max_workers=2, both a high and a normal priority bead are selected."""
+        normal = self.storage.create_bead(
+            title="Normal priority task",
+            agent_type="developer",
+            description="created first",
+            expected_files=["src/normal.py"],
+        )
+        high = self.storage.create_bead(
+            title="High priority task",
+            agent_type="developer",
+            description="created second but high priority",
+            expected_files=["src/high.py"],
+            priority="high",
+        )
+        runner = FakeRunner(
+            results={
+                normal.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=normal.expected_files),
+                high.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=high.expected_files),
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once(max_workers=2)
+        self.assertIn(high.bead_id, result.started)
+        self.assertIn(normal.bead_id, result.started)
+        self.assertIn(high.bead_id, result.completed)
+        self.assertIn(normal.bead_id, result.completed)
+        self.assertEqual([], result.deferred)
 
     # ------------------------------------------------------------------
     # Feature root inheritance
