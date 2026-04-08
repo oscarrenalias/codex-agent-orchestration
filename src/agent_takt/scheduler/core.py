@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait as cf_wait
 from datetime import datetime, timezone
 from fnmatch import fnmatch
 from pathlib import Path
@@ -81,37 +81,103 @@ class Scheduler:
             for bead_id in expired:
                 reporter.lease_expired(bead_id)
         self._reevaluate_blocked(feature_root_id=feature_root_id, reporter=reporter)
+
+        # Track beads deferred in this cycle to avoid duplicate history entries
+        # and duplicate reporter events when the same bead is reconsidered across
+        # fill-loop iterations.
+        deferred_this_cycle: set[str] = set()
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures: dict[Future, Bead] = {}
+            reevaluate_after_completion = False
+
+            while True:
+                # Re-evaluate blocked beads after each completion pass to pick up
+                # corrective beads and dependencies that became satisfied mid-cycle.
+                if reevaluate_after_completion:
+                    self._reevaluate_blocked(feature_root_id=feature_root_id, reporter=reporter)
+                    reevaluate_after_completion = False
+
+                # Fill any free worker slots.
+                free_slots = max_workers - len(futures)
+                if free_slots > 0:
+                    selected = self._select_beads_for_dispatch(
+                        free_slots,
+                        in_flight=list(futures.values()),
+                        feature_root_id=feature_root_id,
+                        result=result,
+                        reporter=reporter,
+                        deferred_this_cycle=deferred_this_cycle,
+                    )
+                    result.started.extend(bead.bead_id for bead in selected)
+                    for bead in selected:
+                        futures[executor.submit(self._process, bead, result, reporter=reporter)] = bead
+
+                if not futures:
+                    break  # nothing running and nothing left to dispatch
+
+                # Wait for at least one in-flight bead to finish, then loop to fill
+                # the freed slot immediately.
+                done_set, _ = cf_wait(list(futures.keys()), return_when=FIRST_COMPLETED)
+                for future in done_set:
+                    futures.pop(future)
+                    future.result()  # re-raise any uncaught exception from the worker
+                reevaluate_after_completion = True
+
+        return result
+
+    def _select_beads_for_dispatch(
+        self,
+        max_count: int,
+        *,
+        in_flight: list[Bead],
+        feature_root_id: str | None,
+        result: SchedulerResult,
+        reporter: SchedulerReporter | None = None,
+        deferred_this_cycle: set[str],
+    ) -> list[Bead]:
+        """Return up to *max_count* ready beads with no file-scope conflicts.
+
+        Beads already being processed (*in_flight*) are excluded from candidates.
+        Conflict checks include in-flight beads to guard the brief window between
+        executor.submit() and the worker thread marking the bead in_progress.
+        A bead is recorded as deferred at most once per run_once() call to avoid
+        duplicate execution-history entries.
+        """
         ready = self.storage.ready_beads()
         if feature_root_id:
             ready = [
                 bead for bead in ready
                 if self.storage.feature_root_id_for(bead) == feature_root_id
             ]
+        in_flight_ids = {bead.bead_id for bead in in_flight}
+        ready = [bead for bead in ready if bead.bead_id not in in_flight_ids]
         ready.sort(key=lambda b: 0 if b.priority == "high" else 1)
-        selected: list[Bead] = []
+
+        # Merge storage-active beads with in-flight beads for conflict detection.
+        # In-flight beads may not yet be marked in_progress in storage.
         active = self.storage.active_beads()
+        active_ids = {b.bead_id for b in active}
+        for b in in_flight:
+            if b.bead_id not in active_ids:
+                active.append(b)
+
+        selected: list[Bead] = []
         for bead in ready:
             conflict_reason = self._find_conflict_reason(bead, active + selected)
             if conflict_reason:
-                bead.block_reason = conflict_reason
-                self.storage.update_bead(bead, event="deferred", summary=conflict_reason)
-                result.deferred.append(bead.bead_id)
-                if reporter:
-                    reporter.bead_deferred(bead, conflict_reason)
+                if bead.bead_id not in deferred_this_cycle:
+                    bead.block_reason = conflict_reason
+                    self.storage.update_bead(bead, event="deferred", summary=conflict_reason)
+                    result.deferred.append(bead.bead_id)
+                    deferred_this_cycle.add(bead.bead_id)
+                    if reporter:
+                        reporter.bead_deferred(bead, conflict_reason)
                 continue
-            if len(selected) >= max_workers:
+            if len(selected) >= max_count:
                 continue
             selected.append(bead)
-        result.started.extend(bead.bead_id for bead in selected)
-        if len(selected) <= 1:
-            for bead in selected:
-                self._process(bead, result, reporter=reporter)
-            return result
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(self._process, bead, result, reporter=reporter) for bead in selected]
-            for future in futures:
-                future.result()
-        return result
+        return selected
 
     def _process(
         self,
