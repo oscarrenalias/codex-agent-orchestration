@@ -104,7 +104,7 @@ AGENT_OUTPUT_SCHEMA = {
                 "additionalProperties": False,
                 "properties": {
                     "title": {"type": "string"},
-                    "agent_type": {"type": "string", "enum": ["planner", "developer", "tester", "documentation", "review"]},
+                    "agent_type": {"type": "string", "enum": ["planner", "developer", "tester", "documentation", "review", "recovery"]},
                     "description": {"type": "string"},
                     "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
                     "dependencies": {"type": "array", "items": {"type": "string"}},
@@ -153,7 +153,7 @@ PLANNER_OUTPUT_SCHEMA = {
             "additionalProperties": False,
             "properties": {
                 "title": {"type": "string"},
-                "agent_type": {"type": "string", "enum": ["planner", "developer", "tester", "documentation", "review"]},
+                "agent_type": {"type": "string", "enum": ["planner", "developer", "tester", "documentation", "review", "recovery"]},
                 "description": {"type": "string"},
                 "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
                 "dependencies": {"type": "array", "items": {"type": "string"}},
@@ -352,7 +352,11 @@ class ClaudeCodeAgentRunner(AgentRunner):
         over the config-based resolution.  The default sentinel ``...`` means
         "resolve from config".
         """
-        tools = self.config.allowed_tools_for("claude", agent_type or "developer")
+        # Recovery agents must not call tools — they only read supplied context and emit JSON.
+        if agent_type == "recovery":
+            tools = []
+        else:
+            tools = self.config.allowed_tools_for("claude", agent_type or "developer")
         if model is ...:
             model = self.config.model_for("claude", agent_type or "developer")
         cmd = [

@@ -6,7 +6,7 @@ from pathlib import Path
 from ._assets import packaged_templates_dir
 from .models import Bead, HandoffSummary
 
-BUILT_IN_AGENT_TYPES = ("planner", "developer", "tester", "documentation", "review")
+BUILT_IN_AGENT_TYPES = ("planner", "developer", "tester", "documentation", "review", "recovery")
 DEFAULT_TEMPLATES_DIR = packaged_templates_dir()
 _EXECUTION_HISTORY_PROMPT_CAP = 5
 
@@ -43,7 +43,7 @@ AGENT_OUTPUT_SCHEMA = {
                 "additionalProperties": False,
                 "properties": {
                     "title": {"type": "string"},
-                    "agent_type": {"type": "string", "enum": ["planner", "developer", "tester", "documentation", "review"]},
+                    "agent_type": {"type": "string", "enum": ["planner", "developer", "tester", "documentation", "review", "recovery"]},
                     "description": {"type": "string"},
                     "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
                     "dependencies": {"type": "array", "items": {"type": "string"}},
