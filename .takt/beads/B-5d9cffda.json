@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-ff6a7e64",
-  "dependencies": [],
+  "dependencies": [
+    "B-0d69af81"
+  ],
   "acceptance_criteria": [
     "SchedulerReporter defines bead_deferred(bead, reason) with the new contract.",
     "Every scheduler deferral path reports a non-empty reason string through the reporter.",
