@@ -3,7 +3,7 @@
   "title": "Document updated TUI observability cues",
   "agent_type": "documentation",
   "description": "Refresh the TUI operator documentation so it describes the live status bar, in-progress elapsed timers, stale lease indicator, and current-cycle deferred visibility introduced by this feature.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-52f6cdc6",
   "dependencies": [
@@ -64,9 +64,12 @@
   },
   "block_reason": "",
   "conflict_risks": "state.py was not in the original `expected_files` list, but the change is additive (new field only) with no risk to sibling beads modifying the same area.\nNo conflicts expected. Only `app.py` was modified; `state.py`'s `status_panel_text()` method is no longer called from `_update_status_panel()` but remains intact for any other callers.\nChanges are isolated to `render.py`. The new `deferred_bead_ids` parameter is keyword-only with default `None`, so no existing callers break. No conflicts expected with sibling beads unless they also modify `render_tree_panel`.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-52f6cdc6",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-52f6cdc6",
+  "lease": {
+    "owner": "documentation:B-b6df813b",
+    "expires_at": "2026-04-08T16:17:06.531543+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -75,9 +78,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-08T15:47:06.847580+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-08T15:47:06.847605+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-b6df813b",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "74b1b8cb463e41af3fe5b77be1d2f5b71332b8328ba1fa07bc1b78e2bc6c3552",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-b6df813b/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
