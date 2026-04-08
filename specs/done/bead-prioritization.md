@@ -5,7 +5,7 @@ description: Allow users to flag beads as high priority so the scheduler process
 dependencies: null
 priority: medium
 complexity: small
-status: planned
+status: done
 tags:
 - scheduler
 - cli
