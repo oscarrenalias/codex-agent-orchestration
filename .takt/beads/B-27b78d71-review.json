@@ -3,7 +3,7 @@
   "title": "Review Add recovery metadata to bead model",
   "agent_type": "review",
   "description": "Review implementation for B-27b78d71",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-27b78d71",
   "dependencies": [
@@ -37,35 +37,51 @@
     "tests/test_recovery_for.py",
     "uv.lock"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Reviewed models.py (field definition + from_dict), prompts.py (BUILT_IN_AGENT_TYPES + AGENT_OUTPUT_SCHEMA enum extension), tests/test_recovery_for.py (9 scenarios including storage round-trip), and CLAUDE.md (field semantics + recovery bead concept). All changes are correct and consistent with design decisions.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "No risks. models.py is backward-compatible \u2014 existing beads without recovery_for deserialize to None via data.get().",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
+    "changed_files": [
+      "CLAUDE.md",
+      "src/agent_takt/models.py",
+      "src/agent_takt/prompts.py",
+      "tests/test_recovery_for.py",
+      "uv.lock"
+    ],
+    "updated_docs": [
+      "CLAUDE.md"
+    ],
     "next_action": "",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/models.py",
+      "uv.lock"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
+    "touched_files": [
+      "CLAUDE.md",
+      "src/agent_takt/models.py",
+      "src/agent_takt/prompts.py",
+      "tests/test_recovery_for.py",
+      "uv.lock"
+    ],
+    "conflict_risks": "No conflicts. models.py changes are additive (new optional field at end of dataclass). No other beads in this feature tree claim models.py.",
     "design_decisions": "",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "No conflicts expected. `models.py` is now free for other beads in this feature tree.",
+  "conflict_risks": "No conflicts. models.py changes are additive (new optional field at end of dataclass). No other beads in this feature tree claim models.py.",
   "branch_name": "feature/b-33e002c4",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-27b78d71-review",
-    "expires_at": "2026-04-08T06:17:58.353445+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -106,6 +122,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-27b78d71-review/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T05:49:29.425659+00:00",
+      "event": "completed",
+      "agent_type": "review",
+      "summary": "Approved: recovery_for field added correctly to Bead model with backward-compatible serialization, thorough tests, and accurate documentation.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -179,7 +202,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Approved: recovery_for field added correctly to Bead model with backward-compatible serialization, thorough tests, and accurate documentation.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.2070258,
+      "duration_ms": 83997,
+      "duration_api_ms": 79483,
+      "num_turns": 8,
+      "input_tokens": 7,
+      "output_tokens": 4514,
+      "cache_creation_tokens": 26364,
+      "cache_read_tokens": 134766,
+      "stop_reason": "end_turn",
+      "session_id": "335ec72a-e847-4647-9eaa-1459194ee64a",
+      "permission_denials": [],
+      "prompt_chars": 7153,
+      "prompt_lines": 157,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.2070258,
+        "duration_ms": 83997,
+        "duration_api_ms": 79483,
+        "num_turns": 8,
+        "input_tokens": 7,
+        "output_tokens": 4514,
+        "cache_creation_tokens": 26364,
+        "cache_read_tokens": 134766,
+        "stop_reason": "end_turn",
+        "session_id": "335ec72a-e847-4647-9eaa-1459194ee64a",
+        "permission_denials": [],
+        "prompt_chars": 7153,
+        "prompt_lines": 157,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": []
 }
