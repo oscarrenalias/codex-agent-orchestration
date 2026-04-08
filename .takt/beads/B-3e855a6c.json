@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-52f6cdc6",
-  "dependencies": [],
+  "dependencies": [
+    "B-81aefbd3",
+    "B-b6df813b"
+  ],
   "acceptance_criteria": [
     "Review confirms the final implementation matches the spec acceptance criteria across render, app, tests, and docs.",
     "Review checks for regressions in bead-row formatting, log readability, and status bar clarity under normal refresh behavior.",
