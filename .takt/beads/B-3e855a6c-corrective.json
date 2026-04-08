@@ -1,0 +1,84 @@
+{
+  "bead_id": "B-3e855a6c-corrective",
+  "title": "Corrective fix for B-3e855a6c: Review TUI observability feature for release readiness",
+  "agent_type": "developer",
+  "description": "Blocked reason: src/agent_takt/tui/app.py TuiSchedulerReporter.bead_deferred() (lines 1099-1102): state.deferred_this_cycle is assigned before _post() is called. If this is the first reporter call in a cycle, _post() clears the just-assigned set via .clear(), silently dropping the deferred bead ID. Fix: reorder to call _post() first, then update _deferred_this_cycle and sync to state. Add a test covering the first-call-in-cycle edge case.\n\nRemaining work: Fix the bead_deferred() ordering bug: move _post() call before the deferred_this_cycle state sync to prevent _post()'s cycle-start clear from erasing the just-written bead ID.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-3e855a6c",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-3e855a6c.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [
+    "specs/drafts/tui-observability-live-workers-status-bar-and-bead-state-clarity.md",
+    "docs/tui.md"
+  ],
+  "feature_root_id": "B-52f6cdc6",
+  "execution_branch_name": "feature/b-52f6cdc6",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-52f6cdc6",
+  "expected_files": [
+    "src/agent_takt/tui/render.py",
+    "src/agent_takt/tui/app.py",
+    "tests/test_tui_render.py",
+    "tests/test_tui_app.py",
+    "docs/tui.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "docs/tui.md",
+    "tests/test_tui_app.py",
+    "tests/test_tui_render.py",
+    "tests/test_tui_state.py"
+  ],
+  "changed_files": [
+    "docs/tui.md",
+    "tests/test_tui_app.py",
+    "tests/test_tui_render.py",
+    "tests/test_tui_state.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T15:51:59.787414+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-3e855a6c"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
