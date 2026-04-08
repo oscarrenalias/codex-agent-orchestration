@@ -40,7 +40,7 @@ src/agent_takt/
     followups.py  Followup bead creation and scope syncing
     reporter.py   SchedulerReporter: cycle summary formatting
   storage.py      Bead JSON persistence under .takt/beads/ + telemetry artifacts
-  models.py       Bead, Lease, HandoffSummary, AgentRunResult
+  models.py       Bead (incl. recovery_for), Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
   prompts.py      Worker/planner prompt construction + guardrail loading (config-overridable)
   skills.py       Per-agent skill catalog allowlists and isolated execution root setup (config-driven)
@@ -66,7 +66,7 @@ templates/agents/   Guardrail templates per agent type (mandatory)
 
 **Beads** are the unit of work. Lifecycle: `open` -> `ready` -> `in_progress` -> `done` | `blocked` | `handed_off`.
 
-**Agent types**: `planner`, `developer`, `tester`, `documentation`, `review`. Only `developer`, `tester`, `documentation` mutate code. Invalid types are rejected at parse time via JSON schema `enum` constraints in both `PLANNER_OUTPUT_SCHEMA` and `AGENT_OUTPUT_SCHEMA`.
+**Agent types**: `planner`, `developer`, `tester`, `documentation`, `review`, `recovery`. Only `developer`, `tester`, `documentation` mutate code. Invalid types are rejected at parse time via JSON schema `enum` constraints in both `PLANNER_OUTPUT_SCHEMA` and `AGENT_OUTPUT_SCHEMA`.
 
 **Verdicts**: Review and tester beads produce `verdict: approved | needs_changes`. Verdict is the control-flow signal; narrative fields are context only.
 
@@ -75,6 +75,12 @@ templates/agents/   Guardrail templates per agent type (mandatory)
 **Shared followup scope population** (`_populate_shared_followup_touched_files`): Before a `tester`, `documentation`, or `review` bead starts, the scheduler aggregates `touched_files` and `changed_files` from all **done** dependency beads — including tester and documentation dependencies, not just developer beads — and merges them into the followup bead's scope. This ensures review beads see test files written by the tester and doc files written by the docs agent. Duplicates are deduplicated; the bead is only persisted if the merged scope differs from the existing one.
 
 **Corrective beads**: Transient failures matching `config.scheduler.transient_block_patterns` get up to `config.scheduler.max_corrective_attempts` (default 5) automatic `-corrective` retries.
+
+**Recovery beads**: When a bead fails with a no-structured-output error, the scheduler automatically creates a `{bead_id}-recovery` bead (`bead_type="recovery"`, `agent_type="recovery"`) — no manual retry is required. The recovery bead's `recovery_for` field holds the `bead_id` of the original bead. When the recovery bead completes successfully, the scheduler applies its synthesised handoff to the original bead, marks it done, and triggers normal follow-up creation. Recovery beads do not consume corrective attempt slots. Recovery-of-recovery is prevented: a `bead_type="recovery"` bead that also fails without structured output does not create a second recovery bead.
+
+If you run `takt retry` on a bead that already has a pending (non-terminal) recovery bead, the command warns and exits without requeuing — preventing a race with the in-progress recovery path. Manual retry is allowed again once the recovery bead reaches `done` or `blocked`.
+
+Recovery beads appear in `takt bead list --plain` as ordinary entries with `bead_type=recovery`. They are also visible as children of the original bead in `takt bead graph`.
 
 ## Multi-Backend Support
 

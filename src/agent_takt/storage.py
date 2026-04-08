@@ -302,6 +302,7 @@ class RepositoryStorage:
         metadata: dict | None = None,
         conflict_risks: str = "",
         labels: list[str] | None = None,
+        recovery_for: str | None = None,
         priority: str | None = None,
     ) -> Bead:
         allocated_bead_id = bead_id or self.allocate_bead_id()
@@ -346,6 +347,7 @@ class RepositoryStorage:
             metadata=dict(metadata or {}),
             conflict_risks=conflict_risks,
             labels=list(labels or []),
+            recovery_for=recovery_for,
             priority=priority,
         )
         bead.execution_history.append(

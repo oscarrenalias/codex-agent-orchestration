@@ -59,6 +59,9 @@ AGENT_SKILL_ALLOWLIST: dict[str, tuple[str, ...]] = {
         "core/base-orchestrator",
         "role/scheduler-policy",
     ),
+    "recovery": (
+        "core/base-orchestrator",
+    ),
 }
 
 
