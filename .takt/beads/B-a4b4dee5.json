@@ -3,7 +3,7 @@
   "title": "Register investigator in core agent and config registries",
   "agent_type": "developer",
   "description": "Add `investigator` to the core agent-type registries and config defaults while keeping it out of mutating-agent sets. Update repo and bundled config defaults so runtime validation and config parity stay aligned.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-a296a479",
   "dependencies": [],
@@ -26,37 +26,64 @@
     "tests/test_config.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    ".takt/config.yaml",
+    "src/agent_takt/_data/default_config.yaml",
+    "src/agent_takt/config.py",
+    "src/agent_takt/models.py",
+    "tests/test_config.py"
+  ],
+  "changed_files": [
+    ".takt/config.yaml",
+    "src/agent_takt/_data/default_config.yaml",
+    "src/agent_takt/config.py",
+    "src/agent_takt/models.py",
+    "tests/test_config.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "- `models.py`: Added `\"investigator\"` to `AGENT_TYPES`; `MUTATING_AGENTS` unchanged.\\n- `config.py`: Added `\"investigator\"` to `OrchestratorConfig.agent_types` field default and in `default_config()` function.\\n- `_data/default_config.yaml`: Added `investigator` to `agent_types` list.\\n- `.takt/config.yaml`: Added `investigator` to `agent_types` list (keeps repo config in parity with defaults, as verified by `test_repo_config_matches_defaults`).\\n- `tests/test_config.py`: Updated `test_agent_types` expected list to include `\"investigator\"`.",
+    "remaining": "N/A",
+    "risks": "The test_repo_config_matches_defaults test asserts cfg.agent_types == default.agent_types; both now include investigator in matching order so this passes. No other tests reference the agent_types list directly in a way that would break.",
+    "verdict": "approved",
     "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
+    "requires_followup": true,
+    "changed_files": [
+      ".takt/config.yaml",
+      "src/agent_takt/_data/default_config.yaml",
+      "src/agent_takt/config.py",
+      "src/agent_takt/models.py",
+      "tests/test_config.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester should run test_config.py (particularly test_agent_types and test_repo_config_matches_defaults) to confirm both pass, plus any other tests that reference AGENT_TYPES (e.g. scheduler validation tests).",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/models.py",
+      "src/agent_takt/config.py",
+      "src/agent_takt/_data/default_config.yaml",
+      ".takt/config.yaml",
+      "tests/test_config.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      ".takt/config.yaml",
+      "src/agent_takt/_data/default_config.yaml",
+      "src/agent_takt/config.py",
+      "src/agent_takt/models.py",
+      "tests/test_config.py"
+    ],
+    "conflict_risks": "Sibling beads that add new agent-type entries or modify AGENT_TYPES/agent_types defaults may conflict with these changes. File-scope overlap on models.py, config.py, and test_config.py is the main risk.",
+    "design_decisions": "investigator is added to AGENT_TYPES (the runtime validation set) and agent_types config list, but deliberately excluded from MUTATING_AGENTS. This is consistent with how review and planner are treated \u2014 they inspect/read code but do not write or modify it. The ordering in the agent_types list places investigator last (after recovery) to minimise diff noise and preserve existing ordering conventions.",
+    "test_coverage_notes": "Tester should verify: (1) test_agent_types passes with the updated expected list; (2) test_repo_config_matches_defaults passes confirming .takt/config.yaml stays in parity with default_config(); (3) Any scheduler or validation code that gates on AGENT_TYPES still accepts investigator; (4) MUTATING_AGENTS does NOT include investigator \u2014 confirm any conflict-check or followup-creation code that reads MUTATING_AGENTS still behaves correctly.",
+    "known_limitations": "The bundled _data/default_config.yaml previously did not include `recovery` (pre-existing inconsistency with default_config()), so adding `investigator` there does not fix that gap. That inconsistency is out of scope for this bead. The skills.py allowlist for `investigator` is handled by a separate bead."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "Sibling beads that add new agent-type entries or modify AGENT_TYPES/agent_types defaults may conflict with these changes. File-scope overlap on models.py, config.py, and test_config.py is the main risk.",
   "branch_name": "feature/b-a296a479",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a296a479",
-  "lease": {
-    "owner": "developer:B-a4b4dee5",
-    "expires_at": "2026-04-08T19:31:29.963071+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -98,6 +125,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-a4b4dee5/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T19:03:58.391616+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added `investigator` to AGENT_TYPES in models.py and to the agent_types list in config.py (both OrchestratorConfig field default and default_config()), the bundled default_config.yaml, the repo .takt/config.yaml, and updated the test_agent_types assertion to match. investigator is excluded from MUTATING_AGENTS throughout.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,7 +203,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added `investigator` to AGENT_TYPES in models.py and to the agent_types list in config.py (both OrchestratorConfig field default and default_config()), the bundled default_config.yaml, the repo .takt/config.yaml, and updated the test_agent_types assertion to match. investigator is excluded from MUTATING_AGENTS throughout.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": true,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.3642183,
+      "duration_ms": 109394,
+      "duration_api_ms": 83657,
+      "num_turns": 15,
+      "input_tokens": 14,
+      "output_tokens": 4926,
+      "cache_creation_tokens": 43520,
+      "cache_read_tokens": 423621,
+      "stop_reason": "end_turn",
+      "session_id": "85a6e431-253d-410b-b0b2-d72d0332b3b7",
+      "permission_denials": [],
+      "prompt_chars": 7336,
+      "prompt_lines": 146,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.3642183,
+        "duration_ms": 109394,
+        "duration_api_ms": 83657,
+        "num_turns": 15,
+        "input_tokens": 14,
+        "output_tokens": 4926,
+        "cache_creation_tokens": 43520,
+        "cache_read_tokens": 423621,
+        "stop_reason": "end_turn",
+        "session_id": "85a6e431-253d-410b-b0b2-d72d0332b3b7",
+        "permission_denials": [],
+        "prompt_chars": 7336,
+        "prompt_lines": 146,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "18a16273b0129173f99438fe7d4784155fbfe531"
   },
   "labels": [],
   "recovery_for": null,
