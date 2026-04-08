@@ -1097,9 +1097,9 @@ class TuiSchedulerReporter:
             self._post(f"[{bead.bead_id}] Created followup {child.bead_id} ({child.agent_type})")
 
     def bead_deferred(self, bead: Bead, reason: str) -> None:
+        self._post(f"[{bead.bead_id}] Deferred: {reason}", style="dim")
         self._deferred_this_cycle.add(bead.bead_id)
         self._state.deferred_this_cycle = set(self._deferred_this_cycle)
-        self._post(f"[{bead.bead_id}] Deferred: {reason}", style="dim")
 
     def bead_blocked(self, bead: Bead, summary: str) -> None:
         self._post(f"[{bead.bead_id}] Blocked: {summary}")

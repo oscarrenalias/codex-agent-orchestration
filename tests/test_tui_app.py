@@ -2038,6 +2038,19 @@ class TuiSchedulerReporterDeferredTests(unittest.TestCase):
             f"Expected no [dim] markup in blocked log entries: {blocked_entries}"
         )
 
+    def test_bead_deferred_as_first_call_in_cycle_preserves_bead_id(self) -> None:
+        """bead_deferred() as the first reporter call in a cycle must not lose the
+        bead ID due to _post()'s cycle-start clear running after the state write
+        (ordering bug fixed in B-3e855a6c-corrective)."""
+        state = self._make_state()
+        reporter = self._make_reporter(state)
+
+        # No preceding reporter call — bead_deferred IS the first event this cycle
+        bead = self._make_bead("B-def-first-call-01")
+        reporter.bead_deferred(bead, "dependency not done: B-xxx")
+
+        self.assertIn("B-def-first-call-01", state.deferred_this_cycle)
+
 
 if __name__ == "__main__":
     unittest.main()
