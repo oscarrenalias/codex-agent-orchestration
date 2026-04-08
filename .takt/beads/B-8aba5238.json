@@ -6,7 +6,12 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-f13fc273",
-  "dependencies": [],
+  "dependencies": [
+    "B-2f8766b2",
+    "B-b70e1647",
+    "B-8927afc7",
+    "B-f888e6fd"
+  ],
   "acceptance_criteria": [
     "Automated tests cover backward-compatible deserialization of beads without a priority field.",
     "Automated tests cover CLI create/set-priority success paths, invalid priority rejection, and show/list display behavior.",
