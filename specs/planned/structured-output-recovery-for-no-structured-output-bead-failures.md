@@ -1,16 +1,19 @@
 ---
 name: Structured output recovery for no-structured-output bead failures
 id: spec-0eaad5f9
-description: When an agent completes real work but emits prose instead of a JSON verdict, a recovery bead reads the prose and git diff to synthesise a valid handoff, unblocking the pipeline automatically.
-dependencies:
+description: "When an agent completes real work but emits prose instead of a JSON verdict, a recovery bead reads the prose and git diff to synthesise a valid handoff, unblocking the pipeline automatically."
+dependencies: null
 priority: medium
 complexity: medium
-status: draft
-tags: [scheduler, recovery, structured-output]
+status: planned
+tags:
+- scheduler
+- recovery
+- structured-output
 scope:
   in: Recovery bead type for no-structured-output failures; scheduler integration to auto-create recovery beads; recovery agent prompt; tests
   out: Changes to the agent prompt to prevent prose output in the first place; changes to how verdicts are parsed
-feature_root_id:
+feature_root_id: null
 ---
 # Structured output recovery for no-structured-output bead failures
 

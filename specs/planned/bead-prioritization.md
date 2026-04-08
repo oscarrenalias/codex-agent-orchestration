@@ -2,15 +2,17 @@
 name: Bead Prioritization
 id: spec-91e606be
 description: Allow users to flag beads as high priority so the scheduler processes them before other eligible beads
-dependencies:
+dependencies: null
 priority: medium
 complexity: small
-status: draft
-tags: [scheduler, cli]
+status: planned
+tags:
+- scheduler
+- cli
 scope:
-  in: priority field on Bead model, CLI setter, scheduler ordering within eligible pool
-  out: cross-dependency priority promotion, priority inheritance by child beads, planner-assigned priority
-feature_root_id:
+  in: "priority field on Bead model, CLI setter, scheduler ordering within eligible pool"
+  out: "cross-dependency priority promotion, priority inheritance by child beads, planner-assigned priority"
+feature_root_id: null
 ---
 # Bead Prioritization
 
