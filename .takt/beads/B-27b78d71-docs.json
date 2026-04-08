@@ -1,0 +1,70 @@
+{
+  "bead_id": "B-27b78d71-docs",
+  "title": "Document Add recovery metadata to bead model",
+  "agent_type": "documentation",
+  "description": "Update docs for B-27b78d71",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-27b78d71",
+  "dependencies": [
+    "B-27b78d71"
+  ],
+  "acceptance_criteria": [],
+  "linked_docs": [
+    "spec-0eaad5f9"
+  ],
+  "feature_root_id": "B-33e002c4",
+  "execution_branch_name": "feature/b-33e002c4",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-33e002c4",
+  "expected_files": [
+    "src/agent_takt/models.py",
+    "uv.lock"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "src/agent_takt/models.py",
+    "uv.lock"
+  ],
+  "changed_files": [
+    "src/agent_takt/models.py",
+    "uv.lock"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "No conflicts expected. `models.py` is now free for other beads in this feature tree.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T05:19:36.896345+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
