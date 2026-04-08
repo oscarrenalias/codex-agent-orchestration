@@ -3,7 +3,7 @@
   "title": "Show Priority In CLI Bead Output",
   "agent_type": "developer",
   "description": "Update CLI display surfaces so high-priority beads are visible in `bead show` and `bead list --plain` without adding noise for normal-priority beads.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-f13fc273",
   "dependencies": [
@@ -28,37 +28,51 @@
   "expected_globs": [
     "tests/test_cli_bead.py"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/cli/commands/bead.py",
+    "src/agent_takt/cli/formatting.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/cli/commands/bead.py",
+    "src/agent_takt/cli/formatting.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Both acceptance criteria implemented: (1) PRIORITY column added to LIST_PLAIN_COLUMNS in formatting.py with blank for None via new _column_value dispatcher; (2) bead show now strips priority from the output dict when None.",
+    "remaining": "N/A",
+    "risks": "The existing test at test_cli_bead.py:309 iterates LIST_PLAIN_COLUMNS and asserts all headers appear in the output \u2014 adding PRIORITY column means it will now also assert PRIORITY is present, which is correct. The line at :313 checks `\" - \"` appears for feature_root_id/parent_id; priority renders as blank (not \"-\"), so that assertion is unaffected.",
+    "verdict": "approved",
     "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
+    "requires_followup": true,
+    "changed_files": [
+      "src/agent_takt/cli/commands/bead.py",
+      "src/agent_takt/cli/formatting.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester should verify: (1) bead list --plain header row contains PRIORITY; (2) normal-priority bead rows show blank in PRIORITY column; (3) high-priority bead rows show \"high\" in PRIORITY column; (4) bead show JSON omits \"priority\" key for normal beads; (5) bead show JSON includes \"priority\": \"high\" for high-priority beads; (6) regression: existing plain output columns/alignment unchanged.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "expected_files": [
+      "src/agent_takt/cli/commands/bead.py",
+      "src/agent_takt/cli/formatting.py"
+    ],
+    "expected_globs": [
+      "tests/test_cli_bead.py"
+    ],
+    "touched_files": [
+      "src/agent_takt/cli/commands/bead.py",
+      "src/agent_takt/cli/formatting.py"
+    ],
+    "conflict_risks": "The PRIORITY column is inserted between TYPE and TITLE in LIST_PLAIN_COLUMNS. Any test that checks column order positionally (e.g. by split index) may need updating. The existing test at :309 checks headers by substring presence, so it is safe \u2014 but verify no other test relies on column position.",
+    "design_decisions": "Two-function dispatch pattern: `_column_value(attribute, value)` wraps `_plain_value` and adds special handling for `priority` (blank instead of \"-\" for None). This avoids changing the LIST_PLAIN_COLUMNS tuple type (no breaking change to callers that iterate the tuple) while enabling per-column formatting. Alternative considered: extend column tuple to 3-tuple with optional formatter callable \u2014 rejected as over-engineered for a single special case. For `bead show`, the dict is mutated in the command handler rather than in `Bead.to_dict()`, preserving `to_dict()` as a lossless serializer for internal use while making the CLI display omit null priority.",
+    "test_coverage_notes": "Test `bead list --plain` with: (a) no beads \u2014 \"No beads found.\" still emitted; (b) one normal-priority bead \u2014 PRIORITY column present in header, blank in data row; (c) one high-priority bead \u2014 PRIORITY column shows \"high\"; (d) mix of both \u2014 correct values per row. Test `bead show` with: (a) normal-priority bead \u2014 \"priority\" key absent from JSON output; (b) high-priority bead \u2014 \"priority\": \"high\" present. Regression: column widths still align, existing column order preserved, no \"-\" bleed into PRIORITY column.",
+    "known_limitations": "N/A"
   },
-  "block_reason": "Deferred due to file-scope conflict with active bead B-8927afc7",
-  "conflict_risks": "",
+  "block_reason": "",
+  "conflict_risks": "The PRIORITY column is inserted between TYPE and TITLE in LIST_PLAIN_COLUMNS. Any test that checks column order positionally (e.g. by split index) may need updating. The existing test at :309 checks headers by substring presence, so it is safe \u2014 but verify no other test relies on column position.",
   "branch_name": "feature/b-f13fc273",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f13fc273",
-  "lease": {
-    "owner": "developer:B-f888e6fd",
-    "expires_at": "2026-04-08T05:50:39.755093+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -107,6 +121,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-f888e6fd/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-08T05:22:36.382449+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added priority visibility to CLI bead output. `bead list --plain` now has a PRIORITY column (blank for normal, \"high\" for high-priority). `bead show` now omits the `priority` key entirely for normal-priority beads and includes `priority: \"high\"` for high-priority beads.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -180,7 +201,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added priority visibility to CLI bead output. `bead list --plain` now has a PRIORITY column (blank for normal, \"high\" for high-priority). `bead show` now omits the `priority` key entirely for normal-priority beads and includes `priority: \"high\"` for high-priority beads.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": true,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.28312005,
+      "duration_ms": 104167,
+      "duration_api_ms": 96803,
+      "num_turns": 11,
+      "input_tokens": 12,
+      "output_tokens": 5821,
+      "cache_creation_tokens": 27327,
+      "cache_read_tokens": 310976,
+      "stop_reason": "end_turn",
+      "session_id": "f69dbe78-114e-4ab1-b0b2-20c5c478a6de",
+      "permission_denials": [],
+      "prompt_chars": 7415,
+      "prompt_lines": 154,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.28312005,
+        "duration_ms": 104167,
+        "duration_api_ms": 96803,
+        "num_turns": 11,
+        "input_tokens": 12,
+        "output_tokens": 5821,
+        "cache_creation_tokens": 27327,
+        "cache_read_tokens": 310976,
+        "stop_reason": "end_turn",
+        "session_id": "f69dbe78-114e-4ab1-b0b2-20c5c478a6de",
+        "permission_denials": [],
+        "prompt_chars": 7415,
+        "prompt_lines": 154,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "518ccbff807c87f46cee460f246349b419ed1ba4"
   },
   "labels": []
 }
