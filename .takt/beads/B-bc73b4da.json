@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-bc73b4da",
+  "title": "Document reactive scheduler and deferral reporting contract",
+  "agent_type": "documentation",
+  "description": "Update developer-facing inline documentation or nearby docs to reflect the reactive scheduler lifecycle and the new bead_deferred reporter hook, keeping the behavior understandable for future maintainers.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-ff6a7e64",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "The scheduler reporter contract documents the purpose of bead_deferred(bead, reason).",
+    "Scheduler behavior documentation reflects continuous slot filling within a single run cycle.",
+    "Documentation matches the implemented CLI and TUI deferral logging behavior without describing nonexistent UI changes."
+  ],
+  "linked_docs": [
+    "spec-f4a943a4"
+  ],
+  "feature_root_id": "B-ff6a7e64",
+  "execution_branch_name": "feature/b-ff6a7e64",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ff6a7e64",
+  "expected_files": [
+    "src/agent_takt/scheduler/reporter.py",
+    "src/agent_takt/scheduler/core.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T10:26:25.492565+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
