@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-f13fc273",
-  "dependencies": [],
+  "dependencies": [
+    "B-2f8766b2"
+  ],
   "acceptance_criteria": [
     "Scheduler sorts only within the already-eligible pool; dependency and conflict checks remain unchanged.",
     "High-priority ready beads are chosen before earlier-created normal-priority ready beads in the same scheduling cycle.",
