@@ -6,7 +6,12 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-52f6cdc6",
-  "dependencies": [],
+  "dependencies": [
+    "B-28bf748c",
+    "B-8150a4da",
+    "B-295ec62a",
+    "B-790f671f"
+  ],
   "acceptance_criteria": [
     "`docs/tui.md` documents the live status bar fields and updated bead-list observability cues.",
     "Documentation reflects that deferred indicators are current-cycle-only rather than persistent across arbitrary future refreshes.",
