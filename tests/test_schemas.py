@@ -9,7 +9,13 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from agent_takt.runner import AGENT_OUTPUT_SCHEMA, INVESTIGATOR_OUTPUT_SCHEMA, PLANNER_OUTPUT_SCHEMA
+from agent_takt.runner import (
+    AGENT_OUTPUT_SCHEMA,
+    INVESTIGATOR_OUTPUT_SCHEMA,
+    PLANNER_OUTPUT_SCHEMA,
+    _payload_to_run_result,
+    _worker_schema_for,
+)
 
 
 class SchemaTests(unittest.TestCase):
@@ -101,6 +107,71 @@ class InvestigatorSchemaTests(unittest.TestCase):
         self.assertIn("verdict", AGENT_OUTPUT_SCHEMA["properties"])
         self.assertIn("changed_files", AGENT_OUTPUT_SCHEMA["properties"])
         self.assertIn("next_agent", AGENT_OUTPUT_SCHEMA["properties"])
+
+
+class WorkerSchemaRoutingTests(unittest.TestCase):
+
+    def test_worker_schema_for_investigator_returns_investigator_schema(self) -> None:
+        self.assertIs(_worker_schema_for("investigator"), INVESTIGATOR_OUTPUT_SCHEMA)
+
+    def test_worker_schema_for_developer_returns_agent_schema(self) -> None:
+        self.assertIs(_worker_schema_for("developer"), AGENT_OUTPUT_SCHEMA)
+
+    def test_worker_schema_for_tester_returns_agent_schema(self) -> None:
+        self.assertIs(_worker_schema_for("tester"), AGENT_OUTPUT_SCHEMA)
+
+    def test_worker_schema_for_review_returns_agent_schema(self) -> None:
+        self.assertIs(_worker_schema_for("review"), AGENT_OUTPUT_SCHEMA)
+
+    def test_worker_schema_for_unknown_returns_agent_schema(self) -> None:
+        self.assertIs(_worker_schema_for("unknown"), AGENT_OUTPUT_SCHEMA)
+
+
+class PayloadToRunResultTests(unittest.TestCase):
+
+    def test_investigator_payload_maps_investigation_fields(self) -> None:
+        payload = {
+            "outcome": "completed",
+            "summary": "Analysis complete.",
+            "findings": "Several hotspots found.",
+            "recommendations": "Refactor core.py.",
+            "risk_areas": "High cyclomatic complexity.",
+            "report_path": "docs/investigator/report.md",
+        }
+        result = _payload_to_run_result(payload, "investigator")
+        self.assertEqual(result.outcome, "completed")
+        self.assertEqual(result.summary, "Analysis complete.")
+        self.assertEqual(result.findings, "Several hotspots found.")
+        self.assertEqual(result.recommendations, "Refactor core.py.")
+        self.assertEqual(result.risk_areas, "High cyclomatic complexity.")
+        self.assertEqual(result.report_path, "docs/investigator/report.md")
+
+    def test_investigator_payload_maps_optional_block_reason(self) -> None:
+        payload = {
+            "outcome": "blocked",
+            "summary": "Cannot proceed.",
+            "findings": "Missing data.",
+            "recommendations": "Provide access.",
+            "risk_areas": "N/A",
+            "report_path": "docs/investigator/blocked.md",
+            "block_reason": "Read permission denied.",
+        }
+        result = _payload_to_run_result(payload, "investigator")
+        self.assertEqual(result.block_reason, "Read permission denied.")
+
+    def test_investigator_result_has_empty_verdict_and_changed_files(self) -> None:
+        payload = {
+            "outcome": "completed",
+            "summary": "Done.",
+            "findings": "None.",
+            "recommendations": "None.",
+            "risk_areas": "None.",
+            "report_path": "docs/investigator/empty.md",
+        }
+        result = _payload_to_run_result(payload, "investigator")
+        self.assertEqual(result.verdict, "")
+        self.assertEqual(result.changed_files, [])
+        self.assertEqual(result.next_agent, "")
 
 
 if __name__ == "__main__":

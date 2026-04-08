@@ -205,6 +205,35 @@ class TestSkillsFallbackToBundled(unittest.TestCase):
             result = _skill_path(repo_root, "core/base-orchestrator")
             self.assertEqual(result, project_skill)
 
+    def test_role_investigator_bundled_skill_exists(self):
+        bundled = packaged_agents_skills_dir() / "role" / "investigator"
+        self.assertTrue(bundled.is_dir(), f"Bundled role/investigator skill missing: {bundled}")
+        skill_md = bundled / "SKILL.md"
+        self.assertTrue(skill_md.is_file(), f"Bundled role/investigator SKILL.md missing: {skill_md}")
+
+    def test_role_investigator_fallback_to_bundled_when_absent_in_project(self):
+        import tempfile
+        from agent_takt.skills import _skill_path
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            result = _skill_path(repo_root, "role/investigator")
+            bundled = packaged_agents_skills_dir() / "role" / "investigator"
+            self.assertEqual(result, bundled)
+
+
+class TestInvestigatorSkillIds(unittest.TestCase):
+    """skills.allowed_skill_ids returns the correct entries for investigator."""
+
+    def test_allowed_skill_ids_for_investigator(self):
+        from agent_takt.skills import allowed_skill_ids
+        ids = allowed_skill_ids("investigator")
+        self.assertEqual(ids, ["core/base-orchestrator", "role/investigator", "memory"])
+
+    def test_investigator_skill_ids_count(self):
+        from agent_takt.skills import allowed_skill_ids
+        ids = allowed_skill_ids("investigator")
+        self.assertEqual(len(ids), 3)
+
 
 if __name__ == "__main__":
     unittest.main()
