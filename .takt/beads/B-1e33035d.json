@@ -44,31 +44,34 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "docs/development.md",
     "tests/test_assets.py",
     "tests/test_prompts.py",
     "tests/test_schemas.py"
   ],
   "changed_files": [
+    "docs/development.md",
     "tests/test_assets.py",
     "tests/test_prompts.py",
     "tests/test_schemas.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "Added tests for: bundled role/investigator skill existence and fallback, allowed_skill_ids for investigator, render_agent_output_requirements investigator fields, _worker_schema_for routing, and _payload_to_run_result investigator payload mapping.",
-    "remaining": "",
-    "risks": "",
+    "completed": "Ran 145 tests across test_assets.py, test_prompts.py, test_schemas.py, test_config.py, and test_scheduler_followups.py. All pass. Verified: investigator in AGENT_TYPES/config, INVESTIGATOR_OUTPUT_SCHEMA fields and isolation, _worker_schema_for routing, _payload_to_run_result mapping, bundled template/skill presence, allowed_skill_ids for investigator (3 entries), followup suppression, and no regressions in developer followup path.",
+    "remaining": "None \u2014 all acceptance criteria confirmed.",
+    "risks": "None identified. All paths tested pass cleanly.",
     "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
     "changed_files": [
+      "docs/development.md",
       "tests/test_assets.py",
       "tests/test_prompts.py",
       "tests/test_schemas.py"
     ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Proceed to review bead.",
+    "next_agent": "review",
     "block_reason": "",
     "expected_files": [
       ".agents/skills/role/investigator/SKILL.md",
@@ -91,14 +94,15 @@
     ],
     "expected_globs": [],
     "touched_files": [
+      "docs/development.md",
       "tests/test_assets.py",
       "tests/test_prompts.py",
       "tests/test_schemas.py"
     ],
     "conflict_risks": "",
     "design_decisions": "",
-    "test_coverage_notes": "Tests added: TestSkillsFallbackToBundled.test_role_investigator_bundled_skill_exists, test_role_investigator_fallback_to_bundled_when_absent_in_project, TestInvestigatorSkillIds.test_allowed_skill_ids_for_investigator, test_investigator_skill_ids_count, PromptsTests.test_render_agent_output_requirements_investigator_mentions_investigation_fields, WorkerSchemaRoutingTests (5 cases), PayloadToRunResultTests (3 cases).",
-    "known_limitations": ""
+    "test_coverage_notes": "145 tests across 5 modules all pass. Coverage spans: config registration (investigator in agent_types), INVESTIGATOR_OUTPUT_SCHEMA structure and isolation from AGENT_OUTPUT_SCHEMA, _worker_schema_for routing, _payload_to_run_result field mapping including optional block_reason, bundled template and skill asset presence, allowed_skill_ids 3-entry tuple, followup suppression for investigator beads, and no regression in developer followup creation.",
+    "known_limitations": "The new test does not exercise an investigator bead nested inside a planner-owned feature tree. The guard is unconditional so the logic holds regardless. Recovery path for investigator is also not tested, consistent with the known limitation from dependencies."
   },
   "block_reason": "",
   "conflict_risks": "",
@@ -200,10 +204,10 @@
       }
     },
     {
-      "timestamp": "2026-04-08T19:31:15.794537+00:00",
+      "timestamp": "2026-04-08T19:32:50.857308+00:00",
       "event": "completed",
       "agent_type": "tester",
-      "summary": "Completed via recovery bead B-1e33035d-recovery",
+      "summary": "All 145 targeted tests pass with zero failures. Full investigator type coverage verified across config registration, schema validation, template/skill availability, followup suppression, and schema routing.",
       "details": {}
     }
   ],
@@ -339,16 +343,51 @@
     },
     "last_agent_result": {
       "outcome": "completed",
-      "summary": "Added investigator regression coverage across test_assets.py, test_prompts.py, and test_schemas.py covering skill routing, bundled skill existence, output requirements, schema routing, and payload mapping.",
+      "summary": "All 145 targeted tests pass with zero failures. Full investigator type coverage verified across config registration, schema validation, template/skill availability, followup suppression, and schema routing.",
       "verdict": "approved",
       "findings_count": 0,
       "requires_followup": false,
-      "next_agent": "",
+      "next_agent": "review",
       "block_reason": ""
     },
     "auto_recovery_bead_id": "B-1e33035d-recovery",
-    "last_commit": "06f5d742541665eb330d91c1372cd621b2bffd2e",
-    "recovered_by": "B-1e33035d-recovery"
+    "telemetry": {
+      "cost_usd": 0.269121,
+      "duration_ms": 115975,
+      "duration_api_ms": 56759,
+      "num_turns": 11,
+      "input_tokens": 2592,
+      "output_tokens": 2552,
+      "cache_creation_tokens": 36516,
+      "cache_read_tokens": 287100,
+      "stop_reason": "end_turn",
+      "session_id": "ba2c62e5-6245-4651-9238-e1de78407d55",
+      "permission_denials": [],
+      "prompt_chars": 15172,
+      "prompt_lines": 248,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.269121,
+        "duration_ms": 115975,
+        "duration_api_ms": 56759,
+        "num_turns": 11,
+        "input_tokens": 2592,
+        "output_tokens": 2552,
+        "cache_creation_tokens": 36516,
+        "cache_read_tokens": 287100,
+        "stop_reason": "end_turn",
+        "session_id": "ba2c62e5-6245-4651-9238-e1de78407d55",
+        "permission_denials": [],
+        "prompt_chars": 15172,
+        "prompt_lines": 248,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "f4b5d22ab48675b466b187a8d0c45c786cdc1f25"
   },
   "labels": [],
   "recovery_for": null,
