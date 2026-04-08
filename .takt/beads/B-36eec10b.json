@@ -3,7 +3,7 @@
   "title": "Review TUI Package Split For No-Behavior-Change Safety",
   "agent_type": "review",
   "description": "Review the combined refactor after implementation, validation, and documentation to confirm that the split stayed mechanical, respected dependency ordering, and did not introduce subtle regressions or unfinished migrations.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-9b67fe9f",
   "dependencies": [
@@ -124,7 +124,10 @@
   "conflict_risks": "Corrective bead will touch state.py, render.py, and possibly tree.py \u2014 the same files as the original implementation bead. No other in-progress beads are expected to overlap.",
   "branch_name": "feature/b-9b67fe9f",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-36eec10b",
+    "expires_at": "2026-04-08T02:08:23.154318+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -185,6 +188,29 @@
       "event": "retried",
       "agent_type": "review",
       "summary": "Requeued blocked bead after corrective bead B-36eec10b-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-08T01:38:24.039361+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-08T01:38:24.039387+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
       "details": {}
     }
   ],
