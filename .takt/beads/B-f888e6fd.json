@@ -1,0 +1,69 @@
+{
+  "bead_id": "B-f888e6fd",
+  "title": "Show Priority In CLI Bead Output",
+  "agent_type": "developer",
+  "description": "Update CLI display surfaces so high-priority beads are visible in `bead show` and `bead list --plain` without adding noise for normal-priority beads.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-f13fc273",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`takt bead show <id>` includes `priority: high` only for high-priority beads.",
+    "`takt bead show <id>` omits any priority line for normal-priority beads.",
+    "`takt bead list --plain` includes a `PRIORITY` column showing `high` for high-priority beads and blank for normal beads.",
+    "Display updates preserve existing output shape aside from the new priority visibility requirements."
+  ],
+  "linked_docs": [
+    "spec-91e606be"
+  ],
+  "feature_root_id": "B-f13fc273",
+  "execution_branch_name": "feature/b-f13fc273",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f13fc273",
+  "expected_files": [
+    "src/agent_takt/cli/commands/bead.py",
+    "src/agent_takt/cli/formatting.py"
+  ],
+  "expected_globs": [
+    "tests/test_cli_bead.py"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T05:14:42.422188+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
