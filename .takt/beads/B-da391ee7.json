@@ -1,0 +1,67 @@
+{
+  "bead_id": "B-da391ee7",
+  "title": "Document Bead Priority Operator Workflow",
+  "agent_type": "documentation",
+  "description": "Update operator-facing documentation to describe bead priority semantics, the create/set-priority CLI surfaces, and the scheduler rule that priority only affects ordering among already-eligible beads.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-f13fc273",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Documentation explains supported priority values and that normal is the default.",
+    "Documentation shows how to set priority at creation time and after bead creation.",
+    "Documentation states that high priority does not bypass dependency resolution or promote related beads.",
+    "Documentation matches the implemented CLI syntax and output behavior."
+  ],
+  "linked_docs": [
+    "spec-91e606be"
+  ],
+  "feature_root_id": "B-f13fc273",
+  "execution_branch_name": "feature/b-f13fc273",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-f13fc273",
+  "expected_files": [
+    "docs/development.md",
+    "docs/onboarding.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-08T05:14:42.896057+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": []
+}
