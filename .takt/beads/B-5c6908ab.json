@@ -1,0 +1,69 @@
+{
+  "bead_id": "B-5c6908ab",
+  "title": "Update onboarding asset installation and scaffold messaging for split skill roots",
+  "agent_type": "developer",
+  "description": "Adjust onboarding asset installers and scaffold flow so initialized projects receive subagent Codex skill templates under `templates/skills/`, keep operator exceptions under `.agents/skills/`, and report/stage the new paths correctly.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-37e340c5",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Onboarding installs subagent Codex skill templates into `templates/skills/` instead of `.agents/skills/`.",
+    "Onboarding still installs or preserves operator-facing exceptions under `.agents/skills/` without moving `spec-management`.",
+    "Scaffold messages and staged git paths reflect the split model rather than describing `.agents/skills/` as the full Codex skill catalog."
+  ],
+  "linked_docs": [
+    "spec-f423c232",
+    "docs/onboarding.md"
+  ],
+  "feature_root_id": "B-37e340c5",
+  "execution_branch_name": "feature/b-37e340c5",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-37e340c5",
+  "expected_files": [
+    "src/agent_takt/onboarding/assets.py",
+    "src/agent_takt/onboarding/scaffold.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-09T18:29:04.626776+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
