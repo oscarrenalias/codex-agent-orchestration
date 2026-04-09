@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-37e340c5",
-  "dependencies": [],
+  "dependencies": [
+    "B-ad9b0192"
+  ],
   "acceptance_criteria": [
     "`prepare_isolated_execution_root()` continues copying allowlisted Codex skills into `exec_root/.agents/skills/` for the Codex backend.",
     "Subagent-only skills are sourced from `templates/skills/` and `memory` continues to resolve from repo-root `.agents/skills/`.",
