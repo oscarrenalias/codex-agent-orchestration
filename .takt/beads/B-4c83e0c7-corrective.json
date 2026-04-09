@@ -1,0 +1,71 @@
+{
+  "bead_id": "B-4c83e0c7-corrective",
+  "title": "Corrective fix for B-4c83e0c7: Fix test_review_with_needs_changes_verdict_blocks_and_requires_followup assertion",
+  "agent_type": "developer",
+  "description": "Blocked reason: Warning: claude.ai MCP server blocked by enterprise policy: claude.ai Gamma",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-4c83e0c7",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-4c83e0c7.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B-4c83e0c7",
+  "execution_branch_name": "feature/b-4c83e0c7",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4c83e0c7",
+  "expected_files": [
+    "tests/test_scheduler_finalize.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "tests/test_scheduler_finalize.py"
+  ],
+  "changed_files": [
+    "tests/test_scheduler_finalize.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-09T08:06:23.511581+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-4c83e0c7"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
