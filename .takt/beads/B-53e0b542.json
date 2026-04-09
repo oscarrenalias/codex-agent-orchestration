@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-37e340c5",
-  "dependencies": [],
+  "dependencies": [
+    "B-ad9b0192"
+  ],
   "acceptance_criteria": [
     "Upgrade catalog generation includes bundled subagent Codex skill templates from `templates/skills/` and no longer assumes the full catalog lives in `.agents/skills/`.",
     "Manifest prefix handling distinguishes `templates/skills/` from repo-root `.agents/skills/` exception assets.",
