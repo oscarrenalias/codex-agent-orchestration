@@ -72,7 +72,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None. Only upgrade.py was modified; no overlap with other in-progress beads expected.\nNone \u2014 changes are additive. `upgrade.py` is not modified; `templates/skills/` files will be passed to `write_assets_manifest()` but filtered out by `_BUNDLED_ASSET_PREFIXES` (which does not include `templates/skills/`), meaning those files won't be tracked in the upgrade manifest until a follow-up bead updates `upgrade.py`.",
+  "conflict_risks": "None. Only upgrade.py was modified; no overlap with other in-progress beads expected.\nNone \u2014 changes are additive. `upgrade.py` is not modified; `templates/skills/` files will be passed to `write_assets_manifest()` but filtered out by `_BUNDLED_ASSET_PREFIXES` (which does not include `templates/skills/`), meaning those files won't be tracked in the upgrade manifest until a follow-up bead updates `upgrade.py`.\nNone. Only `tests/test_assets.py` was modified; no overlap with other in-progress beads.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
