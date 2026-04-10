@@ -3,7 +3,7 @@
   "title": "Review Exclude investigator beads from corrective bead creation",
   "agent_type": "review",
   "description": "Review implementation for B-e622b3eb",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-e622b3eb",
   "dependencies": [
@@ -52,9 +52,12 @@
   },
   "block_reason": "",
   "conflict_risks": "Touches shared scheduler corrective logic and its followup tests; downstream agents should treat `tests/test_scheduler_followups.py` as the authoritative regression coverage for this behavior.",
-  "branch_name": "",
+  "branch_name": "feature/b-e622b3eb",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-e622b3eb-review",
+    "expires_at": "2026-04-10T19:30:55.450914+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -63,9 +66,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T19:00:55.854596+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-10T19:00:55.854619+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-e622b3eb-review",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "e0f8257068960243661f5dc4f9b787fa5f59361a751574191832721af8c0dd84",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-e622b3eb-review/home",
+    "runner_backend": "codex"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
