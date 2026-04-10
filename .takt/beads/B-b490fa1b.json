@@ -32,6 +32,7 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "pyproject.toml",
     "src/agent_takt/storage.py",
     "tests/helpers.py",
     "tests/test_labels.py",
@@ -40,6 +41,7 @@
     "tests/test_scheduler_beads.py"
   ],
   "changed_files": [
+    "pyproject.toml",
     "src/agent_takt/storage.py",
     "tests/helpers.py",
     "tests/test_labels.py",
