@@ -35,17 +35,22 @@
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
-    "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
+    "completed": "1. Verified all 6 setUp blocks in the 4 changed files have `commit.gpgsign=false` guards. 2. All tests in RecoveryForStorageTests, PriorityStorageTests, TestMakeServices, TestBackendResolutionPriority, and TestCommitScaffold pass (17 + 33 tests). 3. 13 of 14 tests in test_config_wiring_phase3.py pass.",
+    "remaining": "One test hangs: tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency. The hang is in Python 3.14 pathlib.glob.scandir during the second _reevaluate_blocked() call inside run_once(), triggered after a ThreadPoolExecutor worker completes. Requires a developer fix \u2014 likely adding RepositoryStorage._auto_commit = False at module level in test_config_wiring_phase3.py, or investigating the Python 3.14 glob/ThreadPoolExecutor interaction.",
+    "risks": "The hang in test_scheduler_skips_corrupt_ready_bead_with_missing_dependency is infinite (does not complete even at 120s timeout). This is a Python 3.14-specific issue or a missing _auto_commit=False guard. Pre-existing \u2014 not introduced by B-51f54bba. The B-51f54bba change is correct and complete for its stated purpose.",
+    "verdict": "needs_changes",
+    "findings_count": 1,
+    "requires_followup": true,
+    "changed_files": [
+      "tests/test_config_wiring.py",
+      "tests/test_config_wiring_phase3.py",
+      "tests/test_onboarding_scaffold.py",
+      "tests/test_recovery_for.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
-    "block_reason": "Agent timed out after 1500 seconds",
+    "next_action": "Create a developer bead to fix test_scheduler_skips_corrupt_ready_bead_with_missing_dependency. Likely fix: add RepositoryStorage._auto_commit = False at module level in tests/test_config_wiring_phase3.py (consistent with all other test files). Also investigate whether the Python 3.14 glob/ThreadPoolExecutor deadlock is the root cause.",
+    "next_agent": "developer",
+    "block_reason": "tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs indefinitely in pathlib.glob.scandir during Scheduler.run_once(). The hang occurs on the second _reevaluate_blocked() call after a ThreadPoolExecutor dispatches and completes a task. tests/test_config_wiring_phase3.py is missing RepositoryStorage._auto_commit = False at module level (unlike all other test files), which may be a contributing factor. This is a pre-existing defect exposed by the B-51f54bba fix.",
     "expected_files": [
       "tests/test_config_wiring.py",
       "tests/test_config_wiring_phase3.py",
@@ -53,20 +58,22 @@
       "tests/test_recovery_for.py"
     ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "tests/test_config_wiring.py",
+      "tests/test_config_wiring_phase3.py",
+      "tests/test_onboarding_scaffold.py",
+      "tests/test_recovery_for.py"
+    ],
+    "conflict_risks": "None \u2014 no production files changed by the tester.",
+    "design_decisions": "Confirmed the B-51f54bba implementation is correct: the six setUp blocks and the _make_git_repo helper all have the gpgsign guard. The failing test is a separate pre-existing defect not in scope of B-51f54bba.",
+    "test_coverage_notes": "17/17 targeted tests pass for RecoveryForStorageTests, PriorityStorageTests, TestMakeServices, TestBackendResolutionPriority. 33/33 tests pass for test_onboarding_scaffold.py. 13/14 tests pass in test_config_wiring_phase3.py. The one failure is a pre-existing infinite hang in the scheduler test body, unrelated to the gpgsign fix.",
+    "known_limitations": "Cannot test on Python < 3.14 to confirm whether the glob/ThreadPoolExecutor interaction is Python-version-specific. Cannot switch to main branch (it is in use by another worktree) to compare baseline behavior."
   },
-  "block_reason": "Test suite has 2 worker crashes due to _git_lock class-level lock contamination. B-2dda73d5 will fix this. Retry after B-2dda73d5 is done.",
-  "conflict_risks": "",
+  "block_reason": "tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs indefinitely in pathlib.glob.scandir during Scheduler.run_once(). The hang occurs on the second _reevaluate_blocked() call after a ThreadPoolExecutor dispatches and completes a task. tests/test_config_wiring_phase3.py is missing RepositoryStorage._auto_commit = False at module level (unlike all other test files), which may be a contributing factor. This is a pre-existing defect exposed by the B-51f54bba fix.",
+  "conflict_risks": "None \u2014 no production files changed by the tester.",
   "branch_name": "feature/b-1ba2d8b2",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-1ba2d8b2",
-  "lease": {
-    "owner": "tester:B-51f54bba-test",
-    "expires_at": "2026-04-10T10:35:19.894996+00:00"
-  },
+  "lease": null,
   "retries": 3,
   "execution_history": [
     {
@@ -268,10 +275,10 @@
       }
     },
     {
-      "timestamp": "2026-04-10T10:24:01.333806+00:00",
-      "event": "updated",
+      "timestamp": "2026-04-10T10:25:26.889871+00:00",
+      "event": "blocked",
       "agent_type": "tester",
-      "summary": "Bead updated via CLI",
+      "summary": "GPG-fix validation complete. All six setUp blocks confirmed to have commit.gpgsign=false. The 5 test classes/tests specifically called out in the developer handoff all pass (17+33 tests). One pre-existing defect was exposed: test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs infinitely in pathlib.glob.scandir after a ThreadPoolExecutor dispatches its first task \u2014 this test was never passing before (it hung in setUp due to GPG), and the fix correctly moved past that. The test body hang is a separate pre-existing issue in test_config_wiring_phase3.py needing a follow-up fix.",
       "details": {}
     }
   ],
@@ -350,14 +357,50 @@
       }
     },
     "last_agent_result": {
-      "outcome": "failed",
-      "summary": "Worker execution failed: Agent timed out after 1500 seconds",
-      "verdict": "",
-      "findings_count": 0,
-      "requires_followup": false,
-      "next_agent": "",
-      "block_reason": "Agent timed out after 1500 seconds"
-    }
+      "outcome": "blocked",
+      "summary": "GPG-fix validation complete. All six setUp blocks confirmed to have commit.gpgsign=false. The 5 test classes/tests specifically called out in the developer handoff all pass (17+33 tests). One pre-existing defect was exposed: test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs infinitely in pathlib.glob.scandir after a ThreadPoolExecutor dispatches its first task \u2014 this test was never passing before (it hung in setUp due to GPG), and the fix correctly moved past that. The test body hang is a separate pre-existing issue in test_config_wiring_phase3.py needing a follow-up fix.",
+      "verdict": "needs_changes",
+      "findings_count": 1,
+      "requires_followup": true,
+      "next_agent": "developer",
+      "block_reason": "tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs indefinitely in pathlib.glob.scandir during Scheduler.run_once(). The hang occurs on the second _reevaluate_blocked() call after a ThreadPoolExecutor dispatches and completes a task. tests/test_config_wiring_phase3.py is missing RepositoryStorage._auto_commit = False at module level (unlike all other test files), which may be a contributing factor. This is a pre-existing defect exposed by the B-51f54bba fix."
+    },
+    "telemetry": {
+      "cost_usd": 1.54696815,
+      "duration_ms": 1205486,
+      "duration_api_ms": 650821,
+      "num_turns": 56,
+      "input_tokens": 49,
+      "output_tokens": 39430,
+      "cache_creation_tokens": 74619,
+      "cache_read_tokens": 2251833,
+      "stop_reason": "end_turn",
+      "session_id": "8e06bbab-d7da-4dfb-9484-34c399c8cefc",
+      "permission_denials": [],
+      "prompt_chars": 8882,
+      "prompt_lines": 173,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.54696815,
+        "duration_ms": 1205486,
+        "duration_api_ms": 650821,
+        "num_turns": 56,
+        "input_tokens": 49,
+        "output_tokens": 39430,
+        "cache_creation_tokens": 74619,
+        "cache_read_tokens": 2251833,
+        "stop_reason": "end_turn",
+        "session_id": "8e06bbab-d7da-4dfb-9484-34c399c8cefc",
+        "permission_denials": [],
+        "prompt_chars": 8882,
+        "prompt_lines": 173,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
