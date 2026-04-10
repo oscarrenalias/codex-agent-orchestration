@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-7ca37c85-test: Test Persist runner preference on bead and honour it during dispatch",
   "agent_type": "developer",
   "description": "Blocked reason: `RepositoryStorage.create_bead()` does not accept a `preferred_runner` argument, so pinned-runner bead creation fails with `TypeError` before the new CLI/scheduler behavior can execute.\n\nRemaining work: Developer needs to plumb `preferred_runner` through `RepositoryStorage.create_bead()` and persist it into the constructed `Bead`. After that, rerun the preferred-runner CLI and scheduler tests that currently error before execution.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-7ca37c85-test",
   "dependencies": [],
@@ -58,9 +58,12 @@
   },
   "block_reason": "file-scope conflict with in-progress B-7ca37c85-docs",
   "conflict_risks": "Any fix must keep the lifecycle consistent across creation, retry, scheduler dispatch, and finalization cleanup so runner pins do not survive terminal states.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-7ca37c85",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-7ca37c85",
+  "lease": {
+    "owner": "developer:B-7ca37c85-test-corrective",
+    "expires_at": "2026-04-10T19:41:35.833978+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -76,10 +79,48 @@
       "agent_type": "developer",
       "summary": "file-scope conflict with in-progress B-7ca37c85-docs",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T19:11:36.230931+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-10T19:11:36.230952+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
   "metadata": {
-    "auto_corrective_for": "B-7ca37c85-test"
+    "auto_corrective_for": "B-7ca37c85-test",
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-7ca37c85-test-corrective",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "38362370ab2540dd106fcb66f0a52813e498b3d981720c1925f3df2e3b4f91f3",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-7ca37c85-test-corrective/home",
+    "runner_backend": "codex"
   },
   "labels": [],
   "recovery_for": null,
