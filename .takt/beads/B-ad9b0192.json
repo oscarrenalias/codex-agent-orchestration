@@ -3,7 +3,7 @@
   "title": "Relocate subagent-only skill templates into templates/skills and bundle them",
   "agent_type": "developer",
   "description": "Create the new `templates/skills/` source tree for subagent-only Codex skills, leave `memory` and `spec-management` in repo-root `.agents/skills/`, and update packaged asset helpers/package data so bundled subagent skill templates resolve from the new location.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-37e340c5",
   "dependencies": [],
@@ -502,7 +502,10 @@
   "conflict_risks": "Avoid touching `templates/skills/**`, `src/agent_takt/_data/templates/skills/**`, and `src/agent_takt/_data/agents_skills/**` in parallel with the follow-up cleanup. The remaining `.agents/skills/**` deletion should be done with care because runtime now intentionally depends on fallback semantics for `memory` and `skill-spec-management`.",
   "branch_name": "feature/b-37e340c5",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-37e340c5",
-  "lease": null,
+  "lease": {
+    "owner": "developer:B-ad9b0192",
+    "expires_at": "2026-04-10T14:02:33.813569+00:00"
+  },
   "retries": 1,
   "execution_history": [
     {
@@ -612,6 +615,30 @@
       "agent_type": "developer",
       "summary": "Bead requeued",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T13:32:34.318993+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-10T13:32:34.319017+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
   "metadata": {
@@ -628,7 +655,7 @@
     ],
     "skill_bundle_hash": "38362370ab2540dd106fcb66f0a52813e498b3d981720c1925f3df2e3b4f91f3",
     "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-ad9b0192/home",
-    "runner_backend": "codex",
+    "runner_backend": "claude",
     "guardrails": {
       "agent_type": "developer",
       "template_path": ".takt/agent-runs/B-ad9b0192/repo/templates/agents/developer.md",
