@@ -121,6 +121,13 @@
       "agent_type": "tester",
       "summary": "Preferred-runner validation found one implementation defect: normal bead creation does not accept `preferred_runner`, which blocks the new CLI and scheduler paths from working through the standard storage API.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T19:10:21.303549+00:00",
+      "event": "corrective_planned",
+      "agent_type": "tester",
+      "summary": "Created corrective bead B-7ca37c85-test-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -228,7 +235,8 @@
         "source": "measured",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-7ca37c85-test-corrective"
   },
   "labels": [],
   "recovery_for": null,
