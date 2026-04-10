@@ -58,7 +58,8 @@ src/agent_takt/
   onboarding.py   scaffold_project() entry point + asset-install/config-generation helpers
 
 templates/agents/   Guardrail templates per agent type (mandatory)
-.agents/skills/     Shared skill catalog (`core/`, `role/`, `capability/`, `task/`, `memory/`)
+templates/skills/   Subagent skill catalog (`core/`, `role/`, `capability/`, `task/`); primary source
+.agents/skills/     Operator skill overrides (custom exceptions only; falls back to templates/skills/)
 .takt/              Runtime state: beads/, logs/, worktrees/, telemetry/, agent-runs/, config.yaml
 ```
 
