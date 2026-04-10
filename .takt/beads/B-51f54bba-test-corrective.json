@@ -56,7 +56,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "file-scope conflict with in-progress B-51f54bba-docs",
+  "block_reason": "worktree in use by in-progress B-2dda73d5 (no file scope defined)",
   "conflict_risks": "None \u2014 no production files changed by the tester.",
   "branch_name": "",
   "worktree_path": "",
@@ -75,6 +75,13 @@
       "event": "deferred",
       "agent_type": "developer",
       "summary": "file-scope conflict with in-progress B-51f54bba-docs",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T10:25:50.012490+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "worktree in use by in-progress B-2dda73d5 (no file scope defined)",
       "details": {}
     }
   ],
