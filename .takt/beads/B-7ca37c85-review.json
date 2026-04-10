@@ -3,7 +3,7 @@
   "title": "Review Persist runner preference on bead and honour it during dispatch",
   "agent_type": "review",
   "description": "Review implementation for B-7ca37c85",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-7ca37c85",
   "dependencies": [
@@ -55,33 +55,63 @@
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Reviewed the scoped model, CLI, scheduler, and test changes for preferred runner persistence, alternate-backend dispatch, and one-shot cleanup. No unresolved correctness or completeness issues were found in the reviewed files.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "No material correctness risks identified in the reviewed scope. Test execution was not rerun in review; coverage assessment is based on the added/updated tests only.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/cli/commands/bead.py",
+      "src/agent_takt/cli/commands/misc.py",
+      "src/agent_takt/models.py",
+      "src/agent_takt/scheduler/execution.py",
+      "src/agent_takt/scheduler/finalize.py",
+      "tests/helpers.py",
+      "tests/test_cli_bead.py",
+      "tests/test_recovery_flow.py",
+      "tests/test_scheduler_execution.py",
+      "tests/test_storage.py"
+    ],
     "updated_docs": [],
     "next_action": "",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/cli/commands/bead.py",
+      "src/agent_takt/cli/commands/misc.py",
+      "src/agent_takt/models.py",
+      "src/agent_takt/scheduler/execution.py",
+      "src/agent_takt/scheduler/finalize.py",
+      "tests/helpers.py",
+      "tests/test_cli_bead.py",
+      "tests/test_recovery_flow.py",
+      "tests/test_scheduler_execution.py",
+      "tests/test_storage.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
+    "touched_files": [
+      "src/agent_takt/cli/commands/bead.py",
+      "src/agent_takt/cli/commands/misc.py",
+      "src/agent_takt/models.py",
+      "src/agent_takt/scheduler/execution.py",
+      "src/agent_takt/scheduler/finalize.py",
+      "tests/helpers.py",
+      "tests/test_cli_bead.py",
+      "tests/test_recovery_flow.py",
+      "tests/test_scheduler_execution.py",
+      "tests/test_storage.py"
+    ],
+    "conflict_risks": "Runner selection and cleanup now depend on the persisted `preferred_runner` lifecycle across retry, dispatch, and finalization. Downstream scheduler changes should preserve the single-use clearing behavior and keep isolated-skill setup aligned with the backend that actually executes `run_bead()`.",
+    "design_decisions": "The implementation persists a one-shot `preferred_runner` on the bead, resolves the effective backend inside `BeadExecutor`, reuses the scheduler runner when the backend already matches, instantiates a backend-specific runner only when needed, and clears the preference on terminal or early-blocked paths so retries do not inherit stale backend pins.",
+    "test_coverage_notes": "Added reviewable coverage for bead serialization/persistence, CLI `bead show` JSON behavior, retry persistence/clearing, dispatching via a preferred runner, and cleanup after completed or blocked runs. Review did not execute the test suite.",
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "Runner selection and cleanup now span both `scheduler/execution.py` and `scheduler/finalize.py`; downstream changes touching scheduler dispatch or terminal-state persistence should preserve that lifecycle coupling.",
+  "conflict_risks": "Runner selection and cleanup now depend on the persisted `preferred_runner` lifecycle across retry, dispatch, and finalization. Downstream scheduler changes should preserve the single-use clearing behavior and keep isolated-skill setup aligned with the backend that actually executes `run_bead()`.",
   "branch_name": "feature/b-7ca37c85",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-7ca37c85-review",
-    "expires_at": "2026-04-10T19:44:51.072240+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -122,6 +152,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-7ca37c85-review/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-10T19:16:06.828015+00:00",
+      "event": "completed",
+      "agent_type": "review",
+      "summary": "Reviewed runner-preference persistence and dispatch override changes; no unresolved findings.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -206,7 +243,32 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Reviewed runner-preference persistence and dispatch override changes; no unresolved findings.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "duration_ms": 74295,
+      "prompt_chars": 8510,
+      "prompt_lines": 176,
+      "source": "measured",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "duration_ms": 74295,
+        "prompt_chars": 8510,
+        "prompt_lines": 176,
+        "source": "measured",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
