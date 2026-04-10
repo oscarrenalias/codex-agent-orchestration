@@ -45,7 +45,8 @@ src/agent_takt/
   onboarding.py   scaffold_project() and asset-install helpers used by takt init
 
 templates/agents/   Guardrail templates per agent type (mandatory)
-.agents/skills/     Skill definitions (SKILL.md + agents/openai.yaml)
+templates/skills/   Subagent skill catalog (SKILL.md + agents/openai.yaml); primary skill source
+.agents/skills/     Operator-facing exception skills (custom overrides only; falls back from templates/skills/)
 .takt/              Runtime state: beads/, logs/, worktrees/, telemetry/, agent-runs/, config.yaml
 ```
 

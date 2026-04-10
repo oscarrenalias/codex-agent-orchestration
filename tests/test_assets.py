@@ -20,6 +20,7 @@ from agent_takt._assets import (
     packaged_claude_skills_dir,
     packaged_default_config,
     packaged_docs_memory_dir,
+    packaged_skill_templates_dir,
     packaged_templates_dir,
 )
 
@@ -29,6 +30,9 @@ class TestPackagedHelperReturnTypes(unittest.TestCase):
 
     def test_templates_dir_is_path(self):
         self.assertIsInstance(packaged_templates_dir(), Path)
+
+    def test_skill_templates_dir_is_path(self):
+        self.assertIsInstance(packaged_skill_templates_dir(), Path)
 
     def test_agents_skills_dir_is_path(self):
         self.assertIsInstance(packaged_agents_skills_dir(), Path)
@@ -51,6 +55,13 @@ class TestPackagedHelperSuffixes(unittest.TestCase):
         self.assertTrue(
             str(p).endswith("templates/agents") or str(p).endswith("templates\\agents"),
             f"Expected path ending in templates/agents, got: {p}",
+        )
+
+    def test_skill_templates_dir_suffix(self):
+        p = packaged_skill_templates_dir()
+        self.assertTrue(
+            str(p).endswith("templates/skills") or str(p).endswith("templates\\skills"),
+            f"Expected path ending in templates/skills, got: {p}",
         )
 
     def test_agents_skills_dir_suffix(self):
@@ -92,14 +103,32 @@ class TestPackagedAssetsExistOnDisk(unittest.TestCase):
             md = p / f"{agent_type}.md"
             self.assertTrue(md.is_file(), f"Missing bundled template: {md}")
 
+    def test_skill_templates_dir_exists(self):
+        p = packaged_skill_templates_dir()
+        self.assertTrue(p.is_dir(), f"packaged_skill_templates_dir() not found: {p}")
+
+    def test_skill_templates_contains_core(self):
+        """core/base-orchestrator lives in templates/skills/ after the split (not agents_skills/)."""
+        p = packaged_skill_templates_dir()
+        core = p / "core" / "base-orchestrator" / "SKILL.md"
+        self.assertTrue(core.is_file(), f"Missing core skill in templates/skills/: {core}")
+
     def test_agents_skills_dir_exists(self):
         p = packaged_agents_skills_dir()
         self.assertTrue(p.is_dir(), f"packaged_agents_skills_dir() not found: {p}")
 
-    def test_agents_skills_contains_core(self):
+    def test_agents_skills_contains_memory_operator_exception(self):
+        """agents_skills/ is the operator-only exceptions catalog; memory must be present."""
         p = packaged_agents_skills_dir()
-        core = p / "core" / "base-orchestrator" / "SKILL.md"
-        self.assertTrue(core.is_file(), f"Missing core skill: {core}")
+        memory = p / "memory" / "SKILL.md"
+        self.assertTrue(memory.is_file(), f"Missing memory skill in agents_skills/: {memory}")
+
+    def test_agents_skills_core_has_no_skill_md(self):
+        """core/base-orchestrator/SKILL.md must not be in agents_skills/ — moved to templates/skills/."""
+        p = packaged_agents_skills_dir()
+        core_skill_md = p / "core" / "base-orchestrator" / "SKILL.md"
+        self.assertFalse(core_skill_md.is_file(),
+                         f"SKILL.md must not exist in agents_skills/core/base-orchestrator/: {core_skill_md}")
 
     def test_claude_skills_dir_exists(self):
         p = packaged_claude_skills_dir()
@@ -137,6 +166,11 @@ class TestPackagedDataUnderDataDir(unittest.TestCase):
     def test_templates_under_data(self):
         data = self._data_dir()
         p = packaged_templates_dir()
+        self.assertTrue(str(p).startswith(str(data)), f"{p} not under {data}")
+
+    def test_skill_templates_under_data(self):
+        data = self._data_dir()
+        p = packaged_skill_templates_dir()
         self.assertTrue(str(p).startswith(str(data)), f"{p} not under {data}")
 
     def test_agents_skills_under_data(self):
@@ -184,14 +218,15 @@ class TestPromptsUseBundledTemplates(unittest.TestCase):
 class TestSkillsFallbackToBundled(unittest.TestCase):
     """skills._skill_path falls back to bundled assets when not in project."""
 
-    def test_missing_project_skill_falls_back_to_bundled(self):
+    def test_missing_project_skill_falls_back_to_bundled_templates(self):
         import tempfile
         from agent_takt.skills import _skill_path
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_root = Path(tmpdir)
-            # No .agents/skills in this temp repo
+            # No templates/skills or .agents/skills in this temp repo — falls
+            # back to packaged_skill_templates_dir() for subagent-only skills.
             result = _skill_path(repo_root, "core/base-orchestrator")
-            bundled = packaged_agents_skills_dir() / "core" / "base-orchestrator"
+            bundled = packaged_skill_templates_dir() / "core" / "base-orchestrator"
             self.assertEqual(result, bundled)
 
     def test_project_skill_takes_priority_over_bundled(self):
@@ -206,8 +241,9 @@ class TestSkillsFallbackToBundled(unittest.TestCase):
             self.assertEqual(result, project_skill)
 
     def test_role_investigator_bundled_skill_exists(self):
-        bundled = packaged_agents_skills_dir() / "role" / "investigator"
-        self.assertTrue(bundled.is_dir(), f"Bundled role/investigator skill missing: {bundled}")
+        """role/investigator lives in templates/skills/ after the split (not agents_skills/)."""
+        bundled = packaged_skill_templates_dir() / "role" / "investigator"
+        self.assertTrue(bundled.is_dir(), f"Bundled role/investigator skill missing in templates/skills/: {bundled}")
         skill_md = bundled / "SKILL.md"
         self.assertTrue(skill_md.is_file(), f"Bundled role/investigator SKILL.md missing: {skill_md}")
 
@@ -217,8 +253,31 @@ class TestSkillsFallbackToBundled(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_root = Path(tmpdir)
             result = _skill_path(repo_root, "role/investigator")
-            bundled = packaged_agents_skills_dir() / "role" / "investigator"
+            bundled = packaged_skill_templates_dir() / "role" / "investigator"
             self.assertEqual(result, bundled)
+
+    def test_memory_skill_falls_back_to_bundled_agents_skills(self):
+        import tempfile
+        from agent_takt.skills import _skill_path
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            # memory is not in templates/skills/ — must fall back to agents_skills/
+            result = _skill_path(repo_root, "memory")
+            bundled = packaged_agents_skills_dir() / "memory"
+            self.assertEqual(result, bundled)
+
+    def test_templates_skills_dir_takes_priority_over_agents_skills(self):
+        import tempfile
+        from agent_takt.skills import _skill_path
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            # Create the same skill in both templates/skills and .agents/skills
+            templates_skill = repo_root / "templates" / "skills" / "core" / "base-orchestrator"
+            templates_skill.mkdir(parents=True)
+            agents_skill = repo_root / ".agents" / "skills" / "core" / "base-orchestrator"
+            agents_skill.mkdir(parents=True)
+            result = _skill_path(repo_root, "core/base-orchestrator")
+            self.assertEqual(result, templates_skill)
 
 
 class TestInvestigatorSkillIds(unittest.TestCase):

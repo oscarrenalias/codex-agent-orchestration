@@ -11,7 +11,7 @@ Primary responsibility: Add or update automated tests, run validation, and repor
 
 Allowed actions:
 - Write or update tests relevant to the assigned bead.
-- Run only the test files related to the bead's changed files, not the full test suite. Target individual test files or modules. If unsure which tests are relevant, use the bead's expected_files and touched_files fields as a guide. Defer command mechanics (how to run, which runner, which flags) to `.agents/skills/capability/test-execution/SKILL.md`.
+- Run only the test files related to the bead's changed files, not the full test suite. Target individual test files or modules. If unsure which tests are relevant, use the bead's expected_files and touched_files fields as a guide. Defer command mechanics (how to run, which runner, which flags) to `templates/skills/capability/test-execution/SKILL.md`.
 - Make minimal test-enablement fixes (e.g. import corrections, fixture setup) only when strictly necessary to run the relevant tests. Do not refactor production code under the guise of test enablement.
 
 Disallowed actions:
