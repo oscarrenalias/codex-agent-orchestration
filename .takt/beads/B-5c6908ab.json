@@ -3,7 +3,7 @@
   "title": "Update onboarding asset installation and scaffold messaging for split skill roots",
   "agent_type": "developer",
   "description": "Adjust onboarding asset installers and scaffold flow so initialized projects receive subagent Codex skill templates under `templates/skills/`, keep operator exceptions under `.agents/skills/`, and report/stage the new paths correctly.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-37e340c5",
   "dependencies": [
@@ -26,37 +26,57 @@
     "src/agent_takt/onboarding/scaffold.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/onboarding/__init__.py",
+    "src/agent_takt/onboarding/assets.py",
+    "src/agent_takt/onboarding/scaffold.py",
+    "tests/test_assets.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/onboarding/__init__.py",
+    "src/agent_takt/onboarding/assets.py",
+    "src/agent_takt/onboarding/scaffold.py",
+    "tests/test_assets.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "- Added `install_skill_templates()` to `src/agent_takt/onboarding/assets.py` that copies from `packaged_skill_templates_dir()` into `project_root/templates/skills/`.\n- Updated `install_agents_skills()` docstring to clarify it installs operator exceptions (memory + spec-management), not the full subagent skill catalog.\n- Updated `scaffold_project()` in `scaffold.py` to call `install_skill_templates()` in step 4 with conditional success/warn messaging, updated `.agents/skills/` message from \"catalog\" to \"operator exceptions\", and included `written_skill_templates` in `all_installed`.\n- Exported `install_skill_templates` from `__init__.py` (both import and `__all__`).\n- Syntax verified with `python -m py_compile` on all three modified files.",
+    "remaining": "None \u2014 all acceptance criteria satisfied.",
+    "risks": "Low. The new `install_skill_templates()` call in `scaffold_project()` uses the real bundled `_data/templates/skills/` data (no fake in the existing `TestScaffoldProject._make_fake_dirs()` test). The real data directory exists, so those tests will copy live templates instead of fakes \u2014 which is correct behaviour for verifying the split model. Tests that check `.agents/skills/` contents are unaffected.",
+    "verdict": "approved",
     "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
+    "requires_followup": true,
+    "changed_files": [
+      "src/agent_takt/onboarding/__init__.py",
+      "src/agent_takt/onboarding/assets.py",
+      "src/agent_takt/onboarding/scaffold.py",
+      "tests/test_assets.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Run tester bead to verify scaffold installs templates/skills/, .agents/skills/ operator exceptions are preserved, and scaffold output messages correctly describe the split.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/onboarding/assets.py",
+      "src/agent_takt/onboarding/scaffold.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/onboarding/__init__.py",
+      "src/agent_takt/onboarding/assets.py",
+      "src/agent_takt/onboarding/scaffold.py",
+      "tests/test_assets.py"
+    ],
+    "conflict_risks": "None \u2014 changes are additive. `upgrade.py` is not modified; `templates/skills/` files will be passed to `write_assets_manifest()` but filtered out by `_BUNDLED_ASSET_PREFIXES` (which does not include `templates/skills/`), meaning those files won't be tracked in the upgrade manifest until a follow-up bead updates `upgrade.py`.",
+    "design_decisions": "Added `install_skill_templates()` as a thin wrapper around `copy_asset_dir()` pointing at `packaged_skill_templates_dir()`, consistent with the existing pattern for `install_agents_skills()` and `install_claude_skills()`. The function is placed between `install_templates()` and `install_agents_skills()` to reflect the logical order (agent guardrails \u2192 subagent skill templates \u2192 operator exceptions \u2192 Claude catalog). The `commit_scaffold()` stage_paths `\"templates/\"` already covers `templates/skills/` so no change was needed there. The `__init__.py` export was added to keep the public API surface consistent.",
+    "test_coverage_notes": "Tester should verify: (1) `install_skill_templates()` copies files from `_data/templates/skills/` into `project_root/templates/skills/`; (2) `scaffold_project()` creates `templates/skills/` and populates it with subagent skill files; (3) `.agents/skills/` still contains only the operator exceptions (memory + spec-management) after scaffold; (4) the scaffold output messages include \"subagent skill template(s) into templates/skills/\" and \"operator exceptions\"; (5) overwrite=False skips existing `templates/skills/` files and emits a warning; (6) `install_skill_templates()` exported from `agent_takt.onboarding` namespace.",
+    "known_limitations": "`upgrade.py`'s `_BUNDLED_ASSET_PREFIXES` and `_compute_bundled_catalog()` do not yet include `templates/skills/`, so `takt upgrade` will not track or update these files. The files are passed into `write_assets_manifest()` during init but will be silently filtered out. A follow-up bead should update `upgrade.py` to add `templates/skills/` to the tracked prefixes and bundled catalog enumeration."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 changes are additive. `upgrade.py` is not modified; `templates/skills/` files will be passed to `write_assets_manifest()` but filtered out by `_BUNDLED_ASSET_PREFIXES` (which does not include `templates/skills/`), meaning those files won't be tracked in the upgrade manifest until a follow-up bead updates `upgrade.py`.",
   "branch_name": "feature/b-37e340c5",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-37e340c5",
-  "lease": {
-    "owner": "developer:B-5c6908ab",
-    "expires_at": "2026-04-10T14:04:33.355908+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -98,6 +118,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-5c6908ab/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-10T13:38:54.730589+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added `install_skill_templates()` to `assets.py` that installs bundled subagent Codex skill templates from `_data/templates/skills/` into `project_root/templates/skills/`. Updated `scaffold_project()` in `scaffold.py` to call it (step 4), report the split via distinct console messages (`templates/skills/` for subagent templates, `.agents/skills/` described as \"operator exceptions\"), and include the written files in the manifest's `all_installed` list. Exported the new function from `__init__.py`. The `commit_scaffold()` `stage_paths` already uses `\"templates/\"` which covers both `templates/agents/` and `templates/skills/`, so no change was needed there.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,7 +196,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added `install_skill_templates()` to `assets.py` that installs bundled subagent Codex skill templates from `_data/templates/skills/` into `project_root/templates/skills/`. Updated `scaffold_project()` in `scaffold.py` to call it (step 4), report the split via distinct console messages (`templates/skills/` for subagent templates, `.agents/skills/` described as \"operator exceptions\"), and include the written files in the manifest's `all_installed` list. Exported the new function from `__init__.py`. The `commit_scaffold()` `stage_paths` already uses `\"templates/\"` which covers both `templates/agents/` and `templates/skills/`, so no change was needed there.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": true,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 1.01212125,
+      "duration_ms": 252915,
+      "duration_api_ms": 243003,
+      "num_turns": 40,
+      "input_tokens": 37,
+      "output_tokens": 13890,
+      "cache_creation_tokens": 60681,
+      "cache_read_tokens": 1920355,
+      "stop_reason": "end_turn",
+      "session_id": "7bda336a-6597-46bf-8d24-4f1dbb5f28e8",
+      "permission_denials": [],
+      "prompt_chars": 7332,
+      "prompt_lines": 147,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.01212125,
+        "duration_ms": 252915,
+        "duration_api_ms": 243003,
+        "num_turns": 40,
+        "input_tokens": 37,
+        "output_tokens": 13890,
+        "cache_creation_tokens": 60681,
+        "cache_read_tokens": 1920355,
+        "stop_reason": "end_turn",
+        "session_id": "7bda336a-6597-46bf-8d24-4f1dbb5f28e8",
+        "permission_denials": [],
+        "prompt_chars": 7332,
+        "prompt_lines": 147,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "bf0b8374ee2639c6e7282a8034cc4eb264681eeb"
   },
   "labels": [],
   "recovery_for": null,
