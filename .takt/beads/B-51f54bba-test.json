@@ -280,6 +280,13 @@
       "agent_type": "tester",
       "summary": "GPG-fix validation complete. All six setUp blocks confirmed to have commit.gpgsign=false. The 5 test classes/tests specifically called out in the developer handoff all pass (17+33 tests). One pre-existing defect was exposed: test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs infinitely in pathlib.glob.scandir after a ThreadPoolExecutor dispatches its first task \u2014 this test was never passing before (it hung in setUp due to GPG), and the fix correctly moved past that. The test body hang is a separate pre-existing issue in test_config_wiring_phase3.py needing a follow-up fix.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T10:25:28.239276+00:00",
+      "event": "corrective_planned",
+      "agent_type": "tester",
+      "summary": "Created corrective bead B-51f54bba-test-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -400,7 +407,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-51f54bba-test-corrective"
   },
   "labels": [],
   "recovery_for": null,
