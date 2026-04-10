@@ -56,7 +56,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-7ca37c85-docs",
   "conflict_risks": "Any fix must keep the lifecycle consistent across creation, retry, scheduler dispatch, and finalization cleanup so runner pins do not survive terminal states.",
   "branch_name": "",
   "worktree_path": "",
@@ -68,6 +68,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T19:10:23.239808+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-7ca37c85-docs",
       "details": {}
     }
   ],
