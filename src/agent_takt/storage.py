@@ -34,7 +34,7 @@ class RepositoryStorage:
     )
 
     def __init__(self, root: Path) -> None:
-        self._git_lock = threading.Lock()
+        self._git_lock = threading.Lock()  # instance-level: each storage instance gets its own lock, preventing cross-test blocking in parallel test runs
         self.root = root.resolve()
         self.state_dir = self.root / ".takt"
         self.beads_dir = self.state_dir / "beads"
