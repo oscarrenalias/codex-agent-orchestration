@@ -1,0 +1,80 @@
+{
+  "bead_id": "B-51f54bba-test-corrective",
+  "title": "Corrective fix for B-51f54bba-test: Test Add commit.gpgsign=false to remaining direct git-init test helpers",
+  "agent_type": "developer",
+  "description": "Blocked reason: tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs indefinitely in pathlib.glob.scandir during Scheduler.run_once(). The hang occurs on the second _reevaluate_blocked() call after a ThreadPoolExecutor dispatches and completes a task. tests/test_config_wiring_phase3.py is missing RepositoryStorage._auto_commit = False at module level (unlike all other test files), which may be a contributing factor. This is a pre-existing defect exposed by the B-51f54bba fix.\n\nRemaining work: One test hangs: tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency. The hang is in Python 3.14 pathlib.glob.scandir during the second _reevaluate_blocked() call inside run_once(), triggered after a ThreadPoolExecutor worker completes. Requires a developer fix \u2014 likely adding RepositoryStorage._auto_commit = False at module level in test_config_wiring_phase3.py, or investigating the Python 3.14 glob/ThreadPoolExecutor interaction.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-51f54bba-test",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-51f54bba-test.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B-1ba2d8b2",
+  "execution_branch_name": "feature/b-1ba2d8b2",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-1ba2d8b2",
+  "expected_files": [
+    "tests/test_config_wiring.py",
+    "tests/test_config_wiring_phase3.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_recovery_for.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "tests/test_config_wiring.py",
+    "tests/test_config_wiring_phase3.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_recovery_for.py"
+  ],
+  "changed_files": [
+    "tests/test_config_wiring.py",
+    "tests/test_config_wiring_phase3.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_recovery_for.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "None \u2014 no production files changed by the tester.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-10T10:25:27.940044+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-51f54bba-test"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
