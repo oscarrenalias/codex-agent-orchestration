@@ -37,7 +37,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "worktree in use by in-progress B-51f54bba-test (no file scope defined)",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -49,6 +49,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T10:15:26.457183+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "worktree in use by in-progress B-51f54bba-test (no file scope defined)",
       "details": {}
     }
   ],
