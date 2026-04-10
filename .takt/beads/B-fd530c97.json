@@ -3,7 +3,7 @@
   "title": "Document the new operator-vs-template skill split",
   "agent_type": "documentation",
   "description": "Revise architecture, onboarding, and developer docs so they describe operator-facing repo-root skills in `.agents/skills/`, subagent skill templates in `templates/skills/`, and unchanged execution-root Codex discovery under `exec_root/.agents/skills/`.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-37e340c5",
   "dependencies": [
@@ -32,37 +32,64 @@
     "templates/agents/tester.md"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
-  "updated_docs": [],
+  "touched_files": [
+    "CLAUDE.md",
+    "docs/onboarding.md",
+    "templates/agents/tester.md"
+  ],
+  "changed_files": [
+    "CLAUDE.md",
+    "docs/onboarding.md",
+    "templates/agents/tester.md"
+  ],
+  "updated_docs": [
+    "CLAUDE.md",
+    "docs/onboarding.md",
+    "templates/agents/tester.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
-    "findings_count": 0,
+    "completed": "Added templates/skills/ to the CLAUDE.md project layout and corrected .agents/skills/ description to \"operator overrides only\". Updated docs/onboarding.md directory structure, git-commit table, and post-init ownership section to distinguish templates/skills/ (primary subagent catalog) from .agents/skills/ (operator exceptions). Fixed templates/agents/tester.md skill path reference from .agents/skills/ to templates/skills/.",
+    "remaining": "AGENTS.md (outside bead scope) retains the stale \"Shared skill catalog\" label at line 61. A follow-up bead should update it or the operator can edit it directly per the no-manual-code-changes exception.",
+    "risks": "Low. All changes are documentation-only. The stale AGENTS.md reference is cosmetic \u2014 no runtime behavior depends on it.",
+    "verdict": "approved",
+    "findings_count": 1,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "CLAUDE.md",
+      "docs/onboarding.md",
+      "templates/agents/tester.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md",
+      "docs/onboarding.md",
+      "templates/agents/tester.md"
+    ],
+    "next_action": "Proceed to review bead",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "docs/multi-backend-agents.md",
+      "docs/onboarding.md",
+      "docs/development.md",
+      "CLAUDE.md",
+      "templates/agents/tester.md"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "CLAUDE.md",
+      "docs/onboarding.md",
+      "templates/agents/tester.md"
+    ],
+    "conflict_risks": "None \u2014 all changes are in documentation files with no overlap with other in-progress beads.",
+    "design_decisions": "docs/development.md and docs/multi-backend-agents.md required no changes \u2014 both already accurately described the split between templates/skills/ (primary) and .agents/skills/ (operator overrides). Only files that contained inaccurate or stale references were modified.",
+    "test_coverage_notes": "Documentation bead \u2014 no tests applicable.",
+    "known_limitations": "AGENTS.md line 61 still reads \".agents/skills/     Shared skill catalog\" \u2014 this file was not in the bead's expected_files scope so it was not modified. It should be addressed in a follow-up or by the operator directly."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 all changes are in documentation files with no overlap with other in-progress beads.",
   "branch_name": "feature/b-37e340c5",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-37e340c5",
-  "lease": {
-    "owner": "documentation:B-fd530c97",
-    "expires_at": "2026-04-10T18:53:27.594545+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -103,6 +130,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-fd530c97/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-10T18:26:44.776601+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated CLAUDE.md, docs/onboarding.md, and templates/agents/tester.md to document the operator-vs-template skill split; development.md and multi-backend-agents.md were already accurate.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -179,7 +213,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated CLAUDE.md, docs/onboarding.md, and templates/agents/tester.md to document the operator-vs-template skill split; development.md and multi-backend-agents.md were already accurate.",
+      "verdict": "approved",
+      "findings_count": 1,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.7535331,
+      "duration_ms": 195683,
+      "duration_api_ms": 188817,
+      "num_turns": 33,
+      "input_tokens": 72,
+      "output_tokens": 11231,
+      "cache_creation_tokens": 54572,
+      "cache_read_tokens": 1267357,
+      "stop_reason": "end_turn",
+      "session_id": "73e04623-6812-4208-ad27-b57a8cde4380",
+      "permission_denials": [],
+      "prompt_chars": 6674,
+      "prompt_lines": 152,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.7535331,
+        "duration_ms": 195683,
+        "duration_api_ms": 188817,
+        "num_turns": 33,
+        "input_tokens": 72,
+        "output_tokens": 11231,
+        "cache_creation_tokens": 54572,
+        "cache_read_tokens": 1267357,
+        "stop_reason": "end_turn",
+        "session_id": "73e04623-6812-4208-ad27-b57a8cde4380",
+        "permission_denials": [],
+        "prompt_chars": 6674,
+        "prompt_lines": 152,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "35dcbc90627d0a74232a865741912438fbfbec19"
   },
   "labels": [],
   "recovery_for": null,
