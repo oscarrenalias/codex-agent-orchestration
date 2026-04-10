@@ -56,9 +56,18 @@ exec_root/
 
 ## Skills
 
-Skills live in the repository under `.agents/skills/` and follow the [Agent Skills](https://agentskills.io) open standard. The catalog is organized by responsibility: `core/`, `role/`, `capability/`, `task/`, plus the shared `memory/` skill. Each skill directory contains a `SKILL.md` with YAML frontmatter (`name`, `description`) and repository-specific instructions.
+Skills follow the [Agent Skills](https://agentskills.io) open standard. The catalog is organized by responsibility: `core/`, `role/`, `capability/`, `task/`, plus the shared `memory/` skill. Each skill directory contains a `SKILL.md` with YAML frontmatter (`name`, `description`) and repository-specific instructions.
 
-`prepare_isolated_execution_root()` copies skills from the catalog repository root, not from the per-bead workspace symlink. That keeps the execution bundle stable even when a feature worktree only contains a partial `.agents/skills/` tree.
+### Skill source locations
+
+`_skill_path()` in `skills.py` resolves each skill using the following priority order:
+
+1. **`templates/skills/{skill_id}/`** — The primary skill catalog. Subagent-only skills (those used exclusively by worker agents) live here. Bundled with the package under `src/agent_takt/_data/templates/skills/` and installed to `templates/skills/` during `takt init`.
+2. **`.agents/skills/{skill_id}/`** — Operator-facing exception overrides. Use this to locally override a bundled skill without modifying the package. Only skills that differ from the bundled defaults need to be present here.
+3. **Bundled `templates/skills/` (package data)** — Fallback to the package-bundled copy when neither of the above is present on disk.
+4. **Bundled `agents_skills/` (package data)** — Legacy fallback retained for backward compatibility.
+
+`prepare_isolated_execution_root()` copies skills from the catalog repository root, not from the per-bead workspace symlink. That keeps the execution bundle stable even when a feature worktree only contains a partial skill tree.
 
 The `AGENT_SKILL_ALLOWLIST` in `skills.py` controls which skills each agent type can access. Each worker agent receives `core/base-orchestrator`, its role-specific skill, and the shared `memory` skill. Most agent types also receive capability and task skills; the `planner` is an exception — it gets `task/spec-intake` and `task/dependency-graphing` but no `capability/` skill. The `scheduler` agent type is limited to `core/base-orchestrator` and `role/scheduler-policy`. Only the allowlisted skills are copied into the execution root.
 
@@ -170,6 +179,8 @@ Both runners accept `config: OrchestratorConfig` and `backend: BackendConfig` at
 ### Skills config wiring
 
 `prepare_isolated_execution_root()` accepts `config: OrchestratorConfig` and `runner_backend: str`. The skills directory is resolved via `config.backend(runner_backend).skills_dir` (`.agents` for Codex, `.claude` for Claude Code). `AGENT_SKILL_ALLOWLIST` remains a module-level constant — it is tightly coupled to the skill directory structure and not externalized to YAML.
+
+Skill source resolution is performed by `_skill_path()` in `skills.py`. It checks `templates/skills/` first (project-local and bundled), then `.agents/skills/` as an override fallback. See [Skills — Skill source locations](#skill-source-locations) for the full resolution order.
 
 ### Prompts config wiring
 
