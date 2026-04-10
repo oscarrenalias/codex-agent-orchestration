@@ -37,7 +37,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "worktree in use by in-progress B-51f54bba-test (no file scope defined)",
+  "block_reason": "worktree in use by in-progress B-51f54bba-docs (no file scope defined)",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -238,6 +238,13 @@
       "event": "deferred",
       "agent_type": "developer",
       "summary": "worktree in use by in-progress B-51f54bba-test (no file scope defined)",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T10:24:13.038100+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "worktree in use by in-progress B-51f54bba-docs (no file scope defined)",
       "details": {}
     }
   ],
