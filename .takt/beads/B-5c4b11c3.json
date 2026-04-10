@@ -34,13 +34,9 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "pyproject.toml",
-    "src/agent_takt/storage.py",
     "tests/helpers.py"
   ],
   "changed_files": [
-    "pyproject.toml",
-    "src/agent_takt/storage.py",
     "tests/helpers.py"
   ],
   "updated_docs": [],
@@ -65,7 +61,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "No file-scope conflicts expected. pyproject.toml is the only changed file and no sibling beads claim it.",
+  "conflict_risks": "None. Only `tests/helpers.py` was modified; no overlap with other in-progress beads expected.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
