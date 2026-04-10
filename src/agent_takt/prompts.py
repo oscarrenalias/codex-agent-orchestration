@@ -59,7 +59,8 @@ AGENT_OUTPUT_SCHEMA = {
         "outcome", "summary", "completed", "remaining", "risks", "verdict",
         "findings_count", "requires_followup", "expected_files", "expected_globs",
         "touched_files", "changed_files", "updated_docs", "next_action", "next_agent",
-        "block_reason", "conflict_risks", "new_beads",
+        "block_reason", "conflict_risks", "design_decisions", "test_coverage_notes",
+        "known_limitations", "new_beads",
     ],
 }
 
