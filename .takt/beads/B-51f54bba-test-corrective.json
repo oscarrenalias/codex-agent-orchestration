@@ -56,7 +56,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-51f54bba-docs",
   "conflict_risks": "None \u2014 no production files changed by the tester.",
   "branch_name": "",
   "worktree_path": "",
@@ -68,6 +68,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T10:25:32.639591+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-51f54bba-docs",
       "details": {}
     }
   ],
