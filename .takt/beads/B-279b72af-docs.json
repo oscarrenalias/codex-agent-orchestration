@@ -81,7 +81,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-279b72af-test",
   "conflict_risks": "None. The changed files are non-overlapping with other in-progress beads. Documentation changes are localised to specific flag references. Test deletions only remove tests that tested now-removed behaviour.",
   "branch_name": "",
   "worktree_path": "",
@@ -93,6 +93,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T20:18:19.905611+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-279b72af-test",
       "details": {}
     }
   ],
