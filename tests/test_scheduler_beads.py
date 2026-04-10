@@ -740,8 +740,10 @@ class BeadAutoCommitTests(OrchestratorTests):
         for t in threads:
             t.start()
         for t in threads:
-            t.join()
+            t.join(timeout=10)
 
+        stuck = [t for t in threads if t.is_alive()]
+        self.assertEqual([], stuck, f"Worker threads did not finish within timeout: {stuck}")
         self.assertEqual([], errors, f"Concurrent writes raised: {errors}")
         # All beads should be persisted in their final state
         for bead in beads:

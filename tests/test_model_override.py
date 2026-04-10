@@ -42,6 +42,7 @@ def _make_git_repo(root: Path) -> None:
     subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=root, check=True)
     subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+    subprocess.run(["git", "config", "commit.gpgsign", "false"], cwd=root, check=True)
     (root / "README.md").write_text("seed\n")
     source_templates = REPO_ROOT / "templates" / "agents"
     target_templates = root / "templates" / "agents"
