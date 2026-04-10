@@ -3,7 +3,7 @@
   "title": "Review split skill source change for regression risk and completeness",
   "agent_type": "review",
   "description": "Perform final review of the implementation, tests, and documentation to confirm the source/destination split is coherent, operator exceptions are preserved exactly where required, and no behavior regressions remain in subagent runtime discovery.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-37e340c5",
   "dependencies": [
@@ -37,35 +37,48 @@
     "docs/onboarding.md",
     "templates/agents/tester.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md",
+    "docs/onboarding.md",
+    "templates/agents/tester.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Reviewed CLAUDE.md, docs/onboarding.md, and templates/agents/tester.md. All changes accurately reflect the templates/skills/ (primary source) vs .agents/skills/ (operator overrides) split. The tester.md path correction eliminates the primary runtime regression risk for tester agents.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None identified. The tester.md path fix is critical and was correctly applied; without it, tester agents would silently fail to load the test-execution skill.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
+    "changed_files": [
+      "CLAUDE.md",
+      "docs/onboarding.md",
+      "templates/agents/tester.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md",
+      "docs/onboarding.md",
+      "templates/agents/tester.md"
+    ],
     "next_action": "",
     "next_agent": "",
     "block_reason": "",
     "expected_files": [],
     "expected_globs": [],
-    "touched_files": [],
+    "touched_files": [
+      "CLAUDE.md",
+      "docs/onboarding.md",
+      "templates/agents/tester.md"
+    ],
     "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
+    "design_decisions": "No new design decisions. Documentation changes faithfully reflect the split implemented by dependency beads.",
+    "test_coverage_notes": "The tester.md path correction (`.agents/skills/` \u2192 `templates/skills/`) is the primary regression surface. The dependency test bead (B-ad9b0192-test) validated the relocation before this review bead started.",
     "known_limitations": ""
   },
   "block_reason": "",
   "conflict_risks": "",
   "branch_name": "feature/b-37e340c5",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-de90ed80",
-    "expires_at": "2026-04-10T18:56:46.439390+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -106,6 +119,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-de90ed80/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-10T18:28:45.554817+00:00",
+      "event": "completed",
+      "agent_type": "review",
+      "summary": "All three changed files correctly document the split skill source model; no unresolved findings.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -181,7 +201,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "All three changed files correctly document the split skill source model; no unresolved findings.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.27302820000000005,
+      "duration_ms": 114809,
+      "duration_api_ms": 109486,
+      "num_turns": 9,
+      "input_tokens": 1543,
+      "output_tokens": 5839,
+      "cache_creation_tokens": 32972,
+      "cache_read_tokens": 190564,
+      "stop_reason": "end_turn",
+      "session_id": "5edac460-bc3e-4560-9bbd-fbb0532c8796",
+      "permission_denials": [],
+      "prompt_chars": 7654,
+      "prompt_lines": 163,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.27302820000000005,
+        "duration_ms": 114809,
+        "duration_api_ms": 109486,
+        "num_turns": 9,
+        "input_tokens": 1543,
+        "output_tokens": 5839,
+        "cache_creation_tokens": 32972,
+        "cache_read_tokens": 190564,
+        "stop_reason": "end_turn",
+        "session_id": "5edac460-bc3e-4560-9bbd-fbb0532c8796",
+        "permission_denials": [],
+        "prompt_chars": 7654,
+        "prompt_lines": 163,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
