@@ -3,7 +3,7 @@
   "title": "Review Resolve merge conflicts for Persist runner preference on bead and honour it during dispatch",
   "agent_type": "review",
   "description": "Review implementation for B-5f79d508",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-5f79d508",
   "dependencies": [
@@ -28,33 +28,36 @@
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Compared `.takt/beads/B-7ca37c85.json` in the worktree with the `main` branch version and confirmed the resolved file matches the completed authoritative record from `main`. The bead remains `done` with the prior developer handoff, scope, and execution history preserved.",
+    "remaining": "No review findings. No further changes are required from review.",
+    "risks": "Residual risk is limited to downstream agents accidentally restoring the stale pre-resolution bead metadata instead of keeping the completed `main` copy authoritative.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      ".takt/beads/B-7ca37c85.json"
+    ],
     "updated_docs": [],
     "next_action": "",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      ".takt/beads/B-7ca37c85.json"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      ".takt/beads/B-7ca37c85.json"
+    ],
+    "conflict_risks": "This remains a metadata-only conflict resolution. Downstream work should continue to treat the completed `main` copy of `.takt/beads/B-7ca37c85.json` as authoritative and avoid reintroducing the stale `ready` variant from feature-branch history.",
+    "design_decisions": "Review validated the chosen conflict strategy of taking the completed bead record from `main` wholesale rather than attempting field-level reconciliation, which is appropriate for preserving authoritative status, scope, and handoff metadata.",
+    "test_coverage_notes": "No tests were run in review, per guardrails. Validation was limited to file inspection and confirming the resolved bead JSON matches the authoritative `main` version.",
+    "known_limitations": "Review scope was limited to `.takt/beads/B-7ca37c85.json`; no unrelated source, test, or documentation files were inspected."
   },
   "block_reason": "",
-  "conflict_risks": "This bead resolves a metadata-only conflict. Downstream work should treat the completed `main` copy of `.takt/beads/B-7ca37c85.json` as authoritative and avoid restoring the stale `ready` version from the feature branch history.",
+  "conflict_risks": "This remains a metadata-only conflict resolution. Downstream work should continue to treat the completed `main` copy of `.takt/beads/B-7ca37c85.json` as authoritative and avoid reintroducing the stale `ready` variant from feature-branch history.",
   "branch_name": "feature/b-7ca37c85",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-5f79d508-review",
-    "expires_at": "2026-04-10T20:11:09.180752+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -95,6 +98,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-5f79d508-review/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-10T19:41:38.154040+00:00",
+      "event": "completed",
+      "agent_type": "review",
+      "summary": "Reviewed the metadata-only merge-conflict resolution for B-7ca37c85 and found no unresolved issues.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -161,7 +171,32 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Reviewed the metadata-only merge-conflict resolution for B-7ca37c85 and found no unresolved issues.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "duration_ms": 27670,
+      "prompt_chars": 7347,
+      "prompt_lines": 149,
+      "source": "measured",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "duration_ms": 27670,
+        "prompt_chars": 7347,
+        "prompt_lines": 149,
+        "source": "measured",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
