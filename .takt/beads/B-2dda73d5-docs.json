@@ -3,7 +3,7 @@
   "title": "Document Fix _git_lock class-level lock causing cross-test blocking",
   "agent_type": "documentation",
   "description": "Update docs for B-2dda73d5",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-2dda73d5",
   "dependencies": [
@@ -24,35 +24,42 @@
   "changed_files": [
     "src/agent_takt/storage.py"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "src/agent_takt/storage.py"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Added comment to `self._git_lock = threading.Lock()` in `RepositoryStorage.__init__` (storage.py:37) documenting that the instance-level assignment is intentional \u2014 it prevents parallel test workers from blocking on a shared class-level lock.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None \u2014 comment-only change.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "src/agent_takt/storage.py"
+    ],
+    "updated_docs": [
+      "src/agent_takt/storage.py"
+    ],
+    "next_action": "Proceed to review bead B-2dda73d5-review.",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/storage.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
+    "touched_files": [
+      "src/agent_takt/storage.py"
+    ],
+    "conflict_risks": "None \u2014 only one file changed, comment-only edit.",
+    "design_decisions": "The fix moved `_git_lock` from a class attribute (shared singleton lock across all `RepositoryStorage` instances) to an instance attribute in `__init__`. With the class-level lock, parallel pytest workers sharing the same process space would all contend on a single lock object, causing inter-test blocking. Making it instance-level gives each storage object an independent lock.",
+    "test_coverage_notes": "No documentation tests required; comment-only change.",
     "known_limitations": ""
   },
-  "block_reason": "file-scope conflict with in-progress B-2dda73d5-test",
-  "conflict_risks": "None \u2014 only one file changed, no shared scope with other in-progress beads in this feature tree.",
+  "block_reason": "",
+  "conflict_risks": "None \u2014 only one file changed, comment-only edit.",
   "branch_name": "feature/b-1ba2d8b2",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-1ba2d8b2",
-  "lease": {
-    "owner": "documentation:B-2dda73d5-docs",
-    "expires_at": "2026-04-10T12:25:48.043757+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -107,6 +114,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-2dda73d5-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-10T11:57:17.412807+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Added inline comment to `_git_lock` initialization in storage.py explaining why it is instance-level rather than class-level.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -171,7 +185,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added inline comment to `_git_lock` initialization in storage.py explaining why it is instance-level rather than class-level.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.2788179,
+      "duration_ms": 84490,
+      "duration_api_ms": 70717,
+      "num_turns": 13,
+      "input_tokens": 12,
+      "output_tokens": 3497,
+      "cache_creation_tokens": 33272,
+      "cache_read_tokens": 338523,
+      "stop_reason": "end_turn",
+      "session_id": "baa46319-a2b7-4458-9f90-23f95b53a215",
+      "permission_denials": [],
+      "prompt_chars": 6240,
+      "prompt_lines": 144,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.2788179,
+        "duration_ms": 84490,
+        "duration_api_ms": 70717,
+        "num_turns": 13,
+        "input_tokens": 12,
+        "output_tokens": 3497,
+        "cache_creation_tokens": 33272,
+        "cache_read_tokens": 338523,
+        "stop_reason": "end_turn",
+        "session_id": "baa46319-a2b7-4458-9f90-23f95b53a215",
+        "permission_denials": [],
+        "prompt_chars": 6240,
+        "prompt_lines": 144,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "b50065562f8e9367e071ee56b826c5419f1be196"
   },
   "labels": [],
   "recovery_for": null,
