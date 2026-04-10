@@ -322,6 +322,13 @@ class RunParserVerboseTests(unittest.TestCase):
         args = parser.parse_args(["run"])
         self.assertFalse(args.verbose)
 
+    def test_once_flag_rejected(self) -> None:
+        """takt run --once must be rejected as an unrecognised argument (flag was removed)."""
+        parser = build_parser()
+        with self.assertRaises(SystemExit) as ctx:
+            parser.parse_args(["run", "--once"])
+        self.assertEqual(2, ctx.exception.code)
+
 
 class TuiSchedulerReporterTests(unittest.TestCase):
     """Unit tests for TuiSchedulerReporter scheduler_log behaviour."""
