@@ -3,7 +3,7 @@
   "title": "Test Add commit.gpgsign=false to remaining direct git-init test helpers",
   "agent_type": "tester",
   "description": "Validate implementation for B-51f54bba",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-51f54bba",
   "dependencies": [
@@ -69,7 +69,7 @@
     "test_coverage_notes": "17/17 targeted tests pass for RecoveryForStorageTests, PriorityStorageTests, TestMakeServices, TestBackendResolutionPriority. 33/33 tests pass for test_onboarding_scaffold.py. 13/14 tests pass in test_config_wiring_phase3.py. The one failure is a pre-existing infinite hang in the scheduler test body, unrelated to the gpgsign fix.",
     "known_limitations": "Cannot test on Python < 3.14 to confirm whether the glob/ThreadPoolExecutor interaction is Python-version-specific. Cannot switch to main branch (it is in use by another worktree) to compare baseline behavior."
   },
-  "block_reason": "tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs indefinitely in pathlib.glob.scandir during Scheduler.run_once(). The hang occurs on the second _reevaluate_blocked() call after a ThreadPoolExecutor dispatches and completes a task. tests/test_config_wiring_phase3.py is missing RepositoryStorage._auto_commit = False at module level (unlike all other test files), which may be a contributing factor. This is a pre-existing defect exposed by the B-51f54bba fix.",
+  "block_reason": "",
   "conflict_risks": "None \u2014 no production files changed by the tester.",
   "branch_name": "feature/b-1ba2d8b2",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-1ba2d8b2",
@@ -287,6 +287,13 @@
       "agent_type": "tester",
       "summary": "Created corrective bead B-51f54bba-test-corrective for blocked issue",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T10:28:16.673242+00:00",
+      "event": "retried",
+      "agent_type": "tester",
+      "summary": "Requeued blocked bead after corrective bead B-51f54bba-test-corrective completed",
+      "details": {}
     }
   ],
   "metadata": {
@@ -408,7 +415,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-51f54bba-test-corrective"
+    "auto_corrective_bead_id": "B-51f54bba-test-corrective",
+    "last_corrective_retry_source": "B-51f54bba-test-corrective",
+    "last_corrective_retry_commit": "74fcf2af32a4581a7d051945555447676f46fa7e"
   },
   "labels": [],
   "recovery_for": null,
