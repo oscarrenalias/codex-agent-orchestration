@@ -147,6 +147,10 @@ class Scheduler:
         # and duplicate reporter events when the same bead is reconsidered across
         # fill-loop iterations.
         deferred_this_cycle: set[str] = set()
+        # Track beads already dispatched this cycle so the slot-fill loop cannot
+        # re-select a bead whose on-disk status is still READY (e.g. because
+        # _process was mocked in tests or failed before updating storage).
+        started_this_cycle: set[str] = set()
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures: dict[Future, Bead] = {}
@@ -169,8 +173,10 @@ class Scheduler:
                         result=result,
                         reporter=reporter,
                         deferred_this_cycle=deferred_this_cycle,
+                        started_this_cycle=started_this_cycle,
                     )
                     result.started.extend(bead.bead_id for bead in selected)
+                    started_this_cycle.update(bead.bead_id for bead in selected)
                     for bead in selected:
                         futures[executor.submit(self._process, bead, result, reporter=reporter)] = bead
 
@@ -196,10 +202,12 @@ class Scheduler:
         result: SchedulerResult,
         reporter: SchedulerReporter | None = None,
         deferred_this_cycle: set[str],
+        started_this_cycle: set[str] | None = None,
     ) -> list[Bead]:
         """Return up to *max_count* ready beads with no file-scope conflicts.
 
-        Beads already being processed (*in_flight*) are excluded from candidates.
+        Beads already being processed (*in_flight*) or already dispatched earlier
+        in the current cycle (*started_this_cycle*) are excluded from candidates.
         Conflict checks include in-flight beads to guard the brief window between
         executor.submit() and the worker thread marking the bead in_progress.
         A bead is recorded as deferred at most once per run_once() call to avoid
@@ -212,7 +220,8 @@ class Scheduler:
                 if self.storage.feature_root_id_for(bead) == feature_root_id
             ]
         in_flight_ids = {bead.bead_id for bead in in_flight}
-        ready = [bead for bead in ready if bead.bead_id not in in_flight_ids]
+        already_dispatched = in_flight_ids | (started_this_cycle or set())
+        ready = [bead for bead in ready if bead.bead_id not in already_dispatched]
         ready.sort(key=lambda b: 0 if b.priority == "high" else 1)
 
         # Emit deferral events for READY beads whose dependencies are not yet done.

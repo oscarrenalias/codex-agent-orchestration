@@ -22,7 +22,6 @@ from .models import (
 
 
 class RepositoryStorage:
-    _git_lock: threading.Lock = threading.Lock()
     _auto_commit: bool = True
 
     SUMMARY_STATUS_KEYS = (
@@ -35,6 +34,7 @@ class RepositoryStorage:
     )
 
     def __init__(self, root: Path) -> None:
+        self._git_lock = threading.Lock()  # instance-level: each storage instance gets its own lock, preventing cross-test blocking in parallel test runs
         self.root = root.resolve()
         self.state_dir = self.root / ".takt"
         self.beads_dir = self.state_dir / "beads"
@@ -65,12 +65,14 @@ class RepositoryStorage:
                     cwd=self.root,
                     check=True,
                     capture_output=True,
+                    timeout=30,
                 )
                 subprocess.run(
                     ["git", "commit", "-m", message, "--no-verify"],
                     cwd=self.root,
                     check=True,
                     capture_output=True,
+                    timeout=30,
                 )
         except Exception:
             pass
@@ -87,12 +89,14 @@ class RepositoryStorage:
                     cwd=self.root,
                     check=True,
                     capture_output=True,
+                    timeout=30,
                 )
                 subprocess.run(
                     ["git", "commit", "-m", message, "--no-verify"],
                     cwd=self.root,
                     check=True,
                     capture_output=True,
+                    timeout=30,
                 )
         except Exception:
             pass
