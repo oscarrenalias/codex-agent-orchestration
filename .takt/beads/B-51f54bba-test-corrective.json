@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-51f54bba-test: Test Add commit.gpgsign=false to remaining direct git-init test helpers",
   "agent_type": "developer",
   "description": "Blocked reason: tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs indefinitely in pathlib.glob.scandir during Scheduler.run_once(). The hang occurs on the second _reevaluate_blocked() call after a ThreadPoolExecutor dispatches and completes a task. tests/test_config_wiring_phase3.py is missing RepositoryStorage._auto_commit = False at module level (unlike all other test files), which may be a contributing factor. This is a pre-existing defect exposed by the B-51f54bba fix.\n\nRemaining work: One test hangs: tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency. The hang is in Python 3.14 pathlib.glob.scandir during the second _reevaluate_blocked() call inside run_once(), triggered after a ThreadPoolExecutor worker completes. Requires a developer fix \u2014 likely adding RepositoryStorage._auto_commit = False at module level in test_config_wiring_phase3.py, or investigating the Python 3.14 glob/ThreadPoolExecutor interaction.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-51f54bba-test",
   "dependencies": [],
@@ -58,9 +58,12 @@
   },
   "block_reason": "worktree in use by in-progress B-2dda73d5 (no file scope defined)",
   "conflict_risks": "None \u2014 no production files changed by the tester.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-1ba2d8b2",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-1ba2d8b2",
+  "lease": {
+    "owner": "developer:B-51f54bba-test-corrective",
+    "expires_at": "2026-04-10T10:56:46.133239+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -83,10 +86,48 @@
       "agent_type": "developer",
       "summary": "worktree in use by in-progress B-2dda73d5 (no file scope defined)",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T10:26:46.723486+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-10T10:26:46.723515+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
   "metadata": {
-    "auto_corrective_for": "B-51f54bba-test"
+    "auto_corrective_for": "B-51f54bba-test",
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-51f54bba-test-corrective",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "38362370ab2540dd106fcb66f0a52813e498b3d981720c1925f3df2e3b4f91f3",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-51f54bba-test-corrective/home",
+    "runner_backend": "claude"
   },
   "labels": [],
   "recovery_for": null,
