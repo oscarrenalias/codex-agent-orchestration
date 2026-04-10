@@ -6,7 +6,13 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-1ba2d8b2",
-  "dependencies": [],
+  "dependencies": [
+    "B-9afb6ff1",
+    "B-609cfa01",
+    "B-62e53d97",
+    "B-1b2f1c90",
+    "B-52b0a471"
+  ],
   "acceptance_criteria": [
     "The handoff or documentation output records the required cleanup steps for stranded bead `B-71b3c0d6` and merge retry `B-4c83e0c7`.",
     "Any persistent documentation update is scoped strictly to operator-facing guidance for this issue, if such a file exists and is warranted.",
