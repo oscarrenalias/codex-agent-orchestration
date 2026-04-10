@@ -34,10 +34,14 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "tests/helpers.py"
+    "src/agent_takt/storage.py",
+    "tests/helpers.py",
+    "tests/test_merge_safety.py"
   ],
   "changed_files": [
-    "tests/helpers.py"
+    "src/agent_takt/storage.py",
+    "tests/helpers.py",
+    "tests/test_merge_safety.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
@@ -61,7 +65,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None. Only `tests/helpers.py` was modified; no overlap with other in-progress beads expected.",
+  "conflict_risks": "None. Only `tests/helpers.py` was modified; no overlap with other in-progress beads expected.\nNone \u2014 only `src/agent_takt/storage.py` was touched and no sibling beads claim that file.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
