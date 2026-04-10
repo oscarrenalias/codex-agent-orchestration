@@ -127,6 +127,34 @@ class TestWriteAssetsManifest(unittest.TestCase):
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertIn(".takt/config.yaml", data["assets"])
 
+    def test_templates_skills_not_user_owned(self):
+        """templates/skills/ files are recorded with user_owned: false (upgradeable)."""
+        f = self._make_file("templates/skills/core/base-orchestrator/SKILL.md", "skill content")
+        manifest_path = write_assets_manifest(self.root, [f])
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        entry = data["assets"]["templates/skills/core/base-orchestrator/SKILL.md"]
+        self.assertFalse(entry["user_owned"])
+        self.assertEqual("bundled", entry["source"])
+
+    def test_templates_skills_recorded_with_correct_sha(self):
+        """SHA-256 is recorded correctly for templates/skills/ files."""
+        import hashlib
+        content = "subagent skill content"
+        f = self._make_file("templates/skills/role/tester-validation/SKILL.md", content)
+        manifest_path = write_assets_manifest(self.root, [f])
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        expected_sha = hashlib.sha256(content.encode()).hexdigest()
+        recorded_sha = data["assets"]["templates/skills/role/tester-validation/SKILL.md"]["sha256"]
+        self.assertEqual(expected_sha, recorded_sha)
+
+    def test_templates_agents_still_user_owned_regression(self):
+        """Regression: templates/agents/ files must still produce user_owned=true."""
+        f = self._make_file("templates/agents/developer.md", "template content")
+        manifest_path = write_assets_manifest(self.root, [f])
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        entry = data["assets"]["templates/agents/developer.md"]
+        self.assertTrue(entry["user_owned"], "templates/agents/ must remain user_owned=true")
+
 
 # ---------------------------------------------------------------------------
 # read_assets_manifest
@@ -340,6 +368,39 @@ class TestEvaluateUpgradeActions(unittest.TestCase):
         self.assertIsNotNone(d)
         self.assertEqual(d.action, "user_added")
         self.assertTrue(d.user_owned)
+
+    def test_templates_skills_new_action_when_manifest_empty(self):
+        """templates/skills/ entries in the bundle appear as action=new when manifest is empty."""
+        rel = "templates/skills/core/base-orchestrator/SKILL.md"
+        bundled_content = "bundled skill"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as bf:
+            bf.write(bundled_content)
+            bundled_path = Path(bf.name)
+        try:
+            with patch("agent_takt.onboarding.upgrade._compute_bundled_catalog",
+                       return_value={rel: bundled_path}):
+                manifest = {"takt_version": "", "installed_at": "", "assets": {}}
+                decisions = evaluate_upgrade_actions(self.root, manifest)
+        finally:
+            bundled_path.unlink(missing_ok=True)
+
+        d = next((x for x in decisions if x.rel_path == rel), None)
+        self.assertIsNotNone(d)
+        self.assertEqual(d.action, "new")
+
+    def test_templates_skills_user_added_when_on_disk_not_in_bundle(self):
+        """templates/skills/ file on disk but not in manifest or bundle → user_added."""
+        rel = "templates/skills/custom/my-skill/SKILL.md"
+        self._make_file(rel, "custom subagent skill")
+
+        with patch("agent_takt.onboarding.upgrade._compute_bundled_catalog",
+                   return_value={}):
+            manifest = {"takt_version": "", "installed_at": "", "assets": {}}
+            decisions = evaluate_upgrade_actions(self.root, manifest)
+
+        d = next((x for x in decisions if x.rel_path == rel), None)
+        self.assertIsNotNone(d)
+        self.assertEqual(d.action, "user_added")
 
 
 # ---------------------------------------------------------------------------
