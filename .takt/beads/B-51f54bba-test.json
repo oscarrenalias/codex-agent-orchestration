@@ -363,6 +363,15 @@
       "agent_type": "tester",
       "summary": "Worker started",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-10T11:09:31.824428+00:00",
+      "event": "guardrails_applied",
+      "agent_type": "tester",
+      "summary": "Applied guardrails from .takt/agent-runs/B-51f54bba-test/repo/templates/agents/tester.md",
+      "details": {
+        "template_path": ".takt/agent-runs/B-51f54bba-test/repo/templates/agents/tester.md"
+      }
     }
   ],
   "metadata": {
@@ -383,7 +392,7 @@
       "agent_type": "tester",
       "template_path": ".takt/agent-runs/B-51f54bba-test/repo/templates/agents/tester.md",
       "template_text": "# Tester Guardrails\n\n**CRITICAL \u2014 read before any tool use:**\n- **Never use `run_in_background: true`** on any Bash command. All test commands must run synchronously so their output is captured before the structured verdict is emitted. Background tasks cause the structured output to be lost, resulting in a failed bead.\n- **If a task-notification appears in your context**, that means a previous Bash command ran in the background in violation of this rule. Do not treat the notification as a sign that work is done. Re-run the test command synchronously (without `run_in_background`) and emit the JSON verdict block as your final response.\n- **The JSON verdict block must be the absolute last output of your response.** Never end with prose, a status summary, or a notification acknowledgement. The orchestrator parses your final message as JSON and will fail if it is not valid JSON.\n\n---\n\nPrimary responsibility: Add or update automated tests, run validation, and report defects or missing coverage.\n\nAllowed actions:\n- Write or update tests relevant to the assigned bead.\n- Run only the test files related to the bead's changed files, not the full test suite. Target individual test files or modules. If unsure which tests are relevant, use the bead's expected_files and touched_files fields as a guide. Defer command mechanics (how to run, which runner, which flags) to `.agents/skills/capability/test-execution/SKILL.md`.\n- Make minimal test-enablement fixes (e.g. import corrections, fixture setup) only when strictly necessary to run the relevant tests. Do not refactor production code under the guise of test enablement.\n\nDisallowed actions:\n- Run the full test suite instead of targeting specific tests. Always run targeted, scoped commands. Running the full suite wastes time and often exceeds the agent timeout.\n- Use `run_in_background` for any Bash commands. (See CRITICAL section above.)\n- Implement feature logic beyond minimal test-enablement work.\n- Reframe a feature implementation task as testing work to bypass handoff.\n- Perform review signoff or broad documentation rewrites.\n\nExpected outputs:\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Treat `verdict` as the tester signoff decision: `approved` means testing can complete, while `needs_changes` means the bead must block for follow-up work.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when testing is complete with no unresolved tester-scope findings.\n- Use `verdict=needs_changes`, set `findings_count` to the unresolved defect or coverage gap count, set `requires_followup=true` unless there is a stronger explicit reason not to, and always include `block_reason` when follow-up work is required.\n- Keep `completed`, `remaining`, and `risks` as free-form narrative context only. They inform operators, but they do not override the structured verdict or control scheduler state.\n- Completed or blocked JSON describing test coverage, validation status, and follow-up needs.\n- Precise defect or coverage notes when the bead cannot be completed within tester scope.\n\n**FINAL REMINDER: The JSON verdict block must be the last thing you output. Do not add any text, prose, or acknowledgement after it.**",
-      "captured_at": "2026-04-10T10:28:24.528720+00:00"
+      "captured_at": "2026-04-10T11:09:31.824368+00:00"
     },
     "worker_prompt_context": {
       "bead_id": "B-51f54bba-test",
@@ -412,24 +421,19 @@
         "tests/test_onboarding_scaffold.py",
         "tests/test_recovery_for.py"
       ],
-      "conflict_risks": "None \u2014 no production files changed by the tester.",
+      "conflict_risks": "",
       "handoff_summary": {
-        "completed": "1. Verified all 6 setUp blocks in the 4 changed files have `commit.gpgsign=false` guards. 2. All tests in RecoveryForStorageTests, PriorityStorageTests, TestMakeServices, TestBackendResolutionPriority, and TestCommitScaffold pass (17 + 33 tests). 3. 13 of 14 tests in test_config_wiring_phase3.py pass.",
-        "remaining": "One test hangs: tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency. The hang is in Python 3.14 pathlib.glob.scandir during the second _reevaluate_blocked() call inside run_once(), triggered after a ThreadPoolExecutor worker completes. Requires a developer fix \u2014 likely adding RepositoryStorage._auto_commit = False at module level in test_config_wiring_phase3.py, or investigating the Python 3.14 glob/ThreadPoolExecutor interaction.",
-        "risks": "The hang in test_scheduler_skips_corrupt_ready_bead_with_missing_dependency is infinite (does not complete even at 120s timeout). This is a Python 3.14-specific issue or a missing _auto_commit=False guard. Pre-existing \u2014 not introduced by B-51f54bba. The B-51f54bba change is correct and complete for its stated purpose.",
-        "verdict": "needs_changes",
-        "findings_count": 1,
-        "requires_followup": true,
-        "changed_files": [
-          "tests/test_config_wiring.py",
-          "tests/test_config_wiring_phase3.py",
-          "tests/test_onboarding_scaffold.py",
-          "tests/test_recovery_for.py"
-        ],
+        "completed": "",
+        "remaining": "",
+        "risks": "",
+        "verdict": "",
+        "findings_count": 0,
+        "requires_followup": false,
+        "changed_files": [],
         "updated_docs": [],
-        "next_action": "Create a developer bead to fix test_scheduler_skips_corrupt_ready_bead_with_missing_dependency. Likely fix: add RepositoryStorage._auto_commit = False at module level in tests/test_config_wiring_phase3.py (consistent with all other test files). Also investigate whether the Python 3.14 glob/ThreadPoolExecutor deadlock is the root cause.",
-        "next_agent": "developer",
-        "block_reason": "tests/test_config_wiring_phase3.py::TestDependencyValidationAndRuntimeResilience::test_scheduler_skips_corrupt_ready_bead_with_missing_dependency hangs indefinitely in pathlib.glob.scandir during Scheduler.run_once(). The hang occurs on the second _reevaluate_blocked() call after a ThreadPoolExecutor dispatches and completes a task. tests/test_config_wiring_phase3.py is missing RepositoryStorage._auto_commit = False at module level (unlike all other test files), which may be a contributing factor. This is a pre-existing defect exposed by the B-51f54bba fix.",
+        "next_action": "",
+        "next_agent": "",
+        "block_reason": "Agent timed out after 1500 seconds",
         "expected_files": [
           "tests/test_config_wiring.py",
           "tests/test_config_wiring_phase3.py",
@@ -437,16 +441,11 @@
           "tests/test_recovery_for.py"
         ],
         "expected_globs": [],
-        "touched_files": [
-          "tests/test_config_wiring.py",
-          "tests/test_config_wiring_phase3.py",
-          "tests/test_onboarding_scaffold.py",
-          "tests/test_recovery_for.py"
-        ],
-        "conflict_risks": "None \u2014 no production files changed by the tester.",
-        "design_decisions": "Confirmed the B-51f54bba implementation is correct: the six setUp blocks and the _make_git_repo helper all have the gpgsign guard. The failing test is a separate pre-existing defect not in scope of B-51f54bba.",
-        "test_coverage_notes": "17/17 targeted tests pass for RecoveryForStorageTests, PriorityStorageTests, TestMakeServices, TestBackendResolutionPriority. 33/33 tests pass for test_onboarding_scaffold.py. 13/14 tests pass in test_config_wiring_phase3.py. The one failure is a pre-existing infinite hang in the scheduler test body, unrelated to the gpgsign fix.",
-        "known_limitations": "Cannot test on Python < 3.14 to confirm whether the glob/ThreadPoolExecutor interaction is Python-version-specific. Cannot switch to main branch (it is in use by another worktree) to compare baseline behavior."
+        "touched_files": [],
+        "conflict_risks": "",
+        "design_decisions": "",
+        "test_coverage_notes": "",
+        "known_limitations": ""
       }
     },
     "last_agent_result": {
