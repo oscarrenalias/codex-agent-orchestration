@@ -255,6 +255,15 @@
       "agent_type": "review",
       "summary": "Worker started",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T15:41:22.457899+00:00",
+      "event": "guardrails_applied",
+      "agent_type": "review",
+      "summary": "Applied guardrails from .takt/agent-runs/B-be0f62e8/repo/templates/agents/review.md",
+      "details": {
+        "template_path": ".takt/agent-runs/B-be0f62e8/repo/templates/agents/review.md"
+      }
     }
   ],
   "metadata": {
@@ -275,7 +284,7 @@
       "agent_type": "review",
       "template_path": ".takt/agent-runs/B-be0f62e8/repo/templates/agents/review.md",
       "template_text": "# Review Guardrails\n\nPrimary responsibility: Inspect code, tests, docs, and acceptance criteria for correctness, completeness, and risk.\n\nAllowed actions:\n- Review only the changed files listed in the bead's touched_files and changed_files fields. Do not read unrelated files.\n- Validate acceptance criteria against the implementation and handoff state.\n- Block with a clear recommendation when the bead actually requires implementation work.\n\n## Memory\n\n**Read memory at bead start.** Before reviewing any files, run three searches using `$TAKT_CMD` (injected by the orchestrator):\n\n```bash\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace global\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace feature:<feature_root_id>\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace specs\n```\n\nTreat results as ambient context \u2014 apply relevant entries to inform the review; skip entries that don't apply.\n\nDo **not** write to memory \u2014 review agents are read-only.\n\nEfficiency constraints:\n- Do not run the test suite. Testing is the tester agent's responsibility.\n- Focus on correctness, completeness, and risk \u2014 not style or formatting.\n- Keep the review concise. If there are no findings, say so and approve promptly.\n\nDisallowed actions:\n- Implement feature work, tests, or docs instead of reporting findings.\n- Rewrite architecture or silently fix issues discovered during review.\n- Mark incomplete work as accepted without evidence.\n\nExpected outputs:\n- Return JSON with `outcome` set to `completed` (reviews always complete; use `verdict` for pass/fail) and `summary` as a one-line description of the review result.\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Treat `verdict` as the review signoff decision: `approved` means the bead can complete, while `needs_changes` means the bead must block for follow-up work.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when no unresolved findings remain.\n- Use `verdict=needs_changes`, set `findings_count` to the unresolved finding count, set `requires_followup=true` unless there is a stronger explicit reason not to, and always include `block_reason` when any required fix remains.\n- Keep `completed`, `remaining`, and `risks` as free-form narrative context only. They inform operators, but they do not override the structured verdict or control scheduler state.\n- Review findings ordered by severity, or an explicit statement that no findings were discovered.\n- Clear blocked handoff details when the task belongs to another agent type.",
-      "captured_at": "2026-04-12T15:24:46.451615+00:00"
+      "captured_at": "2026-04-12T15:41:22.457880+00:00"
     },
     "worker_prompt_context": {
       "bead_id": "B-be0f62e8",
@@ -365,7 +374,7 @@
         "tests/test_runner_memory_env.py",
         "uv.lock"
       ],
-      "conflict_risks": "None \u2014 only runner.py modified; no overlap with sibling beads' expected files.\nsrc/agent_takt/memory.py is fully implemented here. Sibling beads should import from it but not modify it. If any sibling bead lists memory.py in expected_files they should be scoped to additive imports only.\nNone \u2014 all changes were confined to src/agent_takt/memory.py which is not shared with other in-progress beads.\nNo file-scope conflicts expected. The only changed file is scaffold.py, which is not touched by any sibling bead.\nNone \u2014 only `src/agent_takt/memory.py` was modified; no overlapping file claims with sibling beads expected.\nNone \u2014 only `planner.py` and `misc.py` were changed; no overlap with other in-progress beads.\nNone. The only files changed are the three in the bead's expected_files scope plus the commands __init__ re-export. No overlap with runner.py, onboarding, or planner.\nNone. All changed files are documentation-only templates with no code execution. No file-scope overlap with other in-progress beads expected.",
+      "conflict_risks": "",
       "handoff_summary": {
         "completed": "",
         "remaining": "",
@@ -377,9 +386,34 @@
         "updated_docs": [],
         "next_action": "",
         "next_agent": "",
-        "block_reason": "",
-        "expected_files": [],
-        "expected_globs": [],
+        "block_reason": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"duration_ms\":972068,\"duration_api_ms\":31099,\"num_turns\":16,\"result\":\"API Error: Stream idle timeout - partial response received\",\"stop_reason\":\"stop_sequence\",\"session_id\":\"67f01286-fc81-454d-8a0a-39e271ac892a\",\"total_cost_usd\":0.27138665,\"usage\":{\"input_tokens\":1656,\"cache_creation_input_tokens\":45993,\"cache_read_input_tokens\":122364,\"output_tokens\":2090,\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":45993,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"\",\"iterations\":[{\"input_tokens\":1,\"output_tokens\":369,\"cache_read_input_tokens\":52256,\"cache_creation_input_tokens\":6476,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":6476},\"type\":\"message\"}],\"speed\":\"standard\"},\"modelUsage\":{\"claude-sonnet-4-6\":{\"inputTokens\":1656,\"outputTokens\":2090,\"cacheReadInputTokens\":122364,\"cacheCreationInputTokens\":45993,\"webSearchRequests\":0,\"costUSD\":0.24550095000000002,\"contextWindow\":200000,\"maxOutputTokens\":32000},\"claude-haiku-4-5-20251001\":{\"inputTokens\":10,\"outputTokens\":812,\"cacheReadInputTokens\":15107,\"cacheCreationInputTokens\":16244,\"webSearchRequests\":0,\"costUSD\":0.0258857,\"contextWindow\":200000,\"maxOutputTokens\":32000}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"uuid\":\"a698e169-f6ba-4fbc-98ae-a85160bdc824\"}",
+        "expected_files": [
+          ".agents/skills/memory/SKILL.md",
+          "pyproject.toml",
+          "src/agent_takt/_data/agents_skills/memory/SKILL.md",
+          "src/agent_takt/_data/claude_skills/memory/SKILL.md",
+          "src/agent_takt/cli/__init__.py",
+          "src/agent_takt/cli/commands/__init__.py",
+          "src/agent_takt/cli/commands/memory.py",
+          "src/agent_takt/cli/commands/misc.py",
+          "src/agent_takt/cli/parser.py",
+          "src/agent_takt/memory.py",
+          "src/agent_takt/onboarding/scaffold.py",
+          "src/agent_takt/planner.py",
+          "src/agent_takt/runner.py",
+          "templates/agents/developer.md",
+          "templates/agents/documentation.md",
+          "templates/agents/planner.md",
+          "templates/agents/review.md",
+          "templates/agents/tester.md",
+          "uv.lock"
+        ],
+        "expected_globs": [
+          "docs/*.md",
+          "src/agent_takt/**/*.py",
+          "templates/agents/*.md",
+          "tests/test_*.py"
+        ],
         "touched_files": [],
         "conflict_risks": "",
         "design_decisions": "",
