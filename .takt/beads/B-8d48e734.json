@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-8d48e734",
+  "title": "Align onboarding known-issues matching with canonical stack names",
+  "agent_type": "developer",
+  "description": "Tighten `src/agent_takt/onboarding/scaffold.py` so `_language_specific_known_issues()` matches the canonical stack names produced by the new prompt flow and covers the Go case expected by the spec.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-2b9df640",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Known-issues logic uses exact canonical names rather than fuzzy substring matching for Node.js and TypeScript.",
+    "Canonical `Node.js` and `TypeScript` return the expected language-specific guidance block.",
+    "Canonical `Other` returns no language-specific guidance.",
+    "Go-specific guidance is present if required by existing behavior gaps described in the spec."
+  ],
+  "linked_docs": [
+    "spec-302156c2"
+  ],
+  "feature_root_id": "B-2b9df640",
+  "execution_branch_name": "feature/b-2b9df640",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2b9df640",
+  "expected_files": [
+    "src/agent_takt/onboarding/scaffold.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-12T19:48:19.737363+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
