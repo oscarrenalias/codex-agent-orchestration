@@ -3,7 +3,7 @@
   "title": "Document operator-facing impact of stack-agnostic guardrail updates",
   "agent_type": "documentation",
   "description": "Capture the user-facing documentation impact for this spec, explicitly confirming whether any additional docs changes are needed beyond the template edits and recording the memory-first test-command behavior in the bead handoff.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-78f2e704",
   "dependencies": [
@@ -61,9 +61,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 this file is owned exclusively by this bead and is not touched by sibling beads.\nNone. This file is not claimed by any sibling bead.\nNo overlap with other in-progress beads \u2014 only `templates/agents/merge-conflict.md` was changed.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-78f2e704",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-78f2e704",
+  "lease": {
+    "owner": "documentation:B-6713cfca",
+    "expires_at": "2026-04-12T19:07:06.978955+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -72,9 +75,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T18:37:07.299119+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-12T18:37:07.299142+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-6713cfca",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "191f95261a4d31e4f4a691e9c39926c722504f21a3c370b6975facad92e3c1f0",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-6713cfca/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
