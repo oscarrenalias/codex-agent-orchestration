@@ -6,7 +6,13 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-78f2e704",
-  "dependencies": [],
+  "dependencies": [
+    "B-eaa9756c",
+    "B-801d4712",
+    "B-64267055",
+    "B-ffc526ba",
+    "B-6713cfca"
+  ],
   "acceptance_criteria": [
     "Review confirms the final wording removes Python-specific assumptions from all in-scope framework files.",
     "Review confirms the memory-first lookup and write-back guidance is present where required and consistent across related templates.",
