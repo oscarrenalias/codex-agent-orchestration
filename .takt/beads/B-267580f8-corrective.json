@@ -1,0 +1,89 @@
+{
+  "bead_id": "B-267580f8-corrective",
+  "title": "Corrective fix for B-267580f8: Test shared semantic memory integration end to end",
+  "agent_type": "developer",
+  "description": "Blocked reason: memory.py:search() fails at runtime with 'sqlite3.OperationalError: A LIMIT or k = ? constraint is required on vec0 knn queries.' on Python 3.14 / sqlite-vec 0.1.9 / SQLite 3.51.3. The implementation uses 'LIMIT ?' SQL parameter binding but this version of sqlite-vec requires 'AND k = ?' in the WHERE clause instead. All 16 search-dependent tests fail. Fix: in memory.py around line 393, change 'WHERE v.embedding MATCH ? ORDER BY v.distance LIMIT ?' to 'WHERE v.embedding MATCH ? AND k = ? ORDER BY v.distance' (same parameter tuple, just reordered semantics).\n\nRemaining work: Developer fix required: memory.py:search() must replace 'LIMIT ?' with 'AND k = ?' in the sqlite-vec KNN query WHERE clause. Once fixed, all 16 failing tests will pass.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-267580f8",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-267580f8.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [
+    "spec-cbb95a79",
+    "AGENTS.md"
+  ],
+  "feature_root_id": "B-36010371",
+  "execution_branch_name": "feature/b-36010371",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-36010371",
+  "expected_files": [
+    "tests/test_memory_backend.py",
+    "tests/test_cli_memory.py",
+    "tests/test_runner_memory_env.py",
+    "tests/test_memory_templates.py"
+  ],
+  "expected_globs": [
+    "tests/test_*.py"
+  ],
+  "touched_files": [
+    "tests/test_cli_memory.py",
+    "tests/test_memory_backend.py",
+    "tests/test_memory_templates.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_planner.py",
+    "tests/test_runner_memory_env.py"
+  ],
+  "changed_files": [
+    "tests/test_cli_memory.py",
+    "tests/test_memory_backend.py",
+    "tests/test_memory_templates.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_planner.py",
+    "tests/test_runner_memory_env.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "None \u2014 test files only. No overlap with any other bead's expected files.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-12T14:36:36.257220+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-267580f8"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
