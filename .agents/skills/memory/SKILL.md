@@ -5,60 +5,44 @@ description: Read and update shared institutional memory across beads.
 
 # memory
 
-Shared institutional memory persists knowledge across beads, features, and sessions using a local sqlite-vec database at `.takt/memory/memory.db`.
+Shared memory accumulates knowledge across beads and features. Search it at bead start; add entries when you discover reusable project knowledge.
 
-## Namespaces
+## At Bead Start
 
-Memory is partitioned into three namespaces:
-
-- `global` — Project-wide conventions, pitfalls, and discoveries applicable to any agent or feature.
-- `feature:<feature_root_id>` — Knowledge scoped to a specific feature tree (e.g. `feature:B-abc12def`).
-- `specs` — Ingested spec content; automatically populated during planning.
-
-## Retrieval
+Run three searches before touching any code. Use `$TAKT_CMD` (injected by the orchestrator):
 
 ```bash
-# Search across all namespaces (merged, ranked by relevance)
-takt memory search "<query>"
-
-# Search a specific namespace
-takt memory search "<query>" --namespace global
-takt memory search "<query>" --namespace feature:<feature_root_id>
-takt memory search "<query>" --namespace specs
-
-# Adjust result count and similarity threshold
-takt memory search "<query>" --limit 10 --threshold 0.4
+$TAKT_CMD memory search "<bead topic keywords>" --namespace global
+$TAKT_CMD memory search "<bead topic keywords>" --namespace feature:<feature_root_id>
+$TAKT_CMD memory search "<bead topic keywords>" --namespace specs
 ```
 
-## Writing Entries
+Treat results as ambient context — apply relevant entries; ignore entries that don't apply.
+
+## When to Write an Entry
+
+Write a memory entry when you discover something that is:
+
+- Project-wide and reusable — not specific to the current bead
+- Something that would have changed your approach if you had known it upfront
+- Likely to recur across future beads or agent types
+- Not already covered in CLAUDE.md or the guardrail templates
+
+Do **not** write entries for anything bead-specific, ephemeral, or already covered elsewhere.
+
+## Writing an Entry
 
 ```bash
-# Add a global entry
-takt memory add "<fact or observation>" --namespace global
+# Project-wide knowledge
+$TAKT_CMD memory add "<concise fact>" --namespace global
 
-# Add a feature-scoped entry
-takt memory add "<discovery>" --namespace feature:<feature_root_id>
+# Feature-specific discovery
+$TAKT_CMD memory add "<discovery>" --namespace feature:<feature_root_id>
 ```
 
-## Ingesting Files
+Keep entries short: one or two sentences. Be concrete. No padding.
 
-```bash
-# Ingest a markdown or text file into memory
-takt memory ingest path/to/file.md --namespace global
-
-# Migrate legacy docs/memory/*.md files into the sqlite-vec store
-takt memory ingest --migrate
-```
-
-## Administration
-
-```bash
-takt memory init                # Create the database and download the embedding model
-takt memory stats               # Show entry counts by namespace
-takt memory delete <entry_id>   # Remove a specific entry
-```
-
-## Agent Access Control
+## Access Control
 
 | Agent type    | Read | Write                          |
 |---------------|------|--------------------------------|

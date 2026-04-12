@@ -1,8 +1,6 @@
 ---
 name: spec-management
 description: Canonical workflow for spec lifecycle operations using spec.py — initialization, creation, querying, metadata updates, and status transitions. Also covers writing specs, planning beads, and merging features in codex-agent-orchestration.
-tools: Read, Write, Edit, Glob, Grep, Bash
-user-invocable: false
 ---
 
 # spec-management
@@ -159,6 +157,19 @@ Sets the `description` frontmatter field to a single-line text value.
 ```bash
 python3 <spec-py> set description "Adds OAuth login support" spec-a3f19c2b
 ```
+
+---
+
+### `remove <spec>` — Delete a spec file
+
+Deletes a spec file. Prompts for confirmation if the spec is not in `draft` status.
+
+```bash
+python3 <spec-py> remove spec-a3f19c2b
+python3 <spec-py> remove my-feature --force
+```
+
+`--force` skips the confirmation prompt for non-draft specs.
 
 ---
 
@@ -328,13 +339,13 @@ uv run takt merge <bead_id>
 This does:
 1. Merges `main` into the feature branch (conflict check)
 2. If conflict: creates a `merge-conflict` bead, exits with instructions
-3. Runs `config.common.test_command` (currently: `uv run python -m unittest discover -s tests`)
+3. Runs `config.common.test_command`
 4. If tests fail: creates a `merge-conflict` bead, exits with instructions
 5. If all clear: `git merge --no-ff` into main
 
 If a merge-conflict bead is created, run the scheduler then retry:
 ```bash
-uv run takt --runner claude run --max-workers 4
+uv run takt --runner codex run --max-workers 4
 uv run takt merge <bead_id>  # retry
 ```
 

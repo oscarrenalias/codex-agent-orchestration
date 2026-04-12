@@ -22,16 +22,6 @@ To run a single test class:
 python3 -m unittest tests.test_spec.TestCmdCreate
 ```
 
-## Documentation Rules
-
-Whenever a feature is added or changed in `spec.py`, always update **all three** of:
-
-1. **`SKILL.md`** — update the relevant subcommand section, flags, and examples so agents using the skill have accurate instructions.
-2. **`README.md`** — update the CLI reference table and any affected prose.
-3. **`tests/test_spec.py`** — add or update tests to cover the new behaviour.
-
-Never consider a feature complete until all three are updated.
-
 ## Architecture
 
 ### `spec.py`
@@ -52,7 +42,7 @@ specs/drafts/    →  specs/planned/  →  specs/done/
   (draft)            (planned)           (done)
 ```
 
-Transition to `planned` requires beads to be persisted by `orchestrator plan --write`. Transition to `done` requires all beads merged to main via `orchestrator merge`.
+Transition to `planned` requires beads to be persisted by `takt plan --write`. Transition to `done` requires all beads merged to main via `takt merge`.
 
 ### Frontmatter schema
 
