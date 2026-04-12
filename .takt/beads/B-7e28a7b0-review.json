@@ -3,7 +3,7 @@
   "title": "Review Rewrite interactive init prompts to use menu-driven runner and stack selection",
   "agent_type": "review",
   "description": "Review implementation for B-7e28a7b0",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-7e28a7b0",
   "dependencies": [
@@ -56,9 +56,12 @@
   },
   "block_reason": "",
   "conflict_risks": "Downstream bead B-3722ddd9 (non-interactive defaults using STACKS[0]) has no conflict risk \u2014 it touches `cli/commands/init.py`, not `prompts.py`.",
-  "branch_name": "",
+  "branch_name": "feature/b-2b9df640",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-7e28a7b0-review",
+    "expires_at": "2026-04-12T20:33:09.695504+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -67,9 +70,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T20:03:10.086221+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-12T20:03:10.086271+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-7e28a7b0-review",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-7e28a7b0-review/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
