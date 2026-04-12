@@ -179,12 +179,27 @@ class TestSeedMemoryFiles(unittest.TestCase):
         self.assertIn(memory_dir / "conventions.md", written)
         self.assertNotEqual((memory_dir / "conventions.md").read_text(), "old")
 
-    def test_typescript_specific_content(self):
-        answers = _make_answers(language="TypeScript/Node.js")
-        written = seed_memory_files(self.root, answers)
+    def test_typescript_canonical_name_produces_typescript_content(self):
+        answers = _make_answers(language="TypeScript")
+        seed_memory_files(self.root, answers)
         ki_path = self.root / "docs" / "memory" / "known-issues.md"
         content = ki_path.read_text()
         self.assertIn("TypeScript", content)
+
+    def test_nodejs_canonical_name_produces_typescript_content(self):
+        answers = _make_answers(language="Node.js")
+        seed_memory_files(self.root, answers)
+        ki_path = self.root / "docs" / "memory" / "known-issues.md"
+        content = ki_path.read_text()
+        self.assertIn("TypeScript", content)
+
+    def test_free_text_typescript_node_does_not_produce_language_section(self):
+        """Free-text "TypeScript/Node.js" (from the Other path) must not add language-specific content."""
+        answers = _make_answers(language="TypeScript/Node.js")
+        seed_memory_files(self.root, answers)
+        ki_path = self.root / "docs" / "memory" / "known-issues.md"
+        content = ki_path.read_text()
+        self.assertNotIn("## TypeScript / Node.js", content)
 
     def test_go_specific_content(self):
         answers = _make_answers(language="Go")
@@ -197,6 +212,89 @@ class TestSeedMemoryFiles(unittest.TestCase):
         answers = _make_answers(language="Python")
         content = _language_specific_known_issues("Python")
         self.assertEqual(content, "")
+
+
+# ---------------------------------------------------------------------------
+# _language_specific_known_issues — unit tests for exact canonical matching
+# ---------------------------------------------------------------------------
+
+
+class TestLanguageSpecificKnownIssues(unittest.TestCase):
+    """Unit tests for _language_specific_known_issues() exact-match semantics.
+
+    The function must match *only* the canonical STACKS display names.
+    Free-text values from the 'Other' fallback path must return ''.
+    """
+
+    # ------------------------------------------------------------------
+    # Canonical names that SHOULD produce language-specific content
+    # ------------------------------------------------------------------
+
+    def test_node_js_returns_typescript_node_block(self):
+        result = _language_specific_known_issues("Node.js")
+        self.assertNotEqual(result, "")
+        self.assertIn("TypeScript", result)
+
+    def test_typescript_returns_typescript_node_block(self):
+        result = _language_specific_known_issues("TypeScript")
+        self.assertNotEqual(result, "")
+        self.assertIn("TypeScript", result)
+
+    def test_go_returns_go_block(self):
+        result = _language_specific_known_issues("Go")
+        self.assertNotEqual(result, "")
+        self.assertIn("Go", result)
+
+    def test_go_block_mentions_go_build(self):
+        result = _language_specific_known_issues("Go")
+        self.assertIn("go build", result)
+
+    def test_typescript_block_mentions_tsc(self):
+        result = _language_specific_known_issues("TypeScript")
+        self.assertIn("tsc", result)
+
+    # ------------------------------------------------------------------
+    # Canonical names that should return ''
+    # ------------------------------------------------------------------
+
+    def test_other_returns_empty(self):
+        self.assertEqual("", _language_specific_known_issues("Other"))
+
+    def test_python_returns_empty(self):
+        self.assertEqual("", _language_specific_known_issues("Python"))
+
+    def test_rust_returns_empty(self):
+        self.assertEqual("", _language_specific_known_issues("Rust"))
+
+    def test_java_maven_returns_empty(self):
+        self.assertEqual("", _language_specific_known_issues("Java (Maven)"))
+
+    # ------------------------------------------------------------------
+    # Free-text / fuzzy values the old implementation would have matched
+    # ------------------------------------------------------------------
+
+    def test_lowercase_node_returns_empty(self):
+        """'node' (lowercase) must not match 'Node.js'."""
+        self.assertEqual("", _language_specific_known_issues("node"))
+
+    def test_nodejs_no_dot_returns_empty(self):
+        """'nodejs' must not match 'Node.js'."""
+        self.assertEqual("", _language_specific_known_issues("nodejs"))
+
+    def test_typescript_react_freetext_returns_empty(self):
+        """'typescript/react' (Other free-text) must not match 'TypeScript'."""
+        self.assertEqual("", _language_specific_known_issues("typescript/react"))
+
+    def test_golang_returns_empty(self):
+        """'golang' (common alias) must not match 'Go'."""
+        self.assertEqual("", _language_specific_known_issues("golang"))
+
+    def test_typescript_node_freetext_returns_empty(self):
+        """'TypeScript/Node.js' (Other free-text) must not match either canonical name."""
+        self.assertEqual("", _language_specific_known_issues("TypeScript/Node.js"))
+
+    def test_empty_string_returns_empty(self):
+        self.assertEqual("", _language_specific_known_issues(""))
 
 
 # ---------------------------------------------------------------------------
