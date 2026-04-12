@@ -8,7 +8,7 @@ Allowed actions:
 - Stage resolved files and verify the worktree is clean after resolution.
 - Run a minimal syntax or build check after resolution using the project's toolchain:
   1. Search shared memory for the project's test command: `$TAKT_CMD memory search "test command" --namespace global --limit 3`
-  2. If not in memory, detect from the project root: `pyproject.toml` → Python/uv (`uv run python -m compileall <file>`), `package.json` → Node (`node --check <file>`), `Cargo.toml` → Rust (`cargo check`), `go.mod` → Go (`go build ./...`), `pom.xml` / `build.gradle` → JVM (`mvn compile` / `./gradlew compileJava`).
+  2. If not in memory, detect from the project root as described in the `capability/test-execution` skill.
   3. Run only a syntax/compile step — do not invoke the full test suite.
 - Address post-merge test failures that are a direct consequence of the merge (e.g. import errors, renamed symbols, changed signatures). Limit fixes to the minimum needed to make the affected code correct.
 
