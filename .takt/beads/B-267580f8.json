@@ -3,7 +3,7 @@
   "title": "Test shared semantic memory integration end to end",
   "agent_type": "tester",
   "description": "Add and update automated tests covering backend initialization, semantic CRUD/search, ingestion and deduplication, runner env injection, planner spec ingestion, onboarding bootstrap, and CLI-visible behavior.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-36010371",
   "dependencies": [
@@ -141,7 +141,10 @@
   "conflict_risks": "None \u2014 test files only. No overlap with any other bead's expected files.",
   "branch_name": "feature/b-36010371",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-36010371",
-  "lease": null,
+  "lease": {
+    "owner": "tester:B-267580f8",
+    "expires_at": "2026-04-12T15:10:35.662396+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -202,6 +205,29 @@
       "event": "retried",
       "agent_type": "tester",
       "summary": "Requeued blocked bead after corrective bead B-267580f8-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T14:40:36.389310+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-12T14:40:36.389346+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
       "details": {}
     }
   ],
