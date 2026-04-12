@@ -24,16 +24,24 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "CLAUDE.md",
+    "docs/onboarding.md",
     "src/agent_takt/cli/commands/memory.py",
     "src/agent_takt/config.py",
     "src/agent_takt/memory.py",
-    "src/agent_takt/onboarding/scaffold.py"
+    "src/agent_takt/onboarding/scaffold.py",
+    "tests/test_config.py",
+    "tests/test_memory_backend.py"
   ],
   "changed_files": [
+    "CLAUDE.md",
+    "docs/onboarding.md",
     "src/agent_takt/cli/commands/memory.py",
     "src/agent_takt/config.py",
     "src/agent_takt/memory.py",
-    "src/agent_takt/onboarding/scaffold.py"
+    "src/agent_takt/onboarding/scaffold.py",
+    "tests/test_config.py",
+    "tests/test_memory_backend.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
