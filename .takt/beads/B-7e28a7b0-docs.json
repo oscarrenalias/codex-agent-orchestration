@@ -3,7 +3,7 @@
   "title": "Document Rewrite interactive init prompts to use menu-driven runner and stack selection",
   "agent_type": "documentation",
   "description": "Update docs for B-7e28a7b0",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-7e28a7b0",
   "dependencies": [
@@ -22,42 +22,48 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/onboarding/prompts.py",
-    "tests/test_onboarding_scaffold.py"
+    "docs/onboarding.md"
   ],
   "changed_files": [
-    "src/agent_takt/onboarding/prompts.py",
-    "tests/test_onboarding_scaffold.py"
+    "docs/onboarding.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/onboarding.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Rewrote the \"### Prompts\" section in docs/onboarding.md to accurately describe the numbered-menu interaction: runner backend as a 2-option menu, project stack as a 7-option menu from the STACKS catalog (with default test/build commands per entry), and the two-path flow \u2014 predefined stack pre-fills command defaults while \"Other\" opens free-text prompts for language, test command, and build check command.",
+    "remaining": "None.",
+    "risks": "None. Documentation-only change; no runtime behaviour modified.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "docs/onboarding.md"
+    ],
+    "updated_docs": [
+      "docs/onboarding.md"
+    ],
+    "next_action": "Proceed to review bead.",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/onboarding/prompts.py",
+      "tests/test_onboarding_scaffold.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "docs/onboarding.md"
+    ],
+    "conflict_risks": "No conflict risks. docs/onboarding.md is not touched by any sibling bead in this feature tree.",
+    "design_decisions": "Documented only what is directly observable in prompts.py: the STACKS catalog entries, their default commands, the numbered menu format, and the Other fallback path. Did not document internal implementation details.",
+    "test_coverage_notes": "No documentation-specific tests needed. The test bead (B-7e28a7b0-test) covers the interaction behaviour in test_onboarding_scaffold.py.",
+    "known_limitations": "None."
   },
-  "block_reason": "file-scope conflict with in-progress B-45b3eb8f-test",
-  "conflict_risks": "Downstream bead B-3722ddd9 (non-interactive defaults using STACKS[0]) has no conflict risk \u2014 it touches `cli/commands/init.py`, not `prompts.py`.",
+  "block_reason": "",
+  "conflict_risks": "No conflict risks. docs/onboarding.md is not touched by any sibling bead in this feature tree.",
   "branch_name": "feature/b-2b9df640",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2b9df640",
-  "lease": {
-    "owner": "documentation:B-7e28a7b0-docs",
-    "expires_at": "2026-04-12T20:31:15.542364+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -105,6 +111,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-7e28a7b0-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-12T20:03:08.002688+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated docs/onboarding.md Prompts section to document menu-driven runner and stack selection replacing the old free-text approach.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -173,7 +186,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated docs/onboarding.md Prompts section to document menu-driven runner and stack selection replacing the old free-text approach.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.5126754,
+      "duration_ms": 106119,
+      "duration_api_ms": 98744,
+      "num_turns": 19,
+      "input_tokens": 18,
+      "output_tokens": 5479,
+      "cache_creation_tokens": 60282,
+      "cache_read_tokens": 681263,
+      "stop_reason": "end_turn",
+      "session_id": "418c7689-f1d9-43ad-9db6-ccf7b092d686",
+      "permission_denials": [],
+      "prompt_chars": 6967,
+      "prompt_lines": 161,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.5126754,
+        "duration_ms": 106119,
+        "duration_api_ms": 98744,
+        "num_turns": 19,
+        "input_tokens": 18,
+        "output_tokens": 5479,
+        "cache_creation_tokens": 60282,
+        "cache_read_tokens": 681263,
+        "stop_reason": "end_turn",
+        "session_id": "418c7689-f1d9-43ad-9db6-ccf7b092d686",
+        "permission_denials": [],
+        "prompt_chars": 6967,
+        "prompt_lines": 161,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
