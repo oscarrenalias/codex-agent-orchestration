@@ -23,10 +23,12 @@
   "expected_globs": [],
   "touched_files": [
     "pyproject.toml",
+    "tests/test_memory_backend.py",
     "uv.lock"
   ],
   "changed_files": [
     "pyproject.toml",
+    "tests/test_memory_backend.py",
     "uv.lock"
   ],
   "updated_docs": [],
