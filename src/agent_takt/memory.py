@@ -28,11 +28,11 @@ logger = logging.getLogger(__name__)
 _MODEL_REPO = "BAAI/bge-small-en-v1.5"
 _HF_BASE = "https://huggingface.co"
 _EMBEDDING_DIM = 384
+_CHUNK_MAX_CHARS = 1000
+_DEDUP_THRESHOLD = 0.05
 
 #: Process-level override set by :func:`configure_model_cache_dir` or :func:`init_db`.
 _model_cache_dir_override: Path | None = None
-_CHUNK_MAX_CHARS = 1000
-_DEDUP_THRESHOLD = 0.05
 
 #: Files to download from the HuggingFace repository on first use.
 _MODEL_FILES = [
