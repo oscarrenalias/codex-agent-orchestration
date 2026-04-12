@@ -6,7 +6,11 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-2b9df640",
-  "dependencies": [],
+  "dependencies": [
+    "B-7e28a7b0",
+    "B-8d48e734",
+    "B-3722ddd9"
+  ],
   "acceptance_criteria": [
     "Tests cover `_select_from_list()` default selection, valid selection, invalid-then-valid retry, and out-of-range retry.",
     "Tests cover interactive TypeScript selection pre-filling `npm test` and `tsc --noEmit`.",
