@@ -3,7 +3,7 @@
   "title": "Document Align onboarding known-issues matching with canonical stack names",
   "agent_type": "documentation",
   "description": "Update docs for B-8d48e734",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-8d48e734",
   "dependencies": [
@@ -22,42 +22,48 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/onboarding/scaffold.py",
-    "tests/test_onboarding_prompts.py"
+    "docs/onboarding.md"
   ],
   "changed_files": [
-    "src/agent_takt/onboarding/scaffold.py",
-    "tests/test_onboarding_prompts.py"
+    "docs/onboarding.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/onboarding.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Updated docs/onboarding.md: replaced vague \"(language-specific hints added)\" comment on known-issues.md with precise statement naming which canonical stacks receive hints and noting the Other path is excluded intentionally.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None \u2014 change is documentation only, no runtime behavior affected.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "docs/onboarding.md"
+    ],
+    "updated_docs": [
+      "docs/onboarding.md"
+    ],
+    "next_action": "Proceed to review bead B-8d48e734-review.",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/onboarding/scaffold.py",
+      "tests/test_onboarding_prompts.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
+    "touched_files": [
+      "docs/onboarding.md"
+    ],
+    "conflict_risks": "None \u2014 only docs/onboarding.md was modified; no overlap with other in-progress beads.",
+    "design_decisions": "Documented the exact matching behavior inline in the directory listing comment rather than in a separate prose section, keeping the documentation proportional to the scope of the change.",
+    "test_coverage_notes": "Tests for _language_specific_known_issues() and STACKS catalog are in tests/test_onboarding_prompts.py (added by tester bead B-8d48e734-test).",
     "known_limitations": ""
   },
-  "block_reason": "file-scope conflict with in-progress B-8d48e734-test",
-  "conflict_risks": "None \u2014 only `scaffold.py` was modified; no overlap with other in-progress beads.",
+  "block_reason": "",
+  "conflict_risks": "None \u2014 only docs/onboarding.md was modified; no overlap with other in-progress beads.",
   "branch_name": "feature/b-2b9df640",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2b9df640",
-  "lease": {
-    "owner": "documentation:B-8d48e734-docs",
-    "expires_at": "2026-04-12T20:31:26.029441+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -105,6 +111,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-8d48e734-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-12T20:03:51.180142+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated docs/onboarding.md to clarify that known-issues.md receives language-specific hints only for canonical stacks (Node.js, TypeScript, Go), and that the Other free-text stack receives no language-specific block.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -173,7 +186,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated docs/onboarding.md to clarify that known-issues.md receives language-specific hints only for canonical stacks (Node.js, TypeScript, Go), and that the Other free-text stack receives no language-specific block.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.64167585,
+      "duration_ms": 139637,
+      "duration_api_ms": 127157,
+      "num_turns": 29,
+      "input_tokens": 27,
+      "output_tokens": 7396,
+      "cache_creation_tokens": 56391,
+      "cache_read_tokens": 1063962,
+      "stop_reason": "end_turn",
+      "session_id": "36a3fcf8-4304-4837-880a-d1443f09c13d",
+      "permission_denials": [],
+      "prompt_chars": 6889,
+      "prompt_lines": 161,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.64167585,
+        "duration_ms": 139637,
+        "duration_api_ms": 127157,
+        "num_turns": 29,
+        "input_tokens": 27,
+        "output_tokens": 7396,
+        "cache_creation_tokens": 56391,
+        "cache_read_tokens": 1063962,
+        "stop_reason": "end_turn",
+        "session_id": "36a3fcf8-4304-4837-880a-d1443f09c13d",
+        "permission_denials": [],
+        "prompt_chars": 6889,
+        "prompt_lines": 161,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
