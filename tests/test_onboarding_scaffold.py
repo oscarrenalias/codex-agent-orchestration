@@ -103,15 +103,33 @@ class TestCollectInitAnswers(unittest.TestCase):
         self.assertEqual(answers.build_check_command, "python -m py_compile")
 
     def test_custom_values(self):
-        answers = self._run(["codex", "4", "TypeScript/Node.js", "npm test", "tsc --noEmit"])
+        # Runner=2 (codex), workers=4, stack=3 (TypeScript), accept defaults for test/build
+        answers = self._run(["2", "4", "3", "", ""])
         self.assertEqual(answers.runner, "codex")
         self.assertEqual(answers.max_workers, 4)
+        self.assertEqual(answers.language, "TypeScript")
+        self.assertEqual(answers.test_command, "npm test")
+        self.assertEqual(answers.build_check_command, "tsc --noEmit")
+
+    def test_other_stack_free_text(self):
+        # Stack=7 (Other) → free-text prompts for language, test, build
+        answers = self._run(["1", "2", "7", "TypeScript/Node.js", "npm test", "tsc --noEmit"])
+        self.assertEqual(answers.runner, "claude")
+        self.assertEqual(answers.max_workers, 2)
         self.assertEqual(answers.language, "TypeScript/Node.js")
         self.assertEqual(answers.test_command, "npm test")
         self.assertEqual(answers.build_check_command, "tsc --noEmit")
 
+    def test_predefined_stack_allows_command_override(self):
+        # Stack=1 (Python), override both commands
+        answers = self._run(["1", "1", "1", "uv run pytest", "uv run python -m py_compile"])
+        self.assertEqual(answers.language, "Python")
+        self.assertEqual(answers.test_command, "uv run pytest")
+        self.assertEqual(answers.build_check_command, "uv run python -m py_compile")
+
     def test_invalid_runner_then_valid(self):
-        answers = self._run(["invalid", "claude", "", "", "", ""])
+        # "notanumber" is rejected by _select_from_list, "1" selects claude
+        answers = self._run(["notanumber", "1", "", "", "", ""])
         self.assertEqual(answers.runner, "claude")
 
     def test_invalid_max_workers_then_valid(self):

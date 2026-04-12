@@ -116,8 +116,10 @@ def collect_init_answers(
 ) -> InitAnswers:
     """Run the interactive question flow and return collected answers.
 
-    Prompts for runner backend, max workers, language/framework, test command,
-    and build-check command, with sensible defaults and basic validation.
+    Prompts for runner backend, max workers, and project stack using numbered
+    menus, then derives test/build defaults from the selected stack.  Choosing
+    ``Other`` falls back to free-text prompts for language, test command, and
+    build-check command.
 
     Args:
         stream_in: Input stream (defaults to ``sys.stdin``).
@@ -133,17 +135,15 @@ def collect_init_answers(
     out.flush()
 
     # --- Runner backend ---
-    while True:
-        runner = _prompt(
-            "Runner backend (claude/codex)",
-            "claude",
-            stream_in=inp,
-            stream_out=out,
-        )
-        if runner in ("claude", "codex"):
-            break
-        out.write(f"  Invalid runner '{runner}'. Choose 'claude' or 'codex'.\n")
-        out.flush()
+    runner_options = ["claude", "codex"]
+    runner_idx = _select_from_list(
+        "Runner backend",
+        runner_options,
+        default_index=0,
+        stream_in=inp,
+        stream_out=out,
+    )
+    runner = runner_options[runner_idx]
 
     # --- Max workers ---
     while True:
@@ -163,29 +163,53 @@ def collect_init_answers(
             out.write(f"  '{raw_workers}' is not a valid integer.\n")
             out.flush()
 
-    # --- Language / framework ---
-    language = _prompt(
-        "Project language/framework (e.g. Python, TypeScript/Node.js, Go)",
-        "Python",
+    # --- Project stack ---
+    stack_names = [s[0] for s in STACKS]
+    stack_idx = _select_from_list(
+        "Project stack",
+        stack_names,
+        default_index=0,
         stream_in=inp,
         stream_out=out,
     )
+    selected_stack = STACKS[stack_idx]
+    is_other = selected_stack[0] == "Other"
 
-    # --- Test command ---
-    test_command = _prompt(
-        "Test command (e.g. pytest, npm test, go test ./...)",
-        "pytest",
-        stream_in=inp,
-        stream_out=out,
-    )
-
-    # --- Build / syntax check command ---
-    build_check_command = _prompt(
-        "Build/syntax check command (e.g. tsc --noEmit, go build ./...)",
-        "python -m py_compile",
-        stream_in=inp,
-        stream_out=out,
-    )
+    if is_other:
+        # Free-text fallback for custom stacks
+        language = _prompt(
+            "Project language/framework (e.g. Python, TypeScript/Node.js, Go)",
+            "Python",
+            stream_in=inp,
+            stream_out=out,
+        )
+        test_command = _prompt(
+            "Test command (e.g. pytest, npm test, go test ./...)",
+            "",
+            stream_in=inp,
+            stream_out=out,
+        )
+        build_check_command = _prompt(
+            "Build/syntax check command (e.g. tsc --noEmit, go build ./...)",
+            "",
+            stream_in=inp,
+            stream_out=out,
+        )
+    else:
+        # Predefined stack: language is the display name; commands default from catalog
+        language = selected_stack[0]
+        test_command = _prompt(
+            "Test command",
+            selected_stack[1],
+            stream_in=inp,
+            stream_out=out,
+        )
+        build_check_command = _prompt(
+            "Build/syntax check command",
+            selected_stack[2],
+            stream_in=inp,
+            stream_out=out,
+        )
 
     out.write("\n")
     out.flush()
