@@ -24,10 +24,12 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "docs/onboarding.md",
     "src/agent_takt/onboarding/prompts.py",
     "tests/test_onboarding_scaffold.py"
   ],
   "changed_files": [
+    "docs/onboarding.md",
     "src/agent_takt/onboarding/prompts.py",
     "tests/test_onboarding_scaffold.py"
   ],
