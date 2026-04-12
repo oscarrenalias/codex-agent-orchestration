@@ -65,6 +65,18 @@ For scripting or CI environments, skip all prompts and use built-in defaults:
 takt init --non-interactive
 ```
 
+Non-interactive defaults are sourced from the first entry in the stack catalog (`STACKS[0]`), which is the Python stack:
+
+| Setting | Default value |
+|---------|--------------|
+| Runner | `claude` |
+| Max workers | `1` |
+| Language | `Python` |
+| Test command | `pytest` |
+| Build/syntax check command | `python -m py_compile` |
+
+Because these values are read from `STACKS[0]` at runtime rather than being hardcoded separately, they stay in sync with the interactive defaults automatically.
+
 To replace any files that were already created by a previous init:
 
 ```bash
