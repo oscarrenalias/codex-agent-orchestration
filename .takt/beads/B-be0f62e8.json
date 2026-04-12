@@ -177,6 +177,15 @@
       "agent_type": "review",
       "summary": "Worker started",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T15:24:46.451628+00:00",
+      "event": "guardrails_applied",
+      "agent_type": "review",
+      "summary": "Applied guardrails from .takt/agent-runs/B-be0f62e8/repo/templates/agents/review.md",
+      "details": {
+        "template_path": ".takt/agent-runs/B-be0f62e8/repo/templates/agents/review.md"
+      }
     }
   ],
   "metadata": {
@@ -192,7 +201,123 @@
     ],
     "skill_bundle_hash": "e0f8257068960243661f5dc4f9b787fa5f59361a751574191832721af8c0dd84",
     "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-be0f62e8/home",
-    "runner_backend": "claude"
+    "runner_backend": "claude",
+    "guardrails": {
+      "agent_type": "review",
+      "template_path": ".takt/agent-runs/B-be0f62e8/repo/templates/agents/review.md",
+      "template_text": "# Review Guardrails\n\nPrimary responsibility: Inspect code, tests, docs, and acceptance criteria for correctness, completeness, and risk.\n\nAllowed actions:\n- Review only the changed files listed in the bead's touched_files and changed_files fields. Do not read unrelated files.\n- Validate acceptance criteria against the implementation and handoff state.\n- Block with a clear recommendation when the bead actually requires implementation work.\n\n## Memory\n\n**Read memory at bead start.** Before reviewing any files, run three searches using `$TAKT_CMD` (injected by the orchestrator):\n\n```bash\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace global\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace feature:<feature_root_id>\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace specs\n```\n\nTreat results as ambient context \u2014 apply relevant entries to inform the review; skip entries that don't apply.\n\nDo **not** write to memory \u2014 review agents are read-only.\n\nEfficiency constraints:\n- Do not run the test suite. Testing is the tester agent's responsibility.\n- Focus on correctness, completeness, and risk \u2014 not style or formatting.\n- Keep the review concise. If there are no findings, say so and approve promptly.\n\nDisallowed actions:\n- Implement feature work, tests, or docs instead of reporting findings.\n- Rewrite architecture or silently fix issues discovered during review.\n- Mark incomplete work as accepted without evidence.\n\nExpected outputs:\n- Return JSON with `outcome` set to `completed` (reviews always complete; use `verdict` for pass/fail) and `summary` as a one-line description of the review result.\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Treat `verdict` as the review signoff decision: `approved` means the bead can complete, while `needs_changes` means the bead must block for follow-up work.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when no unresolved findings remain.\n- Use `verdict=needs_changes`, set `findings_count` to the unresolved finding count, set `requires_followup=true` unless there is a stronger explicit reason not to, and always include `block_reason` when any required fix remains.\n- Keep `completed`, `remaining`, and `risks` as free-form narrative context only. They inform operators, but they do not override the structured verdict or control scheduler state.\n- Review findings ordered by severity, or an explicit statement that no findings were discovered.\n- Clear blocked handoff details when the task belongs to another agent type.",
+      "captured_at": "2026-04-12T15:24:46.451615+00:00"
+    },
+    "worker_prompt_context": {
+      "bead_id": "B-be0f62e8",
+      "feature_root_id": "B-36010371",
+      "title": "Review semantic memory integration for regressions and scope fidelity",
+      "agent_type": "review",
+      "description": "Review the combined implementation for correctness, guardrail enforcement, backend compatibility, and adherence to the spec's single-database and namespace guarantees.",
+      "status": "in_progress",
+      "acceptance_criteria": [
+        "Review verifies the implementation matches the spec's required CLI, runner env injection, onboarding, and planning ingestion behaviors.",
+        "Review checks for regressions in self-hosting and non-self-hosting takt command resolution.",
+        "Review confirms memory enforcement content is present in the intended guardrails and skill sources only.",
+        "Review produces a clear approval or needs-changes verdict with concrete findings if gaps remain."
+      ],
+      "dependencies": [
+        "B-018c64df",
+        "B-081d8166",
+        "B-0dc4587d",
+        "B-267580f8",
+        "B-2b4f2514",
+        "B-4b623d41",
+        "B-570f55f8",
+        "B-ec6beb9d",
+        "B-f02faf8f",
+        "B-f62bef1d"
+      ],
+      "linked_docs": [
+        "spec-cbb95a79",
+        "AGENTS.md",
+        "docs/multi-backend-agents.md"
+      ],
+      "execution_branch_name": "feature/b-36010371",
+      "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-36010371",
+      "expected_files": [
+        ".agents/skills/memory/SKILL.md",
+        "pyproject.toml",
+        "src/agent_takt/_data/agents_skills/memory/SKILL.md",
+        "src/agent_takt/_data/claude_skills/memory/SKILL.md",
+        "src/agent_takt/cli/__init__.py",
+        "src/agent_takt/cli/commands/__init__.py",
+        "src/agent_takt/cli/commands/memory.py",
+        "src/agent_takt/cli/commands/misc.py",
+        "src/agent_takt/cli/parser.py",
+        "src/agent_takt/memory.py",
+        "src/agent_takt/onboarding/scaffold.py",
+        "src/agent_takt/planner.py",
+        "src/agent_takt/runner.py",
+        "templates/agents/developer.md",
+        "templates/agents/documentation.md",
+        "templates/agents/planner.md",
+        "templates/agents/review.md",
+        "templates/agents/tester.md",
+        "uv.lock"
+      ],
+      "expected_globs": [
+        "docs/*.md",
+        "src/agent_takt/**/*.py",
+        "templates/agents/*.md",
+        "tests/test_*.py"
+      ],
+      "touched_files": [
+        ".agents/skills/memory/SKILL.md",
+        "AGENTS.md",
+        "docs/multi-backend-agents.md",
+        "pyproject.toml",
+        "src/agent_takt/_data/agents_skills/memory/SKILL.md",
+        "src/agent_takt/_data/claude_skills/memory/SKILL.md",
+        "src/agent_takt/cli/__init__.py",
+        "src/agent_takt/cli/commands/__init__.py",
+        "src/agent_takt/cli/commands/memory.py",
+        "src/agent_takt/cli/commands/misc.py",
+        "src/agent_takt/cli/parser.py",
+        "src/agent_takt/memory.py",
+        "src/agent_takt/onboarding/scaffold.py",
+        "src/agent_takt/planner.py",
+        "src/agent_takt/runner.py",
+        "templates/agents/developer.md",
+        "templates/agents/documentation.md",
+        "templates/agents/planner.md",
+        "templates/agents/review.md",
+        "templates/agents/tester.md",
+        "tests/test_cli_memory.py",
+        "tests/test_memory_backend.py",
+        "tests/test_memory_templates.py",
+        "tests/test_onboarding_scaffold.py",
+        "tests/test_planner.py",
+        "tests/test_runner_memory_env.py",
+        "uv.lock"
+      ],
+      "conflict_risks": "None \u2014 only runner.py modified; no overlap with sibling beads' expected files.\nsrc/agent_takt/memory.py is fully implemented here. Sibling beads should import from it but not modify it. If any sibling bead lists memory.py in expected_files they should be scoped to additive imports only.\nNone \u2014 all changes were confined to src/agent_takt/memory.py which is not shared with other in-progress beads.\nNo file-scope conflicts expected. The only changed file is scaffold.py, which is not touched by any sibling bead.\nNone \u2014 only `src/agent_takt/memory.py` was modified; no overlapping file claims with sibling beads expected.\nNone \u2014 only `planner.py` and `misc.py` were changed; no overlap with other in-progress beads.\nNone. The only files changed are the three in the bead's expected_files scope plus the commands __init__ re-export. No overlap with runner.py, onboarding, or planner.\nNone. All changed files are documentation-only templates with no code execution. No file-scope overlap with other in-progress beads expected.",
+      "handoff_summary": {
+        "completed": "",
+        "remaining": "",
+        "risks": "",
+        "verdict": "",
+        "findings_count": 0,
+        "requires_followup": false,
+        "changed_files": [],
+        "updated_docs": [],
+        "next_action": "",
+        "next_agent": "",
+        "block_reason": "",
+        "expected_files": [],
+        "expected_globs": [],
+        "touched_files": [],
+        "conflict_risks": "",
+        "design_decisions": "",
+        "test_coverage_notes": "",
+        "known_limitations": ""
+      }
+    }
   },
   "labels": [],
   "recovery_for": null,
