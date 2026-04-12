@@ -5,7 +5,7 @@ description: Remove hardcoded Python/uv commands from framework skills and guard
 dependencies: null
 priority: medium
 complexity: small
-status: planned
+status: done
 tags:
 - guardrails
 - skills
