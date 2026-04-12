@@ -3,7 +3,7 @@
   "title": "Document Fix shell=True command injection risk in merge.py",
   "agent_type": "documentation",
   "description": "Update docs for B-9c4ce6e6",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-9c4ce6e6",
   "dependencies": [
@@ -20,42 +20,60 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/cli/commands/merge.py",
-    "src/agent_takt/storage.py"
+    "docs/development.md",
+    "src/agent_takt/cli/commands/memory.py",
+    "src/agent_takt/config.py",
+    "src/agent_takt/memory.py"
   ],
   "changed_files": [
-    "src/agent_takt/cli/commands/merge.py",
-    "src/agent_takt/storage.py"
+    "docs/development.md",
+    "src/agent_takt/cli/commands/memory.py",
+    "src/agent_takt/config.py",
+    "src/agent_takt/memory.py"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/development.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Updated docs/development.md Bead Auto-Commit section: replaced \"silently ignored\" with accurate description of warning logging and git_commit_failed event recording; corrected \"class-level threading.Lock\" to \"instance-level threading.Lock\" with rationale.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None \u2014 documentation-only change, no runtime code modified.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "docs/development.md",
+      "src/agent_takt/cli/commands/memory.py",
+      "src/agent_takt/config.py",
+      "src/agent_takt/memory.py"
+    ],
+    "updated_docs": [
+      "docs/development.md"
+    ],
+    "next_action": "Ready for review bead.",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/cli/commands/merge.py",
+      "src/agent_takt/storage.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
+    "touched_files": [
+      "docs/development.md",
+      "src/agent_takt/cli/commands/memory.py",
+      "src/agent_takt/config.py",
+      "src/agent_takt/memory.py"
+    ],
+    "conflict_risks": "None \u2014 only docs/development.md was modified; no overlap with other in-progress beads expected.",
+    "design_decisions": "No design decisions required; documentation aligned to already-merged implementation.",
+    "test_coverage_notes": "N/A \u2014 documentation bead; no tests required.",
     "known_limitations": ""
   },
-  "block_reason": "file-scope conflict with in-progress B-4c2f38db",
-  "conflict_risks": "None \u2014 only merge.py was touched; no overlapping file claims expected.",
+  "block_reason": "",
+  "conflict_risks": "None \u2014 only docs/development.md was modified; no overlap with other in-progress beads expected.",
   "branch_name": "feature/b-2a7ec879",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2a7ec879",
-  "lease": {
-    "owner": "documentation:B-9c4ce6e6-docs",
-    "expires_at": "2026-04-12T20:06:19.447504+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -103,6 +121,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-9c4ce6e6-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-12T19:37:27.146868+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated Bead Auto-Commit section in docs/development.md to reflect accurate error handling (warning logging + git_commit_failed events) and correct lock scope (instance-level, not class-level).",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,7 +194,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated Bead Auto-Commit section in docs/development.md to reflect accurate error handling (warning logging + git_commit_failed events) and correct lock scope (instance-level, not class-level).",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.29709420000000003,
+      "duration_ms": 66196,
+      "duration_api_ms": 60615,
+      "num_turns": 12,
+      "input_tokens": 82,
+      "output_tokens": 3818,
+      "cache_creation_tokens": 34640,
+      "cache_read_tokens": 365594,
+      "stop_reason": "end_turn",
+      "session_id": "292dd552-3709-4885-96af-cecf1d5c737a",
+      "permission_denials": [],
+      "prompt_chars": 6811,
+      "prompt_lines": 159,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.29709420000000003,
+        "duration_ms": 66196,
+        "duration_api_ms": 60615,
+        "num_turns": 12,
+        "input_tokens": 82,
+        "output_tokens": 3818,
+        "cache_creation_tokens": 34640,
+        "cache_read_tokens": 365594,
+        "stop_reason": "end_turn",
+        "session_id": "292dd552-3709-4885-96af-cecf1d5c737a",
+        "permission_denials": [],
+        "prompt_chars": 6811,
+        "prompt_lines": 159,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "1bcb4d2e3dd3a672571bfe62d27467f80b30a79f"
   },
   "labels": [],
   "recovery_for": null,
