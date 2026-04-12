@@ -3,7 +3,7 @@
   "title": "Validate stack-agnostic guardrail wording and regression safety",
   "agent_type": "tester",
   "description": "Run the project's existing test suite and verify the edited framework files no longer contain Python-specific command guidance while preserving intended behavior as documentation-only changes.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-78f2e704",
   "dependencies": [
@@ -79,7 +79,10 @@
   "conflict_risks": "None \u2014 merge-conflict.md is exclusively owned by this feature tree.",
   "branch_name": "feature/b-78f2e704",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-78f2e704",
-  "lease": null,
+  "lease": {
+    "owner": "tester:B-ffc526ba",
+    "expires_at": "2026-04-12T19:11:37.919895+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -140,6 +143,29 @@
       "event": "retried",
       "agent_type": "tester",
       "summary": "Requeued blocked bead after corrective bead B-ffc526ba-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T18:41:38.249966+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-12T18:41:38.249988+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
       "details": {}
     }
   ],
