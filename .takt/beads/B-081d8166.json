@@ -1,0 +1,73 @@
+{
+  "bead_id": "B-081d8166",
+  "title": "Document semantic memory behavior and rollout constraints",
+  "agent_type": "documentation",
+  "description": "Update project documentation for the new shared semantic memory model, including how operator and workers share one DB, how `TAKT_CMD` and namespaces are used, and any backend-specific notes that should remain stable for future contributors.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-36010371",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Documentation explains the shared project-level memory DB and namespace model.",
+    "Documentation explains operator versus worker access patterns and injected environment variables.",
+    "Documentation reflects the mandatory use of `takt memory` rather than append-only markdown memory.",
+    "Any touched docs stay consistent with the implemented CLI and onboarding behavior."
+  ],
+  "linked_docs": [
+    "spec-cbb95a79",
+    "AGENTS.md",
+    "docs/multi-backend-agents.md"
+  ],
+  "feature_root_id": "B-36010371",
+  "execution_branch_name": "feature/b-36010371",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-36010371",
+  "expected_files": [
+    "AGENTS.md",
+    "docs/multi-backend-agents.md"
+  ],
+  "expected_globs": [
+    "docs/*.md"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-12T13:21:51.664156+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
