@@ -151,6 +151,13 @@
       "agent_type": "tester",
       "summary": "Added 114 new tests covering all required acceptance criteria. 98 pass immediately; 16 fail due to a genuine implementation defect in memory.py:search() where LIMIT ? is not recognized by sqlite-vec 0.1.9 + SQLite 3.51.3 (Python 3.14). All pre-existing 1169 tests continue to pass (no regressions).",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T14:36:36.534459+00:00",
+      "event": "corrective_planned",
+      "agent_type": "tester",
+      "summary": "Created corrective bead B-267580f8-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -316,7 +323,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-267580f8-corrective"
   },
   "labels": [],
   "recovery_for": null,
