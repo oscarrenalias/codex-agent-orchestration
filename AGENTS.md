@@ -58,7 +58,12 @@ src/agent_takt/
     app.py        Textual App class, keybindings, and TuiSchedulerReporter
   console.py      CLI output helpers (spinners, spinner pool, colours)
   _assets.py      importlib.resources helpers for locating bundled package data (_data/)
-  onboarding.py   scaffold_project() entry point + asset-install/config-generation helpers
+  onboarding/     takt init/upgrade helpers package; all public symbols re-exported from __init__.py
+    prompts.py    STACKS catalog, InitAnswers dataclass, collect_init_answers, _select_from_list
+    scaffold.py   scaffold_project() entry point; gitignore, memory seed, commit helpers
+    assets.py     Asset installation helpers (templates, skills, config)
+    config.py     Config YAML generation and template placeholder substitution
+    upgrade.py    Asset upgrade evaluation (AssetDecision, evaluate_upgrade_actions) and manifest I/O
 
 templates/agents/   Guardrail templates per agent type (mandatory)
 .agents/skills/     Shared skill catalog (`core/`, `role/`, `capability/`, `task/`, `memory/`)
