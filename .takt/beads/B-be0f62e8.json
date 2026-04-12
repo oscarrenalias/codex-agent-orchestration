@@ -3,7 +3,7 @@
   "title": "Review semantic memory integration for regressions and scope fidelity",
   "agent_type": "review",
   "description": "Review the combined implementation for correctness, guardrail enforcement, backend compatibility, and adherence to the spec's single-database and namespace guarantees.",
-  "status": "in_progress",
+  "status": "blocked",
   "bead_type": "task",
   "parent_id": "B-36010371",
   "dependencies": [
@@ -59,64 +59,8 @@
     "templates/agents/*.md",
     "tests/test_*.py"
   ],
-  "touched_files": [
-    ".agents/skills/memory/SKILL.md",
-    "AGENTS.md",
-    "docs/multi-backend-agents.md",
-    "pyproject.toml",
-    "src/agent_takt/_data/agents_skills/memory/SKILL.md",
-    "src/agent_takt/_data/claude_skills/memory/SKILL.md",
-    "src/agent_takt/cli/__init__.py",
-    "src/agent_takt/cli/commands/__init__.py",
-    "src/agent_takt/cli/commands/memory.py",
-    "src/agent_takt/cli/commands/misc.py",
-    "src/agent_takt/cli/parser.py",
-    "src/agent_takt/memory.py",
-    "src/agent_takt/onboarding/scaffold.py",
-    "src/agent_takt/planner.py",
-    "src/agent_takt/runner.py",
-    "templates/agents/developer.md",
-    "templates/agents/documentation.md",
-    "templates/agents/planner.md",
-    "templates/agents/review.md",
-    "templates/agents/tester.md",
-    "tests/test_cli_memory.py",
-    "tests/test_memory_backend.py",
-    "tests/test_memory_templates.py",
-    "tests/test_onboarding_scaffold.py",
-    "tests/test_planner.py",
-    "tests/test_runner_memory_env.py",
-    "uv.lock"
-  ],
-  "changed_files": [
-    ".agents/skills/memory/SKILL.md",
-    "AGENTS.md",
-    "docs/multi-backend-agents.md",
-    "pyproject.toml",
-    "src/agent_takt/_data/agents_skills/memory/SKILL.md",
-    "src/agent_takt/_data/claude_skills/memory/SKILL.md",
-    "src/agent_takt/cli/__init__.py",
-    "src/agent_takt/cli/commands/__init__.py",
-    "src/agent_takt/cli/commands/memory.py",
-    "src/agent_takt/cli/commands/misc.py",
-    "src/agent_takt/cli/parser.py",
-    "src/agent_takt/memory.py",
-    "src/agent_takt/onboarding/scaffold.py",
-    "src/agent_takt/planner.py",
-    "src/agent_takt/runner.py",
-    "templates/agents/developer.md",
-    "templates/agents/documentation.md",
-    "templates/agents/planner.md",
-    "templates/agents/review.md",
-    "templates/agents/tester.md",
-    "tests/test_cli_memory.py",
-    "tests/test_memory_backend.py",
-    "tests/test_memory_templates.py",
-    "tests/test_onboarding_scaffold.py",
-    "tests/test_planner.py",
-    "tests/test_runner_memory_env.py",
-    "uv.lock"
-  ],
+  "touched_files": [],
+  "changed_files": [],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
@@ -129,24 +73,46 @@
     "updated_docs": [],
     "next_action": "",
     "next_agent": "",
-    "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
+    "block_reason": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"duration_ms\":972068,\"duration_api_ms\":31099,\"num_turns\":16,\"result\":\"API Error: Stream idle timeout - partial response received\",\"stop_reason\":\"stop_sequence\",\"session_id\":\"67f01286-fc81-454d-8a0a-39e271ac892a\",\"total_cost_usd\":0.27138665,\"usage\":{\"input_tokens\":1656,\"cache_creation_input_tokens\":45993,\"cache_read_input_tokens\":122364,\"output_tokens\":2090,\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":45993,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"\",\"iterations\":[{\"input_tokens\":1,\"output_tokens\":369,\"cache_read_input_tokens\":52256,\"cache_creation_input_tokens\":6476,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":6476},\"type\":\"message\"}],\"speed\":\"standard\"},\"modelUsage\":{\"claude-sonnet-4-6\":{\"inputTokens\":1656,\"outputTokens\":2090,\"cacheReadInputTokens\":122364,\"cacheCreationInputTokens\":45993,\"webSearchRequests\":0,\"costUSD\":0.24550095000000002,\"contextWindow\":200000,\"maxOutputTokens\":32000},\"claude-haiku-4-5-20251001\":{\"inputTokens\":10,\"outputTokens\":812,\"cacheReadInputTokens\":15107,\"cacheCreationInputTokens\":16244,\"webSearchRequests\":0,\"costUSD\":0.0258857,\"contextWindow\":200000,\"maxOutputTokens\":32000}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"uuid\":\"a698e169-f6ba-4fbc-98ae-a85160bdc824\"}",
+    "expected_files": [
+      ".agents/skills/memory/SKILL.md",
+      "pyproject.toml",
+      "src/agent_takt/_data/agents_skills/memory/SKILL.md",
+      "src/agent_takt/_data/claude_skills/memory/SKILL.md",
+      "src/agent_takt/cli/__init__.py",
+      "src/agent_takt/cli/commands/__init__.py",
+      "src/agent_takt/cli/commands/memory.py",
+      "src/agent_takt/cli/commands/misc.py",
+      "src/agent_takt/cli/parser.py",
+      "src/agent_takt/memory.py",
+      "src/agent_takt/onboarding/scaffold.py",
+      "src/agent_takt/planner.py",
+      "src/agent_takt/runner.py",
+      "templates/agents/developer.md",
+      "templates/agents/documentation.md",
+      "templates/agents/planner.md",
+      "templates/agents/review.md",
+      "templates/agents/tester.md",
+      "uv.lock"
+    ],
+    "expected_globs": [
+      "docs/*.md",
+      "src/agent_takt/**/*.py",
+      "templates/agents/*.md",
+      "tests/test_*.py"
+    ],
     "touched_files": [],
     "conflict_risks": "",
     "design_decisions": "",
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
-  "conflict_risks": "None \u2014 only runner.py modified; no overlap with sibling beads' expected files.\nsrc/agent_takt/memory.py is fully implemented here. Sibling beads should import from it but not modify it. If any sibling bead lists memory.py in expected_files they should be scoped to additive imports only.\nNone \u2014 all changes were confined to src/agent_takt/memory.py which is not shared with other in-progress beads.\nNo file-scope conflicts expected. The only changed file is scaffold.py, which is not touched by any sibling bead.\nNone \u2014 only `src/agent_takt/memory.py` was modified; no overlapping file claims with sibling beads expected.\nNone \u2014 only `planner.py` and `misc.py` were changed; no overlap with other in-progress beads.\nNone. The only files changed are the three in the bead's expected_files scope plus the commands __init__ re-export. No overlap with runner.py, onboarding, or planner.\nNone. All changed files are documentation-only templates with no code execution. No file-scope overlap with other in-progress beads expected.",
+  "block_reason": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"duration_ms\":972068,\"duration_api_ms\":31099,\"num_turns\":16,\"result\":\"API Error: Stream idle timeout - partial response received\",\"stop_reason\":\"stop_sequence\",\"session_id\":\"67f01286-fc81-454d-8a0a-39e271ac892a\",\"total_cost_usd\":0.27138665,\"usage\":{\"input_tokens\":1656,\"cache_creation_input_tokens\":45993,\"cache_read_input_tokens\":122364,\"output_tokens\":2090,\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":45993,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"\",\"iterations\":[{\"input_tokens\":1,\"output_tokens\":369,\"cache_read_input_tokens\":52256,\"cache_creation_input_tokens\":6476,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":6476},\"type\":\"message\"}],\"speed\":\"standard\"},\"modelUsage\":{\"claude-sonnet-4-6\":{\"inputTokens\":1656,\"outputTokens\":2090,\"cacheReadInputTokens\":122364,\"cacheCreationInputTokens\":45993,\"webSearchRequests\":0,\"costUSD\":0.24550095000000002,\"contextWindow\":200000,\"maxOutputTokens\":32000},\"claude-haiku-4-5-20251001\":{\"inputTokens\":10,\"outputTokens\":812,\"cacheReadInputTokens\":15107,\"cacheCreationInputTokens\":16244,\"webSearchRequests\":0,\"costUSD\":0.0258857,\"contextWindow\":200000,\"maxOutputTokens\":32000}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"uuid\":\"a698e169-f6ba-4fbc-98ae-a85160bdc824\"}",
+  "conflict_risks": "",
   "branch_name": "feature/b-36010371",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-be0f62e8",
-    "expires_at": "2026-04-12T15:54:32.941070+00:00"
-  },
-  "retries": 0,
+  "lease": null,
+  "retries": 1,
   "execution_history": [
     {
       "timestamp": "2026-04-12T13:21:52.070336+00:00",
@@ -186,6 +152,20 @@
       "details": {
         "template_path": ".takt/agent-runs/B-be0f62e8/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-04-12T15:41:01.388076+00:00",
+      "event": "compat_fallback_warning",
+      "agent_type": "scheduler",
+      "summary": "Used legacy remaining-text fallback for review bead because verdict was omitted.",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T15:41:01.388121+00:00",
+      "event": "failed",
+      "agent_type": "review",
+      "summary": "Worker execution failed: {\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"duration_ms\":972068,\"duration_api_ms\":31099,\"num_turns\":16,\"result\":\"API Error: Stream idle timeout - partial response received\",\"stop_reason\":\"stop_sequence\",\"session_id\":\"67f01286-fc81-454d-8a0a-39e271ac892a\",\"total_cost_usd\":0.27138665,\"usage\":{\"input_tokens\":1656,\"cache_creation_input_tokens\":45993,\"cache_read_input_tokens\":122364,\"output_tokens\":2090,\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":45993,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"\",\"iterations\":[{\"input_tokens\":1,\"output_tokens\":369,\"cache_read_input_tokens\":52256,\"cache_creation_input_tokens\":6476,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":6476},\"type\":\"message\"}],\"speed\":\"standard\"},\"modelUsage\":{\"claude-sonnet-4-6\":{\"inputTokens\":1656,\"outputTokens\":2090,\"cacheReadInputTokens\":122364,\"cacheCreationInputTokens\":45993,\"webSearchRequests\":0,\"costUSD\":0.24550095000000002,\"contextWindow\":200000,\"maxOutputTokens\":32000},\"claude-haiku-4-5-20251001\":{\"inputTokens\":10,\"outputTokens\":812,\"cacheReadInputTokens\":15107,\"cacheCreationInputTokens\":16244,\"webSearchRequests\":0,\"costUSD\":0.0258857,\"contextWindow\":200000,\"maxOutputTokens\":32000}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"uuid\":\"a698e169-f6ba-4fbc-98ae-a85160bdc824\"}",
+      "details": {}
     }
   ],
   "metadata": {
@@ -317,6 +297,15 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
+    },
+    "last_agent_result": {
+      "outcome": "failed",
+      "summary": "Worker execution failed: {\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"duration_ms\":972068,\"duration_api_ms\":31099,\"num_turns\":16,\"result\":\"API Error: Stream idle timeout - partial response received\",\"stop_reason\":\"stop_sequence\",\"session_id\":\"67f01286-fc81-454d-8a0a-39e271ac892a\",\"total_cost_usd\":0.27138665,\"usage\":{\"input_tokens\":1656,\"cache_creation_input_tokens\":45993,\"cache_read_input_tokens\":122364,\"output_tokens\":2090,\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":45993,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"\",\"iterations\":[{\"input_tokens\":1,\"output_tokens\":369,\"cache_read_input_tokens\":52256,\"cache_creation_input_tokens\":6476,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":6476},\"type\":\"message\"}],\"speed\":\"standard\"},\"modelUsage\":{\"claude-sonnet-4-6\":{\"inputTokens\":1656,\"outputTokens\":2090,\"cacheReadInputTokens\":122364,\"cacheCreationInputTokens\":45993,\"webSearchRequests\":0,\"costUSD\":0.24550095000000002,\"contextWindow\":200000,\"maxOutputTokens\":32000},\"claude-haiku-4-5-20251001\":{\"inputTokens\":10,\"outputTokens\":812,\"cacheReadInputTokens\":15107,\"cacheCreationInputTokens\":16244,\"webSearchRequests\":0,\"costUSD\":0.0258857,\"contextWindow\":200000,\"maxOutputTokens\":32000}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"uuid\":\"a698e169-f6ba-4fbc-98ae-a85160bdc824\"}",
+      "verdict": "",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"duration_ms\":972068,\"duration_api_ms\":31099,\"num_turns\":16,\"result\":\"API Error: Stream idle timeout - partial response received\",\"stop_reason\":\"stop_sequence\",\"session_id\":\"67f01286-fc81-454d-8a0a-39e271ac892a\",\"total_cost_usd\":0.27138665,\"usage\":{\"input_tokens\":1656,\"cache_creation_input_tokens\":45993,\"cache_read_input_tokens\":122364,\"output_tokens\":2090,\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":45993,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"\",\"iterations\":[{\"input_tokens\":1,\"output_tokens\":369,\"cache_read_input_tokens\":52256,\"cache_creation_input_tokens\":6476,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":6476},\"type\":\"message\"}],\"speed\":\"standard\"},\"modelUsage\":{\"claude-sonnet-4-6\":{\"inputTokens\":1656,\"outputTokens\":2090,\"cacheReadInputTokens\":122364,\"cacheCreationInputTokens\":45993,\"webSearchRequests\":0,\"costUSD\":0.24550095000000002,\"contextWindow\":200000,\"maxOutputTokens\":32000},\"claude-haiku-4-5-20251001\":{\"inputTokens\":10,\"outputTokens\":812,\"cacheReadInputTokens\":15107,\"cacheCreationInputTokens\":16244,\"webSearchRequests\":0,\"costUSD\":0.0258857,\"contextWindow\":200000,\"maxOutputTokens\":32000}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"uuid\":\"a698e169-f6ba-4fbc-98ae-a85160bdc824\"}"
     }
   },
   "labels": [],
