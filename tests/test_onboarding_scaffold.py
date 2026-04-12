@@ -624,7 +624,7 @@ class TestScaffoldProjectMemoryBootstrap(unittest.TestCase):
              patch("agent_takt.memory._download_model", return_value=None):
             scaffold_project(self.root, answers, stream_out=out)
         expected_path = self.root / ".takt" / "memory" / "memory.db"
-        mock_init.assert_called_once_with(expected_path)
+        mock_init.assert_called_once_with(expected_path, model_cache_dir=None)
 
 
 if __name__ == "__main__":
