@@ -52,7 +52,8 @@ src/agent_takt/
     tree.py       Bead tree construction (build_tree_rows, collect_tree_rows)
     render.py     Panel rendering (render_tree_panel, render_detail_panel)
     actions.py    Operator action handlers (retry, status update, merge, scheduler)
-    app.py        Textual App class, keybindings, and TuiSchedulerReporter
+    app.py        Textual App class, keybindings, build_tui_app, run_tui
+    reporter.py   TuiSchedulerReporter: live scheduler event posting from worker threads
   console.py      CLI output helpers (spinners, spinner pool, colours)
   _assets.py      importlib.resources helpers for locating bundled package data (_data/)
   onboarding.py   scaffold_project() entry point + asset-install/config-generation helpers
