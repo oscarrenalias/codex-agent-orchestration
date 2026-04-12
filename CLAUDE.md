@@ -101,7 +101,9 @@ See [docs/multi-backend-agents.md](docs/multi-backend-agents.md) for tool allowl
 
 ## Configuration
 
-Orchestrator settings live in `.takt/config.yaml`. Key dataclasses: `OrchestratorConfig`, `SchedulerConfig`, `BackendConfig`. Falls back to built-in defaults if the file is missing. The YAML file has three top-level blocks: `common`, `codex`, and `claude`.
+Orchestrator settings live in `.takt/config.yaml`. Key dataclasses: `OrchestratorConfig`, `SchedulerConfig`, `BackendConfig`, `CommonConfig`. Falls back to built-in defaults if the file is missing. The YAML file has three top-level blocks: `common`, `codex`, and `claude`.
+
+`CommonConfig` fields (under the `common:` block): `test_command`, `test_timeout_seconds`, `memory_cache_dir`. The `memory_cache_dir` key sets the directory where the ONNX embedding model is cached (default: `~/.cache/agent-takt/models`); override in CI environments or to share the model cache across projects.
 
 Key functions in `config.py`: `load_config(root)`, `default_config()`, `config.backend(name)`, `config.allowed_tools_for(backend, agent_type)`.
 
