@@ -3,7 +3,7 @@
   "title": "Document Source non-interactive init defaults from stack catalog",
   "agent_type": "documentation",
   "description": "Update docs for B-3722ddd9",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-3722ddd9",
   "dependencies": [
@@ -22,42 +22,48 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/cli/commands/init.py",
-    "src/agent_takt/onboarding/__init__.py"
+    "docs/onboarding.md"
   ],
   "changed_files": [
-    "src/agent_takt/cli/commands/init.py",
-    "src/agent_takt/onboarding/__init__.py"
+    "docs/onboarding.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "docs/onboarding.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Added a defaults table and explanatory note to the non-interactive mode section of docs/onboarding.md, clarifying that values come from STACKS[0] and stay in sync with the interactive catalog.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "None. Change is documentation-only and confined to the non-interactive section.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "docs/onboarding.md"
+    ],
+    "updated_docs": [
+      "docs/onboarding.md"
+    ],
+    "next_action": "Proceed to review bead (B-3722ddd9-review)",
+    "next_agent": "review",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/cli/commands/init.py",
+      "src/agent_takt/onboarding/__init__.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
+    "touched_files": [
+      "docs/onboarding.md"
+    ],
+    "conflict_risks": "None \u2014 only docs/onboarding.md was touched; no overlap with other in-progress beads expected.",
+    "design_decisions": "Non-interactive defaults table placed directly under the --non-interactive flag example for immediate discoverability. Kept concise to match the existing doc style.",
     "test_coverage_notes": "",
-    "known_limitations": ""
+    "known_limitations": "The prompts table at line 54-58 still reflects the old per-field prompt format (pre-STACKS catalog interactive flow from B-45b3eb8f). That section is owned by the B-45b3eb8f-docs bead which is still in ready state."
   },
-  "block_reason": "file-scope conflict with in-progress B-3722ddd9-test",
-  "conflict_risks": "None \u2014 only `init.py` and `onboarding/__init__.py` were touched; no overlap with other in-progress beads expected.",
+  "block_reason": "",
+  "conflict_risks": "None \u2014 only docs/onboarding.md was touched; no overlap with other in-progress beads expected.",
   "branch_name": "feature/b-2b9df640",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2b9df640",
-  "lease": {
-    "owner": "documentation:B-3722ddd9-docs",
-    "expires_at": "2026-04-12T20:25:56.373264+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -105,6 +111,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-3722ddd9-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-12T19:57:45.837134+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated docs/onboarding.md non-interactive mode section to document that defaults are sourced from STACKS[0] (Python stack) at runtime, replacing the previous implicit assumption of hardcoded values.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -173,7 +186,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated docs/onboarding.md non-interactive mode section to document that defaults are sourced from STACKS[0] (Python stack) at runtime, replacing the previous implicit assumption of hardcoded values.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.40758315,
+      "duration_ms": 101917,
+      "duration_api_ms": 91380,
+      "num_turns": 20,
+      "input_tokens": 21,
+      "output_tokens": 5119,
+      "cache_creation_tokens": 37265,
+      "cache_read_tokens": 636638,
+      "stop_reason": "end_turn",
+      "session_id": "6b953ef1-2808-421d-86fb-0140b5e0a1e4",
+      "permission_denials": [],
+      "prompt_chars": 6922,
+      "prompt_lines": 161,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.40758315,
+        "duration_ms": 101917,
+        "duration_api_ms": 91380,
+        "num_turns": 20,
+        "input_tokens": 21,
+        "output_tokens": 5119,
+        "cache_creation_tokens": 37265,
+        "cache_read_tokens": 636638,
+        "stop_reason": "end_turn",
+        "session_id": "6b953ef1-2808-421d-86fb-0140b5e0a1e4",
+        "permission_denials": [],
+        "prompt_chars": 6922,
+        "prompt_lines": 161,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "c3809a3597884f3a812e70b58019f5f3dc0f5aaa"
   },
   "labels": [],
   "recovery_for": null,
