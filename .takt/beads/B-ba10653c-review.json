@@ -25,18 +25,30 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "CLAUDE.md",
     "src/agent_takt/tui/__init__.py",
     "src/agent_takt/tui/actions.py",
     "src/agent_takt/tui/app.py",
     "src/agent_takt/tui/render.py",
-    "src/agent_takt/tui/reporter.py"
+    "src/agent_takt/tui/reporter.py",
+    "tests/test_tui_actions.py",
+    "tests/test_tui_app.py",
+    "tests/test_tui_render.py",
+    "tests/test_tui_state.py",
+    "tests/test_tui_tree.py"
   ],
   "changed_files": [
+    "CLAUDE.md",
     "src/agent_takt/tui/__init__.py",
     "src/agent_takt/tui/actions.py",
     "src/agent_takt/tui/app.py",
     "src/agent_takt/tui/render.py",
-    "src/agent_takt/tui/reporter.py"
+    "src/agent_takt/tui/reporter.py",
+    "tests/test_tui_actions.py",
+    "tests/test_tui_app.py",
+    "tests/test_tui_render.py",
+    "tests/test_tui_state.py",
+    "tests/test_tui_tree.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
