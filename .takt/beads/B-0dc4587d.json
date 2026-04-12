@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-36010371",
-  "dependencies": [],
+  "dependencies": [
+    "B-018c64df"
+  ],
   "acceptance_criteria": [
     "Planner write flow attempts spec ingestion only after successful bead persistence.",
     "Spec ingestion targets namespace `specs` with source `planner`.",
