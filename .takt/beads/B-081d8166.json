@@ -6,7 +6,16 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-36010371",
-  "dependencies": [],
+  "dependencies": [
+    "B-570f55f8",
+    "B-4b623d41",
+    "B-018c64df",
+    "B-f02faf8f",
+    "B-f62bef1d",
+    "B-0dc4587d",
+    "B-ec6beb9d",
+    "B-2b4f2514"
+  ],
   "acceptance_criteria": [
     "Documentation explains the shared project-level memory DB and namespace model.",
     "Documentation explains operator versus worker access patterns and injected environment variables.",
