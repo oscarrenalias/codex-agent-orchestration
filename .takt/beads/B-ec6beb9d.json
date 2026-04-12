@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-36010371",
-  "dependencies": [],
+  "dependencies": [
+    "B-570f55f8"
+  ],
   "acceptance_criteria": [
     "Managed skill installation no longer skips existing files in `.agents/skills/` and `.claude/skills/`.",
     "Onboarding creates `.takt/memory/` as needed and calls `init_db()` idempotently.",
