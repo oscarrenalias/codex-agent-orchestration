@@ -3,7 +3,7 @@
   "title": "Review semantic memory integration for regressions and scope fidelity",
   "agent_type": "review",
   "description": "Review the combined implementation for correctness, guardrail enforcement, backend compatibility, and adherence to the spec's single-database and namespace guarantees.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-36010371",
   "dependencies": [
@@ -167,7 +167,10 @@
   "conflict_risks": "",
   "branch_name": "feature/b-36010371",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-be0f62e8",
+    "expires_at": "2026-04-12T16:11:17.954400+00:00"
+  },
   "retries": 1,
   "execution_history": [
     {
@@ -228,6 +231,29 @@
       "event": "retried",
       "agent_type": "review",
       "summary": "Requeued blocked bead after transient infrastructure/auth error",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T15:41:18.282148+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-12T15:41:18.282173+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
       "details": {}
     }
   ],
