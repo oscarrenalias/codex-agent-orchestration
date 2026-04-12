@@ -77,8 +77,35 @@ class RepositoryStorage:
                     capture_output=True,
                     timeout=30,
                 )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "git commit failed for bead %s: %s",
+                bead.bead_id,
+                exc,
+                exc_info=True,
+            )
+            # Append a failure event to bead execution history and persist directly
+            # to disk — bypassing _write_bead to avoid infinite recursion.
+            bead.execution_history.append(
+                ExecutionRecord(
+                    timestamp=utc_now(),
+                    event="git_commit_failed",
+                    agent_type="scheduler",
+                    summary=f"git commit failed: {exc}",
+                    details={"error": str(exc)},
+                )
+            )
+            bead_path = self.bead_path(bead.bead_id)
+            tmp_path = bead_path.parent / f"{bead_path.stem}.{uuid.uuid4().hex[:8]}.tmp"
+            try:
+                tmp_path.write_text(json.dumps(bead.to_dict(), indent=2) + "\n", encoding="utf-8")
+                tmp_path.replace(bead_path)
+            except Exception as write_exc:
+                logger.warning(
+                    "Failed to persist git_commit_failed event for bead %s: %s",
+                    bead.bead_id,
+                    write_exc,
+                )
 
     def _git_commit_bead_deletion(self, bead: Bead, path: Path) -> None:
         """Stage and commit a single bead file removal; git failures are non-fatal."""
@@ -101,8 +128,15 @@ class RepositoryStorage:
                     capture_output=True,
                     timeout=30,
                 )
-        except Exception:
-            pass
+        except Exception as exc:
+            # Bead file is already deleted at this point; only log — execution history
+            # cannot be updated after deletion.
+            logger.warning(
+                "git commit failed for bead deletion %s: %s",
+                bead.bead_id,
+                exc,
+                exc_info=True,
+            )
 
     def _write_bead(self, bead: Bead) -> None:
         self.initialize()
