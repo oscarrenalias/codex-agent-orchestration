@@ -73,8 +73,9 @@ jobs:
 
       - name: Commit and push version bump
         run: |
-          git add pyproject.toml
+          git add pyproject.toml uv.lock
           git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }} [skip ci]"
+          git pull --rebase origin main
           git push origin main
 
       - name: Build package
