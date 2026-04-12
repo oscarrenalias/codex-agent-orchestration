@@ -3,7 +3,7 @@
   "title": "Rewrite interactive init prompts to use menu-driven runner and stack selection",
   "agent_type": "developer",
   "description": "Update `collect_init_answers()` to replace free-text runner and language prompts with numbered menus, derive test/build defaults from the selected stack, and preserve the free-text fallback flow when `Other` is chosen.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-2b9df640",
   "dependencies": [
@@ -26,37 +26,48 @@
     "src/agent_takt/onboarding/prompts.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/onboarding/prompts.py",
+    "tests/test_onboarding_scaffold.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/onboarding/prompts.py",
+    "tests/test_onboarding_scaffold.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "All five acceptance criteria met: runner uses `_select_from_list()` with claude/codex; stack uses `_select_from_list()` over STACKS display names; predefined stacks pre-fill defaults with `_prompt()` overrides; `Other` falls back to free-text; `InitAnswers.language` stores canonical display name.",
+    "remaining": "N/A",
+    "risks": "The `test_onboarding_scaffold.py` input sequences for `test_accepts_defaults`, `test_invalid_max_workers_then_valid`, and `test_negative_max_workers_rejected` are unchanged and pass through cleanly. The two tests that used free-text runner input (`test_custom_values`, `test_invalid_runner_then_valid`) were updated to use numeric inputs compatible with `_select_from_list()`.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/onboarding/prompts.py",
+      "tests/test_onboarding_scaffold.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent verifies all collect_init_answers test cases, menu validation edge cases (out-of-range, non-integer), and Other-stack free-text path.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/onboarding/prompts.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/onboarding/prompts.py",
+      "tests/test_onboarding_scaffold.py"
+    ],
+    "conflict_risks": "Downstream bead B-3722ddd9 (non-interactive defaults using STACKS[0]) has no conflict risk \u2014 it touches `cli/commands/init.py`, not `prompts.py`.",
+    "design_decisions": "Runner validation: replaced the `while True` + string comparison loop with a single `_select_from_list()` call. This removes the possibility of typos and eliminates the need for error-message copy inside `collect_init_answers`. The old loop tested `runner in (\"claude\", \"codex\")`; the menu can only return a valid index, so the validation concern is fully delegated to `_select_from_list`.\n\nStack detection for \"Other\": checked as `selected_stack[0] == \"Other\"` rather than `stack_idx == len(STACKS) - 1`. This makes the condition self-documenting and tolerates future reordering of `STACKS` without breaking the branch.\n\nFree-text \"Other\" defaults: `test_command` and `build_check_command` default to `\"\"` (no default), not `\"pytest\"` / `\"python -m py_compile\"`. A user choosing \"Other\" is explicitly outside the catalog, so suggesting Python defaults would be misleading.\n\nLanguage for predefined stacks: set directly to `selected_stack[0]` (no `_prompt()` call). The display name is the canonical identifier and users cannot override it \u2014 this keeps `InitAnswers.language` consistent with `STACKS` and downstream consumers like `_language_specific_known_issues()`.",
+    "test_coverage_notes": "Key paths for the tester:\n1. All-empty input still yields Python defaults (menus default to index 0).\n2. Runner menu: non-integer input (e.g. \"notanumber\") is rejected by `_select_from_list` with an error message and re-prompt.\n3. Runner menu: out-of-range integer (e.g. \"5\") is rejected and re-prompted.\n4. Stack menu: selecting each predefined stack populates the correct language, test_command, and build_check_command from STACKS.\n5. Stack \"Other\" (index 6, menu item 7): triggers free-text prompts; user-entered language/test/build are preserved verbatim.\n6. Predefined stack with command overrides: user types a non-empty string over the default test/build commands.\n7. Max workers validation path is unchanged from before.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "Downstream bead B-3722ddd9 (non-interactive defaults using STACKS[0]) has no conflict risk \u2014 it touches `cli/commands/init.py`, not `prompts.py`.",
   "branch_name": "feature/b-2b9df640",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2b9df640",
-  "lease": {
-    "owner": "developer:B-7e28a7b0",
-    "expires_at": "2026-04-12T20:22:56.029301+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -98,6 +109,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-7e28a7b0/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-12T19:56:13.748529+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Rewrote `collect_init_answers()` in `src/agent_takt/onboarding/prompts.py` to use numbered menus for runner and stack selection. Runner now uses `_select_from_list()` with `[\"claude\", \"codex\"]`. Project stack uses `_select_from_list()` over all `STACKS` display names. Predefined stacks pre-fill test/build defaults (overridable via `_prompt()`); `Other` triggers free-text fallback. `InitAnswers.language` stores the canonical display name for predefined stacks. Updated `TestCollectInitAnswers` in `tests/test_onboarding_scaffold.py` to use numeric menu inputs and added two new tests covering the `Other` free-text path and command override behaviour.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,7 +187,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Rewrote `collect_init_answers()` in `src/agent_takt/onboarding/prompts.py` to use numbered menus for runner and stack selection. Runner now uses `_select_from_list()` with `[\"claude\", \"codex\"]`. Project stack uses `_select_from_list()` over all `STACKS` display names. Predefined stacks pre-fill test/build defaults (overridable via `_prompt()`); `Other` triggers free-text fallback. `InitAnswers.language` stores the canonical display name for predefined stacks. Updated `TestCollectInitAnswers` in `tests/test_onboarding_scaffold.py` to use numeric menu inputs and added two new tests covering the `Other` free-text path and command override behaviour.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.5451328500000001,
+      "duration_ms": 188722,
+      "duration_api_ms": 181163,
+      "num_turns": 12,
+      "input_tokens": 14,
+      "output_tokens": 11754,
+      "cache_creation_tokens": 40792,
+      "cache_read_tokens": 443673,
+      "stop_reason": "end_turn",
+      "session_id": "0c188930-f8be-4e70-8c2a-7a72f2038cb5",
+      "permission_denials": [],
+      "prompt_chars": 8163,
+      "prompt_lines": 163,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.5451328500000001,
+        "duration_ms": 188722,
+        "duration_api_ms": 181163,
+        "num_turns": 12,
+        "input_tokens": 14,
+        "output_tokens": 11754,
+        "cache_creation_tokens": 40792,
+        "cache_read_tokens": 443673,
+        "stop_reason": "end_turn",
+        "session_id": "0c188930-f8be-4e70-8c2a-7a72f2038cb5",
+        "permission_denials": [],
+        "prompt_chars": 8163,
+        "prompt_lines": 163,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
