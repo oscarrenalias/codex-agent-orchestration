@@ -140,7 +140,9 @@ templates/
 docs/
   memory/
     conventions.md     # Project conventions read by agents at runtime
-    known-issues.md    # Known issues and workarounds (language-specific hints added)
+    known-issues.md    # Known issues and workarounds; language-specific hints added
+                       # for canonical stacks only: Node.js, TypeScript, Go.
+                       # The "Other" free-text stack receives no language-specific block.
 
 specs/
   HOWTO.md             # Guidance on writing effective specs
