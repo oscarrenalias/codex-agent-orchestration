@@ -210,11 +210,90 @@ def _chunk_text(text: str) -> list[str]:
     return result
 
 
+def _chunk_json(text: str) -> list[str]:
+    """Split JSON content into chunks.
+
+    - Arrays: each element becomes a chunk (JSON-encoded), further split if oversized.
+    - Objects: each top-level key-value pair becomes a chunk, further split if oversized.
+    - Scalars / parse errors: fall back to paragraph-boundary splitting on the raw text.
+    """
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        return _chunk_text(text)
+
+    if isinstance(data, list):
+        raw_chunks = [json.dumps(item, ensure_ascii=False) for item in data]
+    elif isinstance(data, dict):
+        raw_chunks = [
+            json.dumps({k: v}, ensure_ascii=False) for k, v in data.items()
+        ]
+    else:
+        return _chunk_text(text)
+
+    result: list[str] = []
+    for chunk in raw_chunks:
+        result.extend(_split_if_large(chunk))
+    return result
+
+
+def _chunk_csv(text: str) -> list[str]:
+    """Split CSV rows into chunks sized around *_CHUNK_MAX_CHARS*.
+
+    The header row is prepended to every chunk so that column context is
+    preserved when the chunk is later embedded.
+    """
+    import csv
+    import io
+
+    reader = csv.reader(io.StringIO(text))
+    rows = list(reader)
+    if not rows:
+        return []
+
+    header = rows[0]
+    header_line = ",".join(header)
+    data_rows = rows[1:]
+
+    result: list[str] = []
+    current_lines: list[str] = [header_line]
+    current_len = len(header_line)
+
+    for row in data_rows:
+        line = ",".join(row)
+        # +1 for the newline separator
+        if current_len + len(line) + 1 > _CHUNK_MAX_CHARS and len(current_lines) > 1:
+            result.append("\n".join(current_lines))
+            current_lines = [header_line, line]
+            current_len = len(header_line) + len(line) + 1
+        else:
+            current_lines.append(line)
+            current_len += len(line) + 1
+
+    if len(current_lines) > 1:
+        result.append("\n".join(current_lines))
+
+    return result
+
+
 def _chunk_file(path: Path) -> list[str]:
-    """Return chunks from *path* appropriate to its file type."""
+    """Return chunks from *path* appropriate to its file type.
+
+    Supported types:
+    - ``.md``  — level-2 heading splits, then oversized-section fallback
+    - ``.txt`` — paragraph-boundary splits
+    - ``.json``— per-element / per-key-value splits
+    - ``.csv`` — row-group splits with header prepended to every chunk
+    """
     text = path.read_text(encoding="utf-8", errors="replace")
-    if path.suffix.lower() == ".md":
+    suffix = path.suffix.lower()
+    if suffix == ".md":
         return _chunk_markdown(text)
+    if suffix == ".json":
+        return _chunk_json(text)
+    if suffix == ".csv":
+        return _chunk_csv(text)
+    # .txt and all other plain-text formats
     return _chunk_text(text)
 
 
