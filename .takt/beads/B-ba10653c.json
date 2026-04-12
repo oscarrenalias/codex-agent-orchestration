@@ -3,7 +3,7 @@
   "title": "Refactor tui/app.py to reduce complexity",
   "agent_type": "developer",
   "description": "src/agent_takt/tui/app.py is 1,132 lines and acts as a god class containing the Textual App class, all keybindings, TuiSchedulerReporter, and accumulated functionality. The TUI module has been partially decomposed (state.py, render.py, actions.py, tree.py) but app.py remains the bottleneck. Extract TuiSchedulerReporter into its own module (tui/reporter.py) since it is a self-contained class with no dependency on the App internals. Extract keybinding registration and the BINDINGS table into a dedicated section or helper. Goal: reduce app.py below 700 lines without changing any observable behaviour. All existing TUI tests must continue to pass. Preserve all public re-exports in tui/__init__.py.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-2a7ec879",
   "dependencies": [],
@@ -13,40 +13,71 @@
   "execution_branch_name": "feature/b-2a7ec879",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2a7ec879",
   "expected_files": [
-    "src/agent_takt/tui/app.py"
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/reporter.py",
+    "src/agent_takt/tui/render.py",
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/__init__.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/tui/__init__.py",
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/render.py",
+    "src/agent_takt/tui/reporter.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/tui/__init__.py",
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/render.py",
+    "src/agent_takt/tui/reporter.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "1. Created tui/reporter.py with TuiSchedulerReporter class (65 lines) \u2014 self-contained, no App internals dependency. 2. Added 6 helper functions to tui/render.py: _panel_badge, _format_filter_label, _beads_panel_title, _detail_summary_lines, _detail_section_body, _detail_section_title (+111 lines). 3. Added OrchestratorTuiActionsMixin class to tui/actions.py containing all 27 action_* methods from OrchestratorTuiApp (+290 lines). Mixin uses optional textual imports guarded by try/except (safe: methods only run from a live Textual app). BeadTree type annotations replaced with Tree base class; HelpOverlay instantiation delegated to _make_help_overlay_screen() factory on the main class. 4. Stripped app.py of all extracted code; updated imports to point at new homes; changed OrchestratorTuiApp to inherit from OrchestratorTuiActionsMixin; added 2-line _make_help_overlay_screen() factory method. 5. Updated tui/__init__.py to re-export TuiSchedulerReporter from .reporter and _detail_section_body/_detail_section_title from .render \u2014 all previously-stable public symbols remain accessible from agent_takt.tui.",
+    "remaining": "None. Tester bead should run the existing TUI test suite (test_tui_app.py, test_tui_render.py, test_tui_actions.py, test_tui_state.py, test_tui_tree.py) to confirm no regressions.",
+    "risks": "The mixin uses # type: ignore[attr-defined] on every self.* call because mypy cannot verify the OrchestratorTuiApp attributes at mixin definition time. This is intentional and consistent with the project's typing approach. No runtime risk: methods only execute from a running App instance.",
+    "verdict": "approved",
     "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
+    "requires_followup": true,
+    "changed_files": [
+      "src/agent_takt/tui/__init__.py",
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/render.py",
+      "src/agent_takt/tui/reporter.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Run tui test suite to verify no regressions: uv run pytest tests/test_tui_app.py tests/test_tui_render.py tests/test_tui_actions.py tests/test_tui_state.py tests/test_tui_tree.py -v",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/reporter.py",
+      "src/agent_takt/tui/render.py",
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/__init__.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/tui/__init__.py",
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/render.py",
+      "src/agent_takt/tui/reporter.py"
+    ],
+    "conflict_risks": "tui/__init__.py and tui/app.py are the most likely points of conflict for downstream beads importing from the tui package. The public API surface is unchanged \u2014 all symbols remain re-exported from the same package namespace.",
+    "design_decisions": "1. Mixin pattern (OrchestratorTuiActionsMixin) for action methods: chosen because action methods are a coherent unit (all named action_*) that reference self.runtime_state and self._* helpers via duck typing. Alternative was standalone functions taking the app as a parameter, rejected as more verbose. 2. BeadTree replaced with Tree in mixin query_one calls: BeadTree is an inner class scoped to build_tui_app; Tree is the public Textual base class and has all required methods (action_cursor_down, action_toggle_node etc.). No behavioural change. 3. _make_help_overlay_screen() factory: added to OrchestratorTuiApp (2 lines) to let the mixin trigger HelpOverlay creation without importing the locally-scoped inner class. 4. Optional textual imports in actions.py: textual is an optional dependency; the try/except guard ensures actions.py can be imported without textual installed. The mixin methods are only ever called from a live App so NoMatches etc. will always be defined at call time. 5. _panel_badge, _detail_section_body etc. placed in render.py (not a new file): they are rendering helpers that fit the module's existing responsibilities and require no new imports.",
+    "test_coverage_notes": "Tester should verify: (1) All 27 action methods in the mixin still function correctly via the inherited OrchestratorTuiApp path \u2014 existing test_tui_app.py covers most action handlers. (2) TuiSchedulerReporter can still be imported from agent_takt.tui and behaves identically (TuiSchedulerReporterDeferredTests class in test_tui_app.py). (3) _detail_section_body and _detail_section_title remain accessible from agent_takt.tui with the same results. (4) _live_status_bar_text is still importable from agent_takt.tui.app (direct import in tests). (5) build_tui_app returns a functioning OrchestratorTuiApp that inherits both the mixin actions and App base class.",
+    "known_limitations": "BINDINGS table remains inside OrchestratorTuiApp (nested in build_tui_app) because it uses Binding objects from textual which cannot be safely imported at module level given the optional-dependency pattern. The bead description mentioned extracting BINDINGS to a dedicated section; this was interpreted as the class-level BINDINGS attribute being the dedicated section, since moving it to a separate file would require breaking the lazy-import guard."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "tui/__init__.py and tui/app.py are the most likely points of conflict for downstream beads importing from the tui package. The public API surface is unchanged \u2014 all symbols remain re-exported from the same package namespace.",
   "branch_name": "feature/b-2a7ec879",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2a7ec879",
-  "lease": {
-    "owner": "developer:B-ba10653c",
-    "expires_at": "2026-04-12T20:02:33.332962+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -88,6 +119,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-ba10653c/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-12T19:50:51.579650+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Refactored tui/app.py from 1132 lines to 686 lines (39% reduction) by extracting three cohesive units into dedicated modules, preserving all public re-exports and observable behaviour.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -149,7 +187,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Refactored tui/app.py from 1132 lines to 686 lines (39% reduction) by extracting three cohesive units into dedicated modules, preserving all public re-exports and observable behaviour.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": true,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 4.47801615,
+      "duration_ms": 1093482,
+      "duration_api_ms": 1072019,
+      "num_turns": 84,
+      "input_tokens": 88,
+      "output_tokens": 79162,
+      "cache_creation_tokens": 162075,
+      "cache_read_tokens": 8941803,
+      "stop_reason": "end_turn",
+      "session_id": "62b588d7-c138-4bd9-bc3b-320231300369",
+      "permission_denials": [],
+      "prompt_chars": 8050,
+      "prompt_lines": 153,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 4.47801615,
+        "duration_ms": 1093482,
+        "duration_api_ms": 1072019,
+        "num_turns": 84,
+        "input_tokens": 88,
+        "output_tokens": 79162,
+        "cache_creation_tokens": 162075,
+        "cache_read_tokens": 8941803,
+        "stop_reason": "end_turn",
+        "session_id": "62b588d7-c138-4bd9-bc3b-320231300369",
+        "permission_denials": [],
+        "prompt_chars": 8050,
+        "prompt_lines": 153,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
