@@ -50,7 +50,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-45b3eb8f-test",
   "conflict_risks": "Downstream bead B-3722ddd9 (non-interactive defaults using STACKS[0]) has no conflict risk \u2014 it touches `cli/commands/init.py`, not `prompts.py`.",
   "branch_name": "",
   "worktree_path": "",
@@ -62,6 +62,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-12T19:56:19.080712+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "file-scope conflict with in-progress B-45b3eb8f-test",
       "details": {}
     }
   ],
