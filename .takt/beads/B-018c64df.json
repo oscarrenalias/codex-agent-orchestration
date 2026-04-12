@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-36010371",
-  "dependencies": [],
+  "dependencies": [
+    "B-4b623d41"
+  ],
   "acceptance_criteria": [
     "`ingest_file()` supports the file types named in the spec.",
     "Markdown heading and paragraph chunking rules are implemented with oversized chunk fallback.",
