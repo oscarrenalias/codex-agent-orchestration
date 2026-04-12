@@ -1,0 +1,76 @@
+{
+  "bead_id": "B-2b4f2514",
+  "title": "Update memory skill content and mandatory guardrail templates",
+  "agent_type": "developer",
+  "description": "Replace append-only markdown memory instructions with `takt memory` usage in managed skill sources and add mandatory read/write or read-only memory sections to the relevant agent guardrail templates.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-36010371",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Worker memory skill content uses `$TAKT_CMD` plus global, feature, and specs searches at bead start.",
+    "Operator memory skill content documents `takt memory` retrieval, writing, and migration flows.",
+    "Developer/tester/planner templates include mandatory read and write memory instructions.",
+    "Documentation/review templates include mandatory read-only memory instructions.",
+    "The directly managed `.agents/skills/memory/SKILL.md` is updated alongside source templates used by `takt init`."
+  ],
+  "linked_docs": [
+    "spec-cbb95a79"
+  ],
+  "feature_root_id": "B-36010371",
+  "execution_branch_name": "feature/b-36010371",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-36010371",
+  "expected_files": [
+    "src/agent_takt/_data/agents_skills/memory/SKILL.md",
+    ".agents/skills/memory/SKILL.md",
+    "src/agent_takt/_data/claude_skills/memory/SKILL.md",
+    "templates/agents/developer.md",
+    "templates/agents/tester.md",
+    "templates/agents/planner.md",
+    "templates/agents/documentation.md",
+    "templates/agents/review.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-12T13:21:50.881474+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
