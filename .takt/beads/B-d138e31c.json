@@ -60,9 +60,18 @@
       "agent_type": "developer",
       "summary": "Preparing worktree (checking out 'feature/b-d138e31c')\nfatal: 'feature/b-d138e31c' is already used by worktree at '/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-2b9df640/.takt/worktrees/B-d138e31c'",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T07:10:12.423513+00:00",
+      "event": "corrective_planned",
+      "agent_type": "developer",
+      "summary": "Created corrective bead B-d138e31c-corrective for blocked issue",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "auto_corrective_bead_id": "B-d138e31c-corrective"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
