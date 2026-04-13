@@ -2,9 +2,8 @@ name: agent-takt
 version: 1.0.0
 description: APM project for agent-takt
 author: Renalias, Oscar
-target: claude, code
 dependencies:
   apm:
-  - oscarrenalias/skill-spec-management#v0.1.5
+  - oscarrenalias/skill-spec-management#v0.1.6
   mcp: []
 scripts: {}
