@@ -192,12 +192,19 @@ class PlannerTests(_OrchestratorBase):
         )
         self.assertIn("touch more than 2-3 functions", prompt)
         self.assertIn("break it into smaller dependent beads with explicit ordering", prompt)
+        # New mandate language — the old "coalesce" phrasing was replaced with prescriptive rules
         self.assertIn(
-            "coalesce tester, documentation, and review work into shared follow-up beads rather than duplicating that work in each implementation bead.",
+            "Always create exactly one shared tester bead, one shared documentation bead, and one shared review bead as children of the feature bead",
+            prompt,
+        )
+        self.assertIn("never omit any of these three types", prompt)
+        self.assertIn("Do not create per-developer tester, documentation, or review children.", prompt)
+        self.assertIn(
+            "The shared tester and documentation beads must depend on all developer beads in the feature tree.",
             prompt,
         )
         self.assertIn(
-            "Those shared follow-up beads should depend on the full related implementation set they validate, document, or review so the follow-up happens after the combined change is ready.",
+            "The shared review bead must depend on all developer beads plus the shared tester and documentation beads.",
             prompt,
         )
 
