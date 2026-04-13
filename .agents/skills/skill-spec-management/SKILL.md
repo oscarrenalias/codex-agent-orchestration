@@ -41,7 +41,9 @@ If missing, initialise it before doing anything else:
 python3 <spec-py> init
 ```
 
-This creates `specs/drafts/`, `specs/planned/`, and `specs/done/`. Only needs to be done once per project.
+This creates `specs/`, `specs/drafts/`, `specs/planned/`, and `specs/done/`. Only needs to be done once per project.
+
+> **Note:** If `specs/` already exists but is missing its lifecycle subdirectories, the `create` subcommand will create them automatically. `spec init` is only required to create the top-level `specs/` directory itself.
 
 "drafts", "planned", and "done" are the default lifecycle stages, but custom status values are supported. The skill enforces that a spec file lives in the folder matching its `status` frontmatter field, so if you use custom status values, the skill script will enforce the correct folder structure automatically.
 
@@ -68,6 +70,8 @@ python3 <spec-py> create "My Feature Title"
 Output: path to the created file and its generated ID (e.g. `spec-a3f19c2b`).
 
 The filename is derived from the title as a slug (lowercase, hyphens, `.md` extension).
+
+If `specs/` exists but the lifecycle subdirectories (`drafts/`, `planned/`, `done/`) are absent, `create` creates them automatically. Running `spec init` beforehand is not required when `specs/` already exists.
 
 ---
 

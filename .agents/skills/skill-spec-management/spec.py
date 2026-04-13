@@ -610,7 +610,8 @@ def cmd_init(_args: argparse.Namespace) -> None:
 
 def cmd_create(args: argparse.Namespace) -> None:
     _require_specs_dir()
-    _require_lifecycle_dirs()
+    for d in LIFECYCLE_DIRS:
+        os.makedirs(d, exist_ok=True)
 
     title = args.title
     filename = _title_to_filename(title)

@@ -25,3 +25,6 @@ apm_modules/
 
 # orchestrator
 .takt/agent-runs/
+
+# github copilot not supported yet as I have no means to test it
+.github/skills/
