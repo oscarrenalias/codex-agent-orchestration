@@ -3,7 +3,7 @@
   "title": "Test Sync bundled skill-spec-management data with APM v0.1.6",
   "agent_type": "tester",
   "description": "Validate implementation for B-a88b7d5e",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-a88b7d5e",
   "dependencies": [
@@ -3407,9 +3407,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None. These are data files under _data/; no Python imports reference the removed files by name.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-a88b7d5e",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a88b7d5e",
+  "lease": {
+    "owner": "tester:B-a88b7d5e-test",
+    "expires_at": "2026-04-13T09:41:37.046328+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3418,9 +3421,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T09:11:37.471924+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-13T09:11:37.471948+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-a88b7d5e-test",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/tester-validation",
+      "capability/test-execution",
+      "task/defect-bead-creation",
+      "task/regression-triage",
+      "memory"
+    ],
+    "skill_bundle_hash": "c2bb19865add8770ba493957f3775e07d50168d42fe585583dcff9d82dc76d86",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-a88b7d5e-test/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
