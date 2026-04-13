@@ -1,16 +1,16 @@
 ---
 name: Exclude bead state from feature branches to eliminate merge conflicts
 id: spec-5f05ff7a
-description: Configure worktrees to ignore .takt/beads/ so bead state is only ever committed on main, eliminating the JSON merge conflicts that repeatedly block feature merges.
-dependencies:
+description: "Configure worktrees to ignore .takt/beads/ so bead state is only ever committed on main, eliminating the JSON merge conflicts that repeatedly block feature merges."
+dependencies: null
 priority: high
 complexity: low
-status: draft
+status: done
 tags: []
 scope:
-  in:
-  out:
-feature_root_id:
+  in: null
+  out: null
+feature_root_id: null
 ---
 
 # Exclude Bead State from Feature Branches to Eliminate Merge Conflicts
