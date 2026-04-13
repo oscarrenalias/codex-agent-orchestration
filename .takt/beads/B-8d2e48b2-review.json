@@ -3,7 +3,7 @@
   "title": "Review Mandate tester, documentation, and review beads in planner prompt",
   "agent_type": "review",
   "description": "Review implementation for B-8d2e48b2",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-8d2e48b2",
   "dependencies": [
@@ -3364,9 +3364,12 @@
   },
   "block_reason": "",
   "conflict_risks": "No file-scope conflicts expected \u2014 only one file changed and it is scoped solely to this bead.",
-  "branch_name": "",
+  "branch_name": "feature/b-8d2e48b2",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-8d2e48b2-review",
+    "expires_at": "2026-04-13T07:46:48.434033+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3375,9 +3378,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T07:16:48.915131+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-13T07:16:48.915152+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-8d2e48b2-review",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-8d2e48b2-review/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
