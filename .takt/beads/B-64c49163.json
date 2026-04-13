@@ -58,6 +58,24 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T07:50:00.879502+00:00",
+      "event": "git_commit_failed",
+      "agent_type": "scheduler",
+      "summary": "git commit failed: Command '['git', 'commit', '-m', '[bead] B-64c49163: done', '--no-verify']' returned non-zero exit status 1.",
+      "details": {
+        "error": "Command '['git', 'commit', '-m', '[bead] B-64c49163: done', '--no-verify']' returned non-zero exit status 1."
+      }
+    },
+    {
+      "timestamp": "2026-04-13T07:53:52.105366+00:00",
+      "event": "git_commit_failed",
+      "agent_type": "scheduler",
+      "summary": "git commit failed: Command '['git', 'commit', '-m', '[bead] B-64c49163: done', '--no-verify']' returned non-zero exit status 1.",
+      "details": {
+        "error": "Command '['git', 'commit', '-m', '[bead] B-64c49163: done', '--no-verify']' returned non-zero exit status 1."
+      }
     }
   ],
   "metadata": {},
