@@ -5,6 +5,6 @@ author: Renalias, Oscar
 target: claude, code
 dependencies:
   apm:
-  - oscarrenalias/skill-spec-management#v0.1.4
+  - oscarrenalias/skill-spec-management#v0.1.5
   mcp: []
 scripts: {}

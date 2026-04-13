@@ -1,10 +1,10 @@
 lockfile_version: '1'
-generated_at: '2026-04-09T18:19:20.609444+00:00'
+generated_at: '2026-04-13T08:06:18.088762+00:00'
 apm_version: 0.8.10
 dependencies:
 - repo_url: oscarrenalias/skill-spec-management
   host: github.com
-  resolved_commit: 52e73606a6d66deea5464934a9596ed9b0b89a88
-  resolved_ref: v0.1.4
+  resolved_commit: ff583d795a241b20837788974e353db25f2b56b2
+  resolved_ref: v0.1.5
   package_type: hybrid
-  content_hash: sha256:27185a09772ea4f054f29445f35554586d7ee32e1dcee347fdd582681f03af12
+  content_hash: sha256:1e47abc463f3c01e7dd1bb92114ae0560f9c711180f8c7cca263bfdd9b079e2f
