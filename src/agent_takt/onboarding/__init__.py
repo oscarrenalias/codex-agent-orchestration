@@ -20,7 +20,7 @@ from .config import (
     merge_config_keys,
     substitute_template_placeholders,
 )
-from .prompts import InitAnswers, _prompt, collect_init_answers
+from .prompts import InitAnswers, STACKS, _prompt, collect_init_answers
 from .scaffold import (
     _CONVENTIONS_CONTENT,
     _GITIGNORE_ENTRIES,
@@ -61,6 +61,7 @@ __all__ = [
     "substitute_template_placeholders",
     # prompts
     "InitAnswers",
+    "STACKS",
     "_prompt",
     "collect_init_answers",
     # scaffold

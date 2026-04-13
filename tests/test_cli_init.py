@@ -3,10 +3,11 @@
 Covers:
 - Parser wiring: `init` subcommand registered, --overwrite and --non-interactive flags
 - command_init: non-git directory returns exit code 1
-- command_init: non-interactive mode uses defaults without prompting
+- command_init: non-interactive mode uses defaults sourced from STACKS[0]
 - command_init: missing runner binary returns exit code 1
 - command_init: calls scaffold_project on success, returns 0
 - command_init: overwrite flag is forwarded to scaffold_project
+- STACKS catalog: well-formed tuples, at least one entry, "Other" last
 """
 from __future__ import annotations
 
@@ -62,6 +63,35 @@ class TestInitParserWiring(unittest.TestCase):
         parser = build_parser()
         args = parser.parse_args(["init", "--root", "/tmp/myproject"])
         self.assertEqual("/tmp/myproject", args.root)
+
+
+# ---------------------------------------------------------------------------
+# STACKS catalog
+# ---------------------------------------------------------------------------
+
+
+class TestStacksCatalog(unittest.TestCase):
+    def test_stacks_is_non_empty(self):
+        from agent_takt.onboarding import STACKS
+        self.assertGreater(len(STACKS), 0)
+
+    def test_stacks_entries_are_three_tuples(self):
+        from agent_takt.onboarding import STACKS
+        for entry in STACKS:
+            self.assertEqual(3, len(entry), f"Expected 3-tuple, got {entry!r}")
+            for field in entry:
+                self.assertIsInstance(field, str, f"Expected str fields in {entry!r}")
+
+    def test_stacks_first_entry_is_python(self):
+        from agent_takt.onboarding import STACKS
+        lang, test_cmd, build_cmd = STACKS[0]
+        self.assertEqual("Python", lang)
+        self.assertEqual("pytest", test_cmd)
+        self.assertEqual("python -m py_compile", build_cmd)
+
+    def test_stacks_last_entry_is_other(self):
+        from agent_takt.onboarding import STACKS
+        self.assertEqual("Other", STACKS[-1][0])
 
 
 # ---------------------------------------------------------------------------
@@ -137,6 +167,8 @@ class TestCommandInit(unittest.TestCase):
         mock_scaffold.assert_called_once()
 
     def test_non_interactive_uses_default_answers(self):
+        from agent_takt.onboarding import STACKS
+
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / ".git").mkdir()
@@ -156,8 +188,34 @@ class TestCommandInit(unittest.TestCase):
         a = captured_answers["answers"]
         self.assertEqual("claude", a.runner)
         self.assertEqual(1, a.max_workers)
-        self.assertEqual("Python", a.language)
-        self.assertEqual("pytest", a.test_command)
+        # Verify all three fields are sourced from STACKS[0], not hardcoded strings.
+        self.assertEqual(STACKS[0][0], a.language)
+        self.assertEqual(STACKS[0][1], a.test_command)
+        self.assertEqual(STACKS[0][2], a.build_check_command)
+
+    def test_non_interactive_build_check_command_from_stack_catalog(self):
+        """build_check_command must equal STACKS[0][2] in non-interactive mode."""
+        from agent_takt.onboarding import STACKS
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / ".git").mkdir()
+            args = self._args(root=str(root), non_interactive=True)
+            console = self._console()
+            captured_answers = {}
+
+            def capture_scaffold(project_root, answers, **kwargs):
+                captured_answers["answers"] = answers
+
+            with (
+                patch("shutil.which", return_value="/usr/local/bin/claude"),
+                patch("agent_takt.onboarding.scaffold_project", side_effect=capture_scaffold),
+            ):
+                command_init(args, console)
+
+        a = captured_answers["answers"]
+        self.assertEqual(STACKS[0][2], a.build_check_command,
+                         "Non-interactive build_check_command must equal STACKS[0][2]")
 
     def test_overwrite_flag_forwarded_to_scaffold(self):
         with tempfile.TemporaryDirectory() as tmpdir:

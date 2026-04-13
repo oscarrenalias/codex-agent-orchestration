@@ -19,12 +19,14 @@ def command_init(args: argparse.Namespace, console: ConsoleReporter) -> int:
     console.section("=== takt init ===")
 
     if getattr(args, "non_interactive", False):
+        from ...onboarding import STACKS
+        _lang, _test_cmd, _build_cmd = STACKS[0]
         answers = InitAnswers(
             runner="claude",
             max_workers=1,
-            language="Python",
-            test_command="pytest",
-            build_check_command="python -m py_compile",
+            language=_lang,
+            test_command=_test_cmd,
+            build_check_command=_build_cmd,
         )
     else:
         answers = collect_init_answers()
