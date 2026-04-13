@@ -4519,6 +4519,15 @@
       "agent_type": "developer",
       "summary": "Replaced the conditional planner prompt guidance with an unconditional mandate to always create exactly one shared tester, documentation, and review bead \u2014 never omitting any of the three types.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T07:11:07.656743+00:00",
+      "event": "git_commit_failed",
+      "agent_type": "scheduler",
+      "summary": "git commit failed: Command '['git', 'commit', '-m', '[bead] B-8d2e48b2: done', '--no-verify']' returned non-zero exit status 1.",
+      "details": {
+        "error": "Command '['git', 'commit', '-m', '[bead] B-8d2e48b2: done', '--no-verify']' returned non-zero exit status 1."
+      }
     }
   ],
   "metadata": {
