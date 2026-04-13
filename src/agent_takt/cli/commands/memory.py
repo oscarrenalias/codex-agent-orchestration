@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from ...config import load_config
 from ...console import ConsoleReporter
-from ...memory import add_entry, delete_entry, ingest_file, init_db, search, stats
+from ...memory import add_entry, configure_model_cache_dir, delete_entry, ingest_file, init_db, search, stats
 from ...storage import RepositoryStorage
 
 _MIGRATE_GLOB = "docs/memory/*.md"
@@ -18,8 +19,13 @@ def command_memory(
     """Dispatch to `takt memory` sub-subcommands."""
     db_path = storage.root / ".takt" / "memory" / "memory.db"
 
+    # Apply the configured model cache directory before any embed operations so
+    # that all subcommands (not just `init`) resolve the model from the right path.
+    _config = load_config(storage.root)
+    configure_model_cache_dir(_config.common.memory_cache_dir)
+
     if args.memory_command == "init":
-        return _cmd_init(db_path, console)
+        return _cmd_init(db_path, _config.common.memory_cache_dir, console)
     if args.memory_command == "add":
         return _cmd_add(args, db_path, console)
     if args.memory_command == "search":
@@ -38,9 +44,9 @@ def command_memory(
 # ---------------------------------------------------------------------------
 
 
-def _cmd_init(db_path: Path, console: ConsoleReporter) -> int:
+def _cmd_init(db_path: Path, model_cache_dir: Path | None, console: ConsoleReporter) -> int:
     with console.spin("Initialising memory database") as spinner:
-        init_db(db_path)
+        init_db(db_path, model_cache_dir=model_cache_dir)
         spinner.success(f"Memory database ready at {db_path}")
     return 0
 

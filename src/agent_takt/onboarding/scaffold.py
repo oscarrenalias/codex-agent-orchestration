@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import IO
 
+from ..config import load_config
 from ..console import BOLD, GREEN, RESET, ConsoleReporter
 from ..memory import init_db
 from .assets import install_agents_skills, install_claude_skills, install_skill_templates
@@ -416,8 +417,11 @@ def scaffold_project(
     console.success("Installed .claude/skills/ catalog")
 
     # 5. Bootstrap shared memory database
+    # Load the config that was just written (or already existed) so that a
+    # custom memory_cache_dir is honoured during the initial model download.
+    _scaffold_config = load_config(project_root)
     memory_db_path = project_root / ".takt" / "memory" / "memory.db"
-    init_db(memory_db_path)
+    init_db(memory_db_path, model_cache_dir=_scaffold_config.common.memory_cache_dir)
     console.success("Bootstrapped shared memory database (.takt/memory/)")
 
     # 6. Seed memory files

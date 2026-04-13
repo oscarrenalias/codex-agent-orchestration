@@ -190,6 +190,7 @@ common:
   default_runner: claude         # from "Runner backend" prompt
   test_command: pytest           # from "Test command" prompt
   # max_workers is a CLI flag: takt run --max-workers 1
+  # memory_cache_dir: /path/to/model-cache   # optional; defaults to ~/.cache/agent-takt/models
 
 codex:
   binary: codex
@@ -211,6 +212,7 @@ claude:
 
 Key points:
 - `max_workers` is intentionally **not** a config file key — it is a CLI flag passed to `takt run --max-workers N`. The comment in the generated file serves as a reminder of the value you chose.
+- `memory_cache_dir` sets the directory where the ONNX embedding model is cached. When omitted, the model is stored at `~/.cache/agent-takt/models`. Override this in environments where the home directory is not writable (e.g. CI), or to share the model cache across projects. The value is applied process-wide so that all `takt memory` subcommands and `takt init` use the same location.
 - Any key omitted from this file falls back to takt's built-in defaults at load time (see `config.py`).
 - The `codex` and `claude` blocks are always written, regardless of which runner you selected; you can use either backend at any time by passing `--runner codex` or `--runner claude` to `takt run`.
 
@@ -331,7 +333,7 @@ After `takt init` copies assets into your repository, **those files belong to yo
 - **Subagent skills** (`templates/skills/`) — the primary skill catalog used by worker agents. Customise these to change what each agent type can do. To protect a skill from automatic upgrades, run `takt asset mark-owned "<glob>"`.
 - **Operator skill overrides** (`.agents/skills/` and `.claude/skills/`) — local exceptions that override a bundled skill without touching `templates/skills/`. Only skills that differ from the bundled defaults need to be present here.
 - **Memory files** (`docs/memory/conventions.md`, `docs/memory/known-issues.md`) — keep these up to date as your project evolves. Agents read them at runtime for project-specific context. These files are not tracked in the manifest and are never touched by `takt upgrade`.
-- **Config** (`.takt/config.yaml`) — adjust runner settings, timeouts, test commands, and parallel worker count here. `takt upgrade` will add missing keys from new releases but will not overwrite values you have set.
+- **Config** (`.takt/config.yaml`) — adjust runner settings, timeouts, test commands, parallel worker count, and the ONNX model cache directory (`common.memory_cache_dir`) here. `takt upgrade` will add missing keys from new releases but will not overwrite values you have set.
 
 Running `takt init --overwrite` will re-copy bundled defaults on top of any local changes, so avoid that after you have customised your files. Use `takt upgrade` for routine asset updates after a package upgrade.
 

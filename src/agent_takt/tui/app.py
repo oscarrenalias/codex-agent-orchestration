@@ -1,49 +1,30 @@
 from __future__ import annotations
 
-from datetime import datetime
-from pathlib import Path
-
 from rich.text import Text
 
-from ..models import BEAD_BLOCKED, BEAD_DONE, BEAD_IN_PROGRESS, BEAD_READY, Bead
+from ..models import BEAD_BLOCKED, BEAD_IN_PROGRESS, BEAD_READY, Bead
 from ..storage import RepositoryStorage
+from .actions import OrchestratorTuiActionsMixin
+from .reporter import TuiSchedulerReporter
 from .state import (
-    DETAIL_SECTION_ACCEPTANCE,
-    DETAIL_SECTION_FILES,
-    DETAIL_SECTION_HANDOFF,
-    DETAIL_SECTION_HISTORY,
     DETAIL_SECTION_ORDER,
-    DETAIL_SECTION_TELEMETRY,
-    EXECUTION_HISTORY_DISPLAY_LIMIT,
     PANEL_DETAIL,
     PANEL_LIST,
     PANEL_SCHEDULER_LOG,
     TuiRuntimeState,
-    _format_block,
-    _format_duration_ms,
-    _format_list,
-    _value_or_dash,
 )
 from .render import (
     _DEFAULT_PANEL_WIDTH,
+    _beads_panel_title,
+    _detail_section_body,
+    _detail_section_title,
+    _detail_summary_lines,
+    _panel_badge,
     _telemetry_badge,
     _truncate_title,
     format_help_overlay,
     render_detail_panel,
 )
-
-
-def _panel_badge(panel_name: str, *, focused: bool) -> str:
-    state = "ACTIVE" if focused else "idle"
-    return f"{panel_name} [{state}]"
-
-
-def _format_filter_label(filter_mode: str) -> str:
-    return filter_mode.replace("_", " ").title()
-
-
-def _beads_panel_title(filter_mode: str, *, focused: bool) -> str:
-    return _panel_badge(f"Beads [{_format_filter_label(filter_mode)}]", focused=focused)
 
 
 def _focus_status_hint(focused_panel: str) -> str:
@@ -52,105 +33,6 @@ def _focus_status_hint(focused_panel: str) -> str:
     if focused_panel == PANEL_SCHEDULER_LOG:
         return "scheduler log scroll"
     return "list navigation"
-
-
-def _detail_summary_lines(bead: Bead | None) -> list[str]:
-    if bead is None:
-        return ["No bead selected."]
-    handoff = bead.handoff_summary
-    return [
-        f"Bead: {bead.bead_id}",
-        f"Title: {bead.title}",
-        f"Status: {bead.status}",
-        f"Type: {bead.bead_type}",
-        f"Agent: {bead.agent_type}",
-        f"Parent: {_value_or_dash(bead.parent_id)}",
-        f"Feature Root: {_value_or_dash(bead.feature_root_id)}",
-        f"Dependencies: {_format_list(bead.dependencies)}",
-        f"Block Reason: {_value_or_dash(bead.block_reason or handoff.block_reason)}",
-    ]
-
-
-def _detail_section_body(bead: Bead | None, section: str, subtree_telemetry: dict | None = None) -> str:
-    if bead is None:
-        return "-"
-    handoff = bead.handoff_summary
-    if section == DETAIL_SECTION_ACCEPTANCE:
-        return "\n".join(_format_block(bead.acceptance_criteria))
-    if section == DETAIL_SECTION_FILES:
-        return "\n".join(
-            [
-                f"expected: {_format_list(bead.expected_files)}",
-                f"expected_globs: {_format_list(bead.expected_globs)}",
-                f"touched: {_format_list(bead.touched_files)}",
-                f"changed: {_format_list(bead.changed_files)}",
-                f"updated_docs: {_format_list(bead.updated_docs)}",
-            ]
-        )
-    if section == DETAIL_SECTION_HANDOFF:
-        return "\n".join(
-            [
-                f"completed: {_value_or_dash(handoff.completed)}",
-                f"remaining: {_value_or_dash(handoff.remaining)}",
-                f"risks: {_value_or_dash(handoff.risks)}",
-                f"next_action: {_value_or_dash(handoff.next_action)}",
-                f"next_agent: {_value_or_dash(handoff.next_agent)}",
-                f"block_reason: {_value_or_dash(handoff.block_reason)}",
-                f"touched_files: {_format_list(handoff.touched_files)}",
-                f"changed_files: {_format_list(handoff.changed_files)}",
-                f"expected_files: {_format_list(handoff.expected_files)}",
-                f"expected_globs: {_format_list(handoff.expected_globs)}",
-                f"updated_docs: {_format_list(handoff.updated_docs)}",
-                f"conflict_risks: {_value_or_dash(handoff.conflict_risks or bead.conflict_risks)}",
-            ]
-        )
-    if section == DETAIL_SECTION_TELEMETRY:
-        telemetry = bead.metadata.get("telemetry")
-        if not telemetry:
-            return "No telemetry data."
-        lines = [
-            f"cost_usd: ${telemetry.get('cost_usd', 0):.2f}",
-            f"duration: {_format_duration_ms(telemetry.get('duration_ms') or telemetry.get('duration_api_ms'))}",
-            f"num_turns: {_value_or_dash(telemetry.get('num_turns'))}",
-            f"input_tokens: {_value_or_dash(telemetry.get('input_tokens'))}",
-            f"output_tokens: {_value_or_dash(telemetry.get('output_tokens'))}",
-            f"cache_read_tokens: {_value_or_dash(telemetry.get('cache_read_tokens'))}",
-            f"prompt_chars: {_value_or_dash(telemetry.get('prompt_chars'))}",
-            f"session_id: {_value_or_dash(telemetry.get('session_id'))}",
-        ]
-        history = bead.metadata.get("telemetry_history")
-        if history and len(history) > 1:
-            total_cost = sum(h.get("cost_usd", 0) or 0 for h in history)
-            lines.append(f"attempts: {len(history)} (total cost: ${total_cost:.2f})")
-        if subtree_telemetry is not None:
-            sub_cost = subtree_telemetry.get("cost_usd", 0)
-            sub_duration = subtree_telemetry.get("duration_ms", 0)
-            sub_count = subtree_telemetry.get("bead_count", 0)
-            lines.append(f"Subtree: ${sub_cost:.2f} total, {_format_duration_ms(sub_duration)} duration, {sub_count} beads")
-        return "\n".join(lines)
-    if section == DETAIL_SECTION_HISTORY:
-        exec_history = bead.execution_history
-        if not exec_history:
-            return "No execution history."
-        lines = []
-        omitted = len(exec_history) - EXECUTION_HISTORY_DISPLAY_LIMIT
-        if omitted > 0:
-            lines.append(f"... {omitted} earlier entries omitted")
-        for record in exec_history[-EXECUTION_HISTORY_DISPLAY_LIMIT:]:
-            lines.append(f"[{record.timestamp}] {record.event} ({record.agent_type}): {record.summary}")
-        return "\n".join(lines)
-    raise ValueError(f"Unknown detail section: {section}")
-
-
-def _detail_section_title(section: str) -> str:
-    titles = {
-        DETAIL_SECTION_ACCEPTANCE: "Acceptance Criteria",
-        DETAIL_SECTION_FILES: "Files",
-        DETAIL_SECTION_HANDOFF: "Handoff",
-        DETAIL_SECTION_TELEMETRY: "Telemetry",
-        DETAIL_SECTION_HISTORY: "Execution History",
-    }
-    return titles[section]
 
 
 def _live_status_bar_text(runtime_state: TuiRuntimeState) -> str:
@@ -246,7 +128,7 @@ def build_tui_app(
             self.runtime_state.close_help_overlay()
             self.dismiss(None)
 
-    class OrchestratorTuiApp(App[None]):
+    class OrchestratorTuiApp(OrchestratorTuiActionsMixin, App[None]):
         CSS = """
         Screen {
             layout: vertical;
@@ -397,278 +279,8 @@ def build_tui_app(
             except NoMatches:
                 pass
 
-        def action_focus_next_panel(self) -> None:
-            self.runtime_state.cycle_focus(1)
-            self._render_focus()
-            self._sync_panel_focus()
-            self._update_status_panel()
-
-        def action_focus_previous_panel(self) -> None:
-            self.runtime_state.cycle_focus(-1)
-            self._render_focus()
-            self._sync_panel_focus()
-            self._update_status_panel()
-
-        def action_move_down(self) -> None:
-            if self.runtime_state.focused_panel == PANEL_DETAIL:
-                if not self.runtime_state.scroll_detail(1, self._detail_viewport_height()):
-                    self.runtime_state.status_message = "Detail view already at the bottom."
-                self._sync_detail_scroll()
-            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
-                try:
-                    self.query_one("#scheduler-log", RichLog).scroll_down()
-                except NoMatches:
-                    pass
-            else:
-                try:
-                    bead_tree = self.query_one("#bead-tree", BeadTree)
-                    bead_tree.action_cursor_down()
-                except NoMatches:
-                    pass
-            self._update_status_panel()
-
-        def action_move_up(self) -> None:
-            if self.runtime_state.focused_panel == PANEL_DETAIL:
-                if not self.runtime_state.scroll_detail(-1, self._detail_viewport_height()):
-                    self.runtime_state.status_message = "Detail view already at the top."
-                self._sync_detail_scroll()
-            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
-                try:
-                    self.query_one("#scheduler-log", RichLog).scroll_up()
-                except NoMatches:
-                    pass
-            else:
-                try:
-                    bead_tree = self.query_one("#bead-tree", BeadTree)
-                    bead_tree.action_cursor_up()
-                except NoMatches:
-                    pass
-            self._update_status_panel()
-
-        def action_page_up(self) -> None:
-            if self.runtime_state.focused_panel == PANEL_DETAIL:
-                if not self.runtime_state.page_detail(-1, self._detail_viewport_height()):
-                    self.runtime_state.status_message = "Detail view already at the top."
-                self._sync_detail_scroll()
-            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
-                try:
-                    self.query_one("#scheduler-log", RichLog).scroll_page_up()
-                except NoMatches:
-                    pass
-            else:
-                try:
-                    bead_tree = self.query_one("#bead-tree", BeadTree)
-                    bead_tree.action_page_up()
-                except NoMatches:
-                    pass
-            self._update_status_panel()
-
-        def action_page_down(self) -> None:
-            if self.runtime_state.focused_panel == PANEL_DETAIL:
-                if not self.runtime_state.page_detail(1, self._detail_viewport_height()):
-                    self.runtime_state.status_message = "Detail view already at the bottom."
-                self._sync_detail_scroll()
-            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
-                try:
-                    self.query_one("#scheduler-log", RichLog).scroll_page_down()
-                except NoMatches:
-                    pass
-            else:
-                try:
-                    bead_tree = self.query_one("#bead-tree", BeadTree)
-                    bead_tree.action_page_down()
-                except NoMatches:
-                    pass
-            self._update_status_panel()
-
-        def action_go_home(self) -> None:
-            if self.runtime_state.focused_panel == PANEL_DETAIL:
-                if not self.runtime_state.jump_detail_to_start():
-                    self.runtime_state.status_message = "Detail view already at the top."
-                self._sync_detail_scroll()
-            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
-                try:
-                    self.query_one("#scheduler-log", RichLog).scroll_home()
-                except NoMatches:
-                    pass
-            else:
-                try:
-                    bead_tree = self.query_one("#bead-tree", BeadTree)
-                    bead_tree.action_scroll_home()
-                except NoMatches:
-                    pass
-            self._update_status_panel()
-
-        def action_go_end(self) -> None:
-            if self.runtime_state.focused_panel == PANEL_DETAIL:
-                if not self.runtime_state.jump_detail_to_end(self._detail_viewport_height()):
-                    self.runtime_state.status_message = "Detail view already at the bottom."
-                self._sync_detail_scroll()
-            elif self.runtime_state.focused_panel == PANEL_SCHEDULER_LOG:
-                try:
-                    self.query_one("#scheduler-log", RichLog).scroll_end()
-                except NoMatches:
-                    pass
-            else:
-                try:
-                    bead_tree = self.query_one("#bead-tree", BeadTree)
-                    bead_tree.action_scroll_end()
-                except NoMatches:
-                    pass
-            self._update_status_panel()
-
-        def action_filter_next(self) -> None:
-            self._collapsed_bead_ids.clear()
-            self.runtime_state.cycle_filter(1)
-            self._render_all(force_detail=True, reset_detail_scroll=True)
-
-        def action_filter_previous(self) -> None:
-            self._collapsed_bead_ids.clear()
-            self.runtime_state.cycle_filter(-1)
-            self._render_all(force_detail=True, reset_detail_scroll=True)
-
-        def action_previous_detail_section(self) -> None:
-            self._move_detail_section(-1)
-
-        def action_next_detail_section(self) -> None:
-            self._move_detail_section(1)
-
-        def action_toggle_timed_refresh(self) -> None:
-            self.runtime_state.toggle_timed_refresh()
-            self._update_status_panel()
-
-        def action_manual_refresh(self) -> None:
-            if self.runtime_state.status_flow_active:
-                self.runtime_state.choose_status_target(BEAD_READY)
-                self._update_status_panel()
-                return
-            self.runtime_state._clear_pending_actions()
-            self.runtime_state.refresh(activity_message="Manual refresh completed.")
-            self.runtime_state.status_message = "Refreshed bead state."
-            self._render_all(force_detail=True)
-
-        def action_scheduler_once(self) -> None:
-            self._start_scheduler_worker()
-
-        def action_toggle_continuous_run(self) -> None:
-            self.runtime_state.toggle_continuous_run()
-            self._update_status_panel()
-
-        def action_retry_blocked(self) -> None:
-            self.runtime_state.request_retry_selected_blocked_bead()
-            self._update_status_panel()
-
-        def action_start_status_update(self) -> None:
-            self.runtime_state.open_status_update_flow()
-            self._update_status_panel()
-
-        def action_toggle_help(self) -> None:
-            if self.runtime_state.toggle_help_overlay():
-                self._update_status_panel()
-                self.push_screen(HelpOverlay(self.runtime_state), callback=lambda _: self._update_status_panel())
-                return
-            self._update_status_panel()
-
-        def action_toggle_maximize(self) -> None:
-            focused = self.runtime_state.focused_panel
-            try:
-                list_panel = self.query_one("#list-panel", Vertical)
-                detail_panel = self.query_one("#detail-panel", VerticalScroll)
-                log_panel = self.query_one("#scheduler-log", RichLog)
-                top_row = self.query_one("#top-row", Horizontal)
-            except NoMatches:
-                return
-            all_panels = {
-                PANEL_LIST: list_panel,
-                PANEL_DETAIL: detail_panel,
-                PANEL_SCHEDULER_LOG: log_panel,
-            }
-            if self.runtime_state.maximized_panel == focused:
-                # Restore: remove maximized/hidden from all panels and top-row
-                self.runtime_state.maximized_panel = None
-                for panel in all_panels.values():
-                    panel.remove_class("maximized", "hidden")
-                top_row.remove_class("hidden")
-                self.runtime_state.status_message = "Restored three-panel layout."
-            else:
-                # Maximize the focused panel, hide the others
-                self.runtime_state.maximized_panel = focused
-                for name, panel in all_panels.items():
-                    if name == focused:
-                        panel.remove_class("hidden")
-                        panel.add_class("maximized")
-                    else:
-                        panel.remove_class("maximized")
-                        panel.add_class("hidden")
-                # When maximizing the scheduler log, also hide the top-row container
-                # so the log panel can expand to fill all available space.
-                if focused == PANEL_SCHEDULER_LOG:
-                    top_row.add_class("hidden")
-                else:
-                    top_row.remove_class("hidden")
-                self.runtime_state.status_message = f"Maximized {focused} panel."
-            self._update_status_panel()
-            # Force bead tree to rebuild with the new panel width after layout settles.
-            self._last_list_render = ()
-            self.call_after_refresh(self._populate_bead_tree)
-
-        def action_request_merge(self) -> None:
-            self.runtime_state.request_merge()
-            self._update_status_panel()
-
-        def action_confirm_merge(self) -> None:
-            if self.runtime_state.help_overlay_visible:
-                return
-            if self.runtime_state.focused_panel == PANEL_DETAIL and not self.runtime_state.awaiting_merge_confirmation:
-                if self._toggle_active_detail_section():
-                    return
-            if not self.runtime_state.awaiting_merge_confirmation and self.runtime_state.focused_panel == PANEL_LIST:
-                # Delegate Enter to the Tree for expand/collapse toggle
-                try:
-                    bead_tree = self.query_one("#bead-tree", BeadTree)
-                    bead_tree.action_toggle_node()
-                except NoMatches:
-                    pass
-                return
-            self.runtime_state.confirm_merge()
-            self._render_all(force_detail=True)
-
-        def action_choose_blocked_status(self) -> None:
-            self.runtime_state.choose_status_target(BEAD_BLOCKED)
-            self._update_status_panel()
-
-        def action_choose_done_status(self) -> None:
-            self.runtime_state.choose_status_target(BEAD_DONE)
-            self._update_status_panel()
-
-        def action_confirm_pending_action(self) -> None:
-            if self.runtime_state.awaiting_retry_confirmation:
-                self.runtime_state.confirm_retry_selected_blocked_bead()
-            else:
-                self.runtime_state.confirm_status_update()
-            self._render_all(force_detail=True)
-
-        def action_cancel_pending_action(self) -> None:
-            self.runtime_state.cancel_pending_action()
-            self._update_status_panel()
-
-        def action_toggle_all_tree_nodes(self) -> None:
-            """Toggle all tree nodes between fully expanded and fully collapsed."""
-            try:
-                bead_tree = self.query_one("#bead-tree", BeadTree)
-            except NoMatches:
-                return
-            rows = self.runtime_state.rows
-            expandable_ids = {row.bead.bead_id for row in rows if row.has_children}
-            if not expandable_ids:
-                return
-            # If any expandable node is collapsed, expand all; otherwise collapse all.
-            any_collapsed = bool(self._collapsed_bead_ids & expandable_ids)
-            if any_collapsed:
-                self._collapsed_bead_ids.clear()
-            else:
-                self._collapsed_bead_ids = set(expandable_ids)
-            self._populate_bead_tree()
+        def _make_help_overlay_screen(self) -> "HelpOverlay":
+            return HelpOverlay(self.runtime_state)
 
         def _on_interval_tick(self) -> None:
             if not self.runtime_state.timed_refresh_enabled:
@@ -1048,64 +660,6 @@ def build_tui_app(
                 pass
 
     return OrchestratorTuiApp()
-
-
-class TuiSchedulerReporter:
-    """SchedulerReporter that posts events to a Textual app from a worker thread."""
-
-    def __init__(self, app: object, state: TuiRuntimeState) -> None:
-        self._app = app
-        self._state = state
-        self._cycle_header_logged = False
-        self._deferred_this_cycle: set[str] = set()
-
-    def _post(self, text: str, *, style: str | None = None) -> None:
-        ts = datetime.now().strftime("%H:%M:%S")
-        if not self._cycle_header_logged:
-            self._cycle_header_logged = True
-            self._state.deferred_this_cycle.clear()
-            header = f"[{ts}] Scheduler cycle starting..."
-            self._state.scheduler_log.append(header)
-            try:
-                self._app.call_from_thread(self._app._append_log_line, header)
-            except Exception:
-                pass
-        line = f"[{ts}] {text}"
-        if style:
-            line = f"[{style}]{line}[/{style}]"
-        self._state.scheduler_log.append(line)
-        try:
-            self._app.call_from_thread(self._app._append_log_line, line)
-        except Exception:
-            pass
-
-    def stop(self) -> None:
-        pass
-
-    def lease_expired(self, bead_id: str) -> None:
-        self._post(f"Lease expired: {bead_id} requeued")
-
-    def bead_started(self, bead: Bead) -> None:
-        self._post(f"[{bead.bead_id}] Started {bead.agent_type}: {bead.title}")
-
-    def worktree_ready(self, bead: Bead, branch_name: str, worktree_path: Path) -> None:
-        self._post(f"[{bead.bead_id}] Worktree ready: {worktree_path}")
-
-    def bead_completed(self, bead: Bead, summary: str, created: list[Bead]) -> None:
-        self._post(f"[{bead.bead_id}] Completed")
-        for child in created:
-            self._post(f"[{bead.bead_id}] Created followup {child.bead_id} ({child.agent_type})")
-
-    def bead_deferred(self, bead: Bead, reason: str) -> None:
-        self._post(f"[{bead.bead_id}] Deferred: {reason}", style="dim")
-        self._deferred_this_cycle.add(bead.bead_id)
-        self._state.deferred_this_cycle = set(self._deferred_this_cycle)
-
-    def bead_blocked(self, bead: Bead, summary: str) -> None:
-        self._post(f"[{bead.bead_id}] Blocked: {summary}")
-
-    def bead_failed(self, bead: Bead, summary: str) -> None:
-        self._post(f"[{bead.bead_id}] Failed: {summary}")
 
 
 def run_tui(

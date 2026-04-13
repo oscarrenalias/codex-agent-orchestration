@@ -39,7 +39,7 @@ src/agent_takt/
     finalize.py   Bead finalization and status transitions
     followups.py  Followup bead creation and scope syncing
     reporter.py   SchedulerReporter: cycle summary formatting
-  storage.py      Bead JSON persistence under .takt/beads/ + telemetry artifacts
+  storage.py      Bead JSON persistence under .takt/beads/ + telemetry artifacts; git commit failures are non-fatal and recorded as `git_commit_failed` execution events
   models.py       Bead (incl. recovery_for), Lease, HandoffSummary, AgentRunResult
   runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
   prompts.py      Worker/planner prompt construction + guardrail loading (config-overridable)
@@ -52,7 +52,8 @@ src/agent_takt/
     tree.py       Bead tree construction (build_tree_rows, collect_tree_rows)
     render.py     Panel rendering (render_tree_panel, render_detail_panel)
     actions.py    Operator action handlers (retry, status update, merge, scheduler)
-    app.py        Textual App class, keybindings, and TuiSchedulerReporter
+    app.py        Textual App class, keybindings, build_tui_app, run_tui
+    reporter.py   TuiSchedulerReporter: live scheduler event posting from worker threads
   console.py      CLI output helpers (spinners, spinner pool, colours)
   _assets.py      importlib.resources helpers for locating bundled package data (_data/)
   onboarding/     takt init/upgrade helpers package; all public symbols re-exported from __init__.py
@@ -106,7 +107,9 @@ See [docs/multi-backend-agents.md](docs/multi-backend-agents.md) for tool allowl
 
 ## Configuration
 
-Orchestrator settings live in `.takt/config.yaml`. Key dataclasses: `OrchestratorConfig`, `SchedulerConfig`, `BackendConfig`. Falls back to built-in defaults if the file is missing. The YAML file has three top-level blocks: `common`, `codex`, and `claude`.
+Orchestrator settings live in `.takt/config.yaml`. Key dataclasses: `OrchestratorConfig`, `SchedulerConfig`, `BackendConfig`, `CommonConfig`. Falls back to built-in defaults if the file is missing. The YAML file has three top-level blocks: `common`, `codex`, and `claude`.
+
+`CommonConfig` fields (under the `common:` block): `test_command`, `test_timeout_seconds`, `memory_cache_dir`. The `memory_cache_dir` key sets the directory where the ONNX embedding model is cached (default: `~/.cache/agent-takt/models`); override in CI environments or to share the model cache across projects.
 
 Key functions in `config.py`: `load_config(root)`, `default_config()`, `config.backend(name)`, `config.allowed_tools_for(backend, agent_type)`.
 
@@ -131,7 +134,7 @@ After `takt run` completes, the CLI prints a cycle summary and emits a JSON bloc
 
 - Guardrail templates are **mandatory**. Missing `templates/agents/{agent_type}.md` fails the bead with `FileNotFoundError`.
 - Bead metadata is authoritative; always read/write through `RepositoryStorage`.
-- Execution history is append-only (audit trail).
+- Execution history is append-only (audit trail). A `git_commit_failed` event is recorded when a git auto-commit in `_git_commit_bead` fails — the bead JSON is still persisted to disk so no state is lost. Deletion commits log only (no event appended, since the bead file no longer exists).
 - Operator status updates are restricted: developer beads cannot be manually marked `done` (must go through scheduler to trigger followups).
 - File-scope conflicts are checked statically at schedule time. Overlapping `expected_files`/`expected_globs` between in-progress beads cause blocking.
 - **Branch naming**: `feature/{feature_root_id.lower()}` (e.g. `B-a7bc3f91` → `feature/b-a7bc3f91`).
