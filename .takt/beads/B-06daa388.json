@@ -4585,6 +4585,15 @@
       "agent_type": "developer",
       "summary": "Synced bundled skill-spec-management files with v0.1.10. Updated spec.py (adds --full flag to `show`, `cmd_create` auto-creates lifecycle dirs inline instead of calling `_require_lifecycle_dirs`, adds `cmd_remove` subcommand) and SKILL.md (updated description/frontmatter, adds `--full` docs for `show`, adds `remove` subcommand docs, `create` auto-dir notes, custom status docs). The agents_skills copy was already in sync \u2014 no changes needed there.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T09:39:40.245255+00:00",
+      "event": "git_commit_failed",
+      "agent_type": "scheduler",
+      "summary": "git commit failed: Command '['git', 'commit', '-m', '[bead] B-06daa388: done', '--no-verify']' returned non-zero exit status 1.",
+      "details": {
+        "error": "Command '['git', 'commit', '-m', '[bead] B-06daa388: done', '--no-verify']' returned non-zero exit status 1."
+      }
     }
   ],
   "metadata": {
