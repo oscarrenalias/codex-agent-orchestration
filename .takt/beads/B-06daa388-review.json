@@ -3,7 +3,7 @@
   "title": "Review Sync bundled skill-spec-management _data/ with v0.1.10",
   "agent_type": "review",
   "description": "Review implementation for B-06daa388",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-06daa388",
   "dependencies": [
@@ -3403,9 +3403,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 changes are isolated to bundled _data/ assets. No other in-progress beads touch these files.",
-  "branch_name": "",
+  "branch_name": "feature/b-06daa388",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-06daa388-review",
+    "expires_at": "2026-04-13T10:14:26.817169+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3414,9 +3417,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T09:44:27.784437+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-13T09:44:27.784464+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-06daa388-review",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-06daa388-review/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
