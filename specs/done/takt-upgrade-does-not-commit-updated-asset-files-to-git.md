@@ -5,7 +5,7 @@ description: "Add a git commit step to takt upgrade so installed/updated asset f
 dependencies: null
 priority: high
 complexity: low
-status: planned
+status: done
 tags: []
 scope:
   in: null
