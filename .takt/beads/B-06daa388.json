@@ -1,0 +1,67 @@
+{
+  "bead_id": "B-06daa388",
+  "title": "Sync bundled skill-spec-management _data/ with v0.1.10",
+  "agent_type": "developer",
+  "description": "The bundled copy at src/agent_takt/_data/claude_skills/skill-spec-management/ is behind the APM-installed v0.1.10 version. spec.py and SKILL.md both differ from .claude/skills/skill-spec-management/. The extra files (.github/, .gitignore, CLAUDE.md, README.md, apm.yml, tests/) were already removed by the previous bead but spec.py and SKILL.md still need updating.\n\nSteps:\n1. Copy .claude/skills/skill-spec-management/spec.py to src/agent_takt/_data/claude_skills/skill-spec-management/spec.py\n2. Copy .claude/skills/skill-spec-management/SKILL.md to src/agent_takt/_data/claude_skills/skill-spec-management/SKILL.md\n3. Check src/agent_takt/_data/agents_skills/task/spec-management/ \u2014 if spec.py or SKILL.md differ from .agents/skills/task/spec-management/, update those too.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": null,
+  "dependencies": [],
+  "acceptance_criteria": [
+    "src/agent_takt/_data/claude_skills/skill-spec-management/spec.py matches .claude/skills/skill-spec-management/spec.py exactly",
+    "src/agent_takt/_data/claude_skills/skill-spec-management/SKILL.md matches .claude/skills/skill-spec-management/SKILL.md exactly",
+    "src/agent_takt/_data/agents_skills/task/spec-management/ is in sync with .agents/skills/task/spec-management/ where applicable",
+    "All existing tests pass"
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B-06daa388",
+  "execution_branch_name": "feature/b-06daa388",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-06daa388",
+  "expected_files": [
+    "src/agent_takt/_data/claude_skills/skill-spec-management/spec.py",
+    "src/agent_takt/_data/claude_skills/skill-spec-management/SKILL.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-13T09:33:40.608794+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
