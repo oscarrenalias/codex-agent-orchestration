@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-64c49163",
-  "dependencies": [],
+  "dependencies": [
+    "B-2074ff84"
+  ],
   "acceptance_criteria": [
     "A test covers `dry_run=False` and asserts `commit_scaffold()` is called, or equivalent git commit behavior is invoked, when at least one asset update occurs.",
     "A test covers `dry_run=True` and asserts no commit is performed while the dry-run notice is emitted.",
