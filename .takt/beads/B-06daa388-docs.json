@@ -120,6 +120,15 @@
       "agent_type": "documentation",
       "summary": "Verified SKILL.md documentation for skill-spec-management v0.1.10 is complete and accurate \u2014 developer bead included doc changes with implementation.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-13T09:44:26.762318+00:00",
+      "event": "git_commit_failed",
+      "agent_type": "scheduler",
+      "summary": "git commit failed: Command '['git', 'commit', '-m', '[bead] B-06daa388-docs: done', '--no-verify']' returned non-zero exit status 128.",
+      "details": {
+        "error": "Command '['git', 'commit', '-m', '[bead] B-06daa388-docs: done', '--no-verify']' returned non-zero exit status 128."
+      }
     }
   ],
   "metadata": {
