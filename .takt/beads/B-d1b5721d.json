@@ -6,7 +6,12 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-ddc97b22",
-  "dependencies": [],
+  "dependencies": [
+    "B-cd620811",
+    "B-09f89073",
+    "B-843d8abe",
+    "B-9490b3cd"
+  ],
   "acceptance_criteria": [
     "Tests verify `--output` writes the expected raw JSON and does not create beads.",
     "Tests verify `--from-file` persists expected beads from a prewritten file without calling planner generation.",
