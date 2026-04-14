@@ -2255,7 +2255,9 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
-    "src/agent_takt/storage.py"
+    "CLAUDE.md",
+    "src/agent_takt/storage.py",
+    "tests/test_scheduler_beads.py"
   ],
   "changed_files": [
     ".takt/beads/.gitkeep",
@@ -3375,7 +3377,9 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
-    "src/agent_takt/storage.py"
+    "CLAUDE.md",
+    "src/agent_takt/storage.py",
+    "tests/test_scheduler_beads.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
