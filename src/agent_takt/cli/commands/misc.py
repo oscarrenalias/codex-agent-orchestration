@@ -32,6 +32,19 @@ def command_plan(args: argparse.Namespace, planner: PlanningService, console: Co
                 "title": bead.title,
             })
         console.dump_json({"created": created_beads})
+    elif getattr(args, "output", None):
+        output_path = Path(args.output)
+        output_path.write_text(
+            _json.dumps(asdict(proposal), indent=2),
+            encoding="utf-8",
+        )
+        console.success(f"Plan written to {output_path}")
+        console.dump_json({
+            "epic_title": proposal.epic_title,
+            "epic_description": proposal.epic_description,
+            "linked_docs": proposal.linked_docs,
+            "feature": asdict(proposal.feature) if proposal.feature else None,
+        })
     else:
         console.dump_json({
             "epic_title": proposal.epic_title,
