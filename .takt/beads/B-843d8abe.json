@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-843d8abe",
+  "title": "Implement plan output file flow",
+  "agent_type": "developer",
+  "description": "Add the `--output` branch in `command_plan` so the planner runs once, writes raw planner JSON to the operator-chosen file, prints the usual human-readable summary, and exits without persisting beads.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-ddc97b22",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`takt plan --output <file> <spec>` runs planner generation once and writes the raw planner bead list JSON to the requested file.",
+    "The command still prints the same human-readable plan summary expected from a dry run.",
+    "No beads are persisted when `--output` is used.",
+    "The output format matches the raw planner output list structure described in the spec."
+  ],
+  "linked_docs": [
+    "spec-80cac16a"
+  ],
+  "feature_root_id": "B-ddc97b22",
+  "execution_branch_name": "feature/b-ddc97b22",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ddc97b22",
+  "expected_files": [
+    "src/agent_takt/cli/commands/misc.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-14T07:59:53.779135+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
