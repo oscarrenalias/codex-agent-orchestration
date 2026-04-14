@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-ddc97b22",
-  "dependencies": [],
+  "dependencies": [
+    "B-cd620811"
+  ],
   "acceptance_criteria": [
     "`takt plan --output <file> <spec>` runs planner generation once and writes the raw planner bead list JSON to the requested file.",
     "The command still prints the same human-readable plan summary expected from a dry run.",
