@@ -2299,9 +2299,12 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "AGENTS.md",
+    "CLAUDE.md",
     "src/agent_takt/cli/commands/misc.py",
     "src/agent_takt/cli/parser.py",
-    "src/agent_takt/planner.py"
+    "src/agent_takt/planner.py",
+    "tests/test_cli_plan.py"
   ],
   "changed_files": [
     ".takt/beads/.gitkeep",
@@ -3433,9 +3436,12 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "AGENTS.md",
+    "CLAUDE.md",
     "src/agent_takt/cli/commands/misc.py",
     "src/agent_takt/cli/parser.py",
-    "src/agent_takt/planner.py"
+    "src/agent_takt/planner.py",
+    "tests/test_cli_plan.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
