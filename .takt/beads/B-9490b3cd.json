@@ -3,7 +3,7 @@
   "title": "Implement plan promotion from saved file",
   "agent_type": "developer",
   "description": "Add the `--from-file` branch in `command_plan` so saved planner JSON is loaded from disk, passed through the shared persistence path, and persisted without invoking the planner LLM.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-ddc97b22",
   "dependencies": [
@@ -23,41 +23,47 @@
   "execution_branch_name": "feature/b-ddc97b22",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ddc97b22",
   "expected_files": [
-    "src/agent_takt/cli/commands/misc.py",
-    "src/agent_takt/planner.py"
+    "src/agent_takt/cli/commands/misc.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/cli/commands/misc.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/cli/commands/misc.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Added `_plan_child_from_dict` and `_plan_proposal_from_dict` helpers; added `--from-file` branch in `command_plan` that loads plan JSON, reconstructs PlanProposal, and calls `planner.write_plan()` through the shared persistence path; added `spec_file` guard for non-from-file branches.",
+    "remaining": "N/A",
+    "risks": "The `--from-file` flow calls `planner.write_plan(proposal)` without `spec_path`, which skips spec memory ingestion. This is intentional \u2014 there is no spec file in this flow. Operators who also want the spec ingested should pass the spec path manually.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/cli/commands/misc.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify the `--from-file` flow: round-trip a plan through `--output` then `--from-file`, confirm beads are created, confirm the LLM is not invoked, and confirm output format matches `--write`.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/cli/commands/misc.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/cli/commands/misc.py"
+    ],
+    "conflict_risks": "None \u2014 changes are confined to `misc.py` and add new code paths only; existing `--write` and `--output` paths are unchanged.",
+    "design_decisions": "Deserialization helpers (`_plan_child_from_dict`, `_plan_proposal_from_dict`) are implemented in `misc.py` rather than on the dataclasses themselves, because this is a CLI presentation concern (reading back the `asdict()` wire format) and adding `from_dict` classmethods to `PlanChild`/`PlanProposal` for a single call site would be over-engineering. The `--from-file` branch is handled first in `command_plan` before the `spec_file` check, so the guard only applies to the remaining branches. `planner.write_plan(proposal)` is called without `spec_path` to deliberately skip spec memory ingestion \u2014 there is no spec file when promoting from a saved plan file.",
+    "test_coverage_notes": "Tester should cover: (1) happy path \u2014 `--output plan.json` followed by `--from-file plan.json` creates beads correctly; (2) missing file error \u2014 `--from-file nonexistent.json` returns exit code 1 with an error message; (3) malformed JSON \u2014 `--from-file bad.json` returns exit code 1 via `spinner.fail`; (4) `spec_file` omitted without `--from-file` returns exit code 1; (5) output format `{\"created\": [...]}` matches the `--write` path exactly; (6) the LLM runner `propose()` is not called in the `--from-file` path.",
+    "known_limitations": "The `--from-file` flow skips spec memory ingestion because there is no spec path. This is by design \u2014 the plan JSON format does not carry the original spec text. If ingestion is needed, it can be wired by passing a `--spec-file` argument alongside `--from-file` in a future enhancement."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 changes are confined to `misc.py` and add new code paths only; existing `--write` and `--output` paths are unchanged.",
   "branch_name": "feature/b-ddc97b22",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ddc97b22",
-  "lease": {
-    "owner": "developer:B-9490b3cd",
-    "expires_at": "2026-04-14T08:36:07.181661+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +105,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-9490b3cd/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-14T08:08:52.299333+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Implemented the `--from-file` branch in `command_plan`. Added two private deserialization helpers (`_plan_child_from_dict`, `_plan_proposal_from_dict`) that reconstruct a `PlanProposal` from the JSON produced by `--output`. The `--from-file` flow reads the plan JSON from disk, deserializes it, calls `planner.write_plan(proposal)` (the shared persistence helper) without a spec path, and emits `{\"created\": [...]}` output identical to the `--write` path. No LLM invocation occurs. A `spec_file` guard was also added to handle the now-optional positional argument cleanly.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -171,7 +184,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Implemented the `--from-file` branch in `command_plan`. Added two private deserialization helpers (`_plan_child_from_dict`, `_plan_proposal_from_dict`) that reconstruct a `PlanProposal` from the JSON produced by `--output`. The `--from-file` flow reads the plan JSON from disk, deserializes it, calls `planner.write_plan(proposal)` (the shared persistence helper) without a spec path, and emits `{\"created\": [...]}` output identical to the `--write` path. No LLM invocation occurs. A `spec_file` guard was also added to handle the now-optional positional argument cleanly.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.4787902,
+      "duration_ms": 153378,
+      "duration_api_ms": 147322,
+      "num_turns": 16,
+      "input_tokens": 3047,
+      "output_tokens": 9286,
+      "cache_creation_tokens": 43526,
+      "cache_read_tokens": 548349,
+      "stop_reason": "end_turn",
+      "session_id": "fbe9ba9e-effa-46e8-8482-7b72798657e0",
+      "permission_denials": [],
+      "prompt_chars": 7999,
+      "prompt_lines": 164,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.4787902,
+        "duration_ms": 153378,
+        "duration_api_ms": 147322,
+        "num_turns": 16,
+        "input_tokens": 3047,
+        "output_tokens": 9286,
+        "cache_creation_tokens": 43526,
+        "cache_read_tokens": 548349,
+        "stop_reason": "end_turn",
+        "session_id": "fbe9ba9e-effa-46e8-8482-7b72798657e0",
+        "permission_denials": [],
+        "prompt_chars": 7999,
+        "prompt_lines": 164,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "dc9c782326f2f07cac955a8b9541f407b7e7c1b3"
   },
   "labels": [],
   "recovery_for": null,
