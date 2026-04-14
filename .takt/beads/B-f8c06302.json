@@ -1,0 +1,71 @@
+{
+  "bead_id": "B-f8c06302",
+  "title": "Document staged planning workflow",
+  "agent_type": "documentation",
+  "description": "Document the new operator workflow for generating a plan once, reviewing the saved JSON, and promoting it later from file, including flag semantics and cleanup expectations.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-ddc97b22",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "CLI-facing documentation explains `--output` and `--from-file` usage with examples.",
+    "Documentation states that `--output` does not persist beads and `--from-file` does not call the planner.",
+    "Documentation preserves current guidance for existing dry-run and `--write` behavior.",
+    "Operator responsibility for plan file cleanup is stated clearly."
+  ],
+  "linked_docs": [
+    "spec-80cac16a",
+    "AGENTS.md"
+  ],
+  "feature_root_id": "B-ddc97b22",
+  "execution_branch_name": "feature/b-ddc97b22",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ddc97b22",
+  "expected_files": [],
+  "expected_globs": [
+    "README.md",
+    "docs/**/*.md",
+    "src/agent_takt/cli/**/*.py"
+  ],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-14T07:59:55.095126+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
