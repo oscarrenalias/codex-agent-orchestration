@@ -26,8 +26,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     plan_parser = subparsers.add_parser("plan", help="Plan a spec file into a bead graph")
     plan_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
-    plan_parser.add_argument("spec_file", help="Path to the spec Markdown file to plan")
-    plan_parser.add_argument("--write", action="store_true", help="Persist the bead graph to storage (dry-run if omitted)")
+    plan_parser.add_argument(
+        "spec_file",
+        nargs="?",
+        help="Path to the spec Markdown file to plan (required unless --from-file is used)",
+    )
+    plan_mode_group = plan_parser.add_mutually_exclusive_group()
+    plan_mode_group.add_argument(
+        "--write",
+        action="store_true",
+        help="Persist the bead graph to storage (dry-run if omitted)",
+    )
+    plan_mode_group.add_argument(
+        "--output",
+        metavar="FILE",
+        help="Write the plan JSON to FILE without persisting any beads",
+    )
+    plan_mode_group.add_argument(
+        "--from-file",
+        metavar="FILE",
+        dest="from_file",
+        help="Read plan JSON from FILE and persist beads without calling the LLM (spec_file not required)",
+    )
 
     run_parser = subparsers.add_parser("run", help="Run the scheduler to quiescence")
     run_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
