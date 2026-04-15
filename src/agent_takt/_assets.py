@@ -38,11 +38,6 @@ def packaged_claude_skills_dir() -> Path:
     return _data_path("claude_skills")
 
 
-def packaged_docs_memory_dir() -> Path:
-    """Path to the bundled ``docs/memory/`` directory."""
-    return _data_path("docs", "memory")
-
-
 def packaged_default_config() -> Path:
     """Path to the bundled default ``config.yaml``."""
     return _data_path("default_config.yaml")

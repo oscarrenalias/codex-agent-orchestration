@@ -510,6 +510,56 @@ def delete_entry(db_path: Path, entry_id: str) -> None:
         conn.close()
 
 
+def list_namespaces(db_path: Path) -> list[dict]:
+    """Return all namespaces present in the database with their entry counts.
+
+    Returns a list of dicts with keys ``namespace`` and ``count``, ordered by
+    count descending.  Returns an empty list when no entries exist.
+    """
+    conn = _open_conn(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT namespace, COUNT(*) AS count FROM entries"
+            " GROUP BY namespace ORDER BY count DESC"
+        ).fetchall()
+        return [{"namespace": row["namespace"], "count": row["count"]} for row in rows]
+    finally:
+        conn.close()
+
+
+def recent_entries(
+    db_path: Path,
+    namespace: str,
+    *,
+    limit: int = 5,
+) -> list[dict]:
+    """Return the most recent entries for *namespace*, newest first.
+
+    Results are ordered by insertion order (``rowid`` descending) and capped at
+    *limit*.  Returns an empty list when the namespace has no entries.
+
+    Each result dict contains: ``id``, ``namespace``, ``text``, ``created_at``.
+    """
+    conn = _open_conn(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT id, namespace, text, created_at FROM entries"
+            " WHERE namespace = ? ORDER BY rowid DESC LIMIT ?",
+            (namespace, limit),
+        ).fetchall()
+        return [
+            {
+                "id": row["id"],
+                "namespace": row["namespace"],
+                "text": row["text"],
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ]
+    finally:
+        conn.close()
+
+
 def stats(db_path: Path) -> dict[str, Any]:
     """Return basic statistics about the memory database.
 

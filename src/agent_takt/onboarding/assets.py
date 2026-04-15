@@ -16,7 +16,6 @@ from .._assets import (
     packaged_agents_skills_dir,
     packaged_claude_skills_dir,
     packaged_default_config,
-    packaged_docs_memory_dir,
     packaged_skill_templates_dir,
     packaged_templates_dir,
 )
