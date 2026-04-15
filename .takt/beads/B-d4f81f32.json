@@ -3,7 +3,7 @@
   "title": "Remove onboarding memory seed scaffolding",
   "agent_type": "developer",
   "description": "Delete the legacy docs/memory seeding path from onboarding and packaged assets. Remove the scaffold helper/constants, stop staging docs/memory in scaffold commits, remove packaged asset resolvers, and delete the packaged/project memory seed files from the repo.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
   "dependencies": [],
@@ -32,37 +32,73 @@
     "src/agent_takt/_data/docs/memory/**",
     "docs/memory/**"
   ],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/_assets.py",
+    "src/agent_takt/onboarding/__init__.py",
+    "src/agent_takt/onboarding/assets.py",
+    "src/agent_takt/onboarding/scaffold.py",
+    "tests/test_assets.py",
+    "tests/test_onboarding_scaffold.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/_assets.py",
+    "src/agent_takt/onboarding/__init__.py",
+    "src/agent_takt/onboarding/assets.py",
+    "src/agent_takt/onboarding/scaffold.py",
+    "tests/test_assets.py",
+    "tests/test_onboarding_scaffold.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "All four acceptance criteria verified: (1) scaffold_project() no longer creates/reports docs/memory seed files; (2) commit_scaffold() no longer stages docs/memory/; (3) _assets.py and onboarding/assets.py no longer expose packaged_docs_memory_dir or resolve_memory_seed; (4) legacy seed files under src/agent_takt/_data/docs/memory/ removed (project-root docs/memory/ was already empty in this worktree). All modified Python files compile and import cleanly.",
+    "remaining": "N/A",
+    "risks": "Tests for removed functions (TestResolveMemorySeed, TestSeedMemoryFiles, TestLanguageSpecificKnownIssues, packaged_docs_memory_dir assertions) are deleted alongside the implementation. The tester agent should verify the remaining scaffold tests still pass and that no other code imports the removed symbols at runtime.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/_assets.py",
+      "src/agent_takt/onboarding/__init__.py",
+      "src/agent_takt/onboarding/assets.py",
+      "src/agent_takt/onboarding/scaffold.py",
+      "tests/test_assets.py",
+      "tests/test_onboarding_scaffold.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Run test suite to verify scaffold, asset, and upgrade tests pass without the deleted code paths.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
-    "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "expected_files": [
+      "src/agent_takt/onboarding/scaffold.py",
+      "src/agent_takt/onboarding/assets.py",
+      "src/agent_takt/_assets.py",
+      "src/agent_takt/_data/docs/memory/conventions.md",
+      "src/agent_takt/_data/docs/memory/known-issues.md",
+      "docs/memory/conventions.md",
+      "docs/memory/known-issues.md"
+    ],
+    "expected_globs": [
+      "src/agent_takt/_data/docs/memory/**",
+      "docs/memory/**"
+    ],
+    "touched_files": [
+      "src/agent_takt/_assets.py",
+      "src/agent_takt/onboarding/__init__.py",
+      "src/agent_takt/onboarding/assets.py",
+      "src/agent_takt/onboarding/scaffold.py",
+      "tests/test_assets.py",
+      "tests/test_onboarding_scaffold.py"
+    ],
+    "conflict_risks": "Low. Changes are purely subtractive \u2014 no new logic added. The only downstream risk is if any code outside this bead's expected_files imported the deleted symbols; grep found no such references.",
+    "design_decisions": "Deleted the memory seed constants (`_KNOWN_ISSUES_CONTENT`, `_CONVENTIONS_CONTENT`) and helper functions entirely rather than deprecating them, as the spec explicitly calls for removal. Updated corresponding test files alongside source files to keep the test suite in a passing state \u2014 the tester agent cannot run if imports fail. The `docs/memory/` directory at the project root is preserved (it is a user-owned directory for runtime memory entries, not a seeded artifact); only the packaged seed files and the code that wrote them were removed.",
+    "test_coverage_notes": "Tester should verify: (1) `takt init` scaffold flow completes without attempting to create docs/memory files; (2) `TestScaffoldProject.test_scaffold_creates_required_structure` passes without the docs/memory assertions; (3) `TestCommitScaffold` tests pass without docs/memory in setup; (4) `test_assets.py` helpers compile and run cleanly; (5) no ImportError on `from agent_takt.onboarding import ...` for any of the remaining exported symbols.",
+    "known_limitations": "The `upgrade.py` docstring still mentions `docs/memory/` as user-owned excluded from manifests \u2014 this is still behaviorally correct (any path passed to write_assets_manifest with a docs/memory/ prefix is silently filtered) so no change was made. If the tester or review agent considers this a documentation gap, it can be addressed in a follow-up."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "Low. Changes are purely subtractive \u2014 no new logic added. The only downstream risk is if any code outside this bead's expected_files imported the deleted symbols; grep found no such references.",
   "branch_name": "feature/b-4be1edbe",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4be1edbe",
-  "lease": {
-    "owner": "developer:B-d4f81f32",
-    "expires_at": "2026-04-15T06:35:33.786096+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -104,6 +140,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-d4f81f32/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-15T06:11:41.063191+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Removed all legacy docs/memory seeding infrastructure from the onboarding package. Deleted `_KNOWN_ISSUES_CONTENT`, `_CONVENTIONS_CONTENT`, `_language_specific_known_issues()`, and `seed_memory_files()` from scaffold.py. Removed `packaged_docs_memory_dir()` from `_assets.py` and `resolve_memory_seed()` from `onboarding/assets.py`. Removed `\"docs/memory/\"` from `commit_scaffold()` stage paths. Removed step 6 (seed memory files) from `scaffold_project()` and renumbered remaining steps. Updated `onboarding/__init__.py` to remove all deleted exports. Deleted `src/agent_takt/_data/docs/memory/conventions.md`, `src/agent_takt/_data/docs/memory/known-issues.md`, and the now-empty `_data/docs/` tree. Updated `tests/test_onboarding_scaffold.py` and `tests/test_assets.py` to remove tests and imports for all deleted symbols, and removed the `docs/memory/` check from the scaffold integration test and commit test setup.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -181,7 +224,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Removed all legacy docs/memory seeding infrastructure from the onboarding package. Deleted `_KNOWN_ISSUES_CONTENT`, `_CONVENTIONS_CONTENT`, `_language_specific_known_issues()`, and `seed_memory_files()` from scaffold.py. Removed `packaged_docs_memory_dir()` from `_assets.py` and `resolve_memory_seed()` from `onboarding/assets.py`. Removed `\"docs/memory/\"` from `commit_scaffold()` stage paths. Removed step 6 (seed memory files) from `scaffold_project()` and renumbered remaining steps. Updated `onboarding/__init__.py` to remove all deleted exports. Deleted `src/agent_takt/_data/docs/memory/conventions.md`, `src/agent_takt/_data/docs/memory/known-issues.md`, and the now-empty `_data/docs/` tree. Updated `tests/test_onboarding_scaffold.py` and `tests/test_assets.py` to remove tests and imports for all deleted symbols, and removed the `docs/memory/` check from the scaffold integration test and commit test setup.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 1.6334825000000002,
+      "duration_ms": 347047,
+      "duration_api_ms": 326778,
+      "num_turns": 55,
+      "input_tokens": 49,
+      "output_tokens": 22714,
+      "cache_creation_tokens": 80662,
+      "cache_read_tokens": 3291300,
+      "stop_reason": "end_turn",
+      "session_id": "9fbb13cb-e26a-448c-bb2d-f33b5a2e2329",
+      "permission_denials": [],
+      "prompt_chars": 8313,
+      "prompt_lines": 169,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.6334825000000002,
+        "duration_ms": 347047,
+        "duration_api_ms": 326778,
+        "num_turns": 55,
+        "input_tokens": 49,
+        "output_tokens": 22714,
+        "cache_creation_tokens": 80662,
+        "cache_read_tokens": 3291300,
+        "stop_reason": "end_turn",
+        "session_id": "9fbb13cb-e26a-448c-bb2d-f33b5a2e2329",
+        "permission_denials": [],
+        "prompt_chars": 8313,
+        "prompt_lines": 169,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "8c5f58232461ae79a37e19d11be0ec732ff2f945"
   },
   "labels": [],
   "recovery_for": null,
