@@ -3,7 +3,7 @@
   "title": "Update memory CLI test coverage",
   "agent_type": "developer",
   "description": "Refresh memory CLI tests to remove migrate-path assertions and add coverage for namespace list/show output, limits, empty namespace behavior, and non-regression for existing commands.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
   "dependencies": [
@@ -25,37 +25,44 @@
     "tests/test_cli_memory.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_cli_memory.py"
+  ],
+  "changed_files": [
+    "tests/test_cli_memory.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "- Removed `test_ingest_migrate_with_md_files` and `test_ingest_migrate_no_directory_warns_exits_0` \u2014 both relied on `args.migrate` which the current `_cmd_ingest` implementation no longer checks, making them broken against the current code.\\n- Removed `ns.migrate = False` default from `_args` helper since the flag is no longer used anywhere.\\n- Added `ns.namespace_command = None` default to `_args` helper.\\n- Added `TestMemoryCliNamespace` class with `_ns_args` convenience builder and 7 test methods:\\n  - `test_namespace_list_ordering`: inserts entries across 3 namespaces (counts 3/2/1), verifies descending-count order and that \"global\" is first.\\n  - `test_namespace_list_empty_db`: empty DB \u2192 returns `[]`.\\n  - `test_namespace_list_without_db_exits_1`: no DB \u2192 rc=1.\\n  - `test_namespace_show_default_limit`: 7 entries inserted, default limit 5 applied, entry shape verified.\\n  - `test_namespace_show_custom_limit`: 10 entries, limit=3 applied.\\n  - `test_namespace_show_nonexistent_namespace`: non-existent namespace \u2192 `[]`.\\n  - `test_namespace_show_without_db_exits_1`: no DB \u2192 rc=1.\\n- Updated module docstring to reflect new coverage.\\n- Syntax-checked with `python3 -m py_compile` \u2014 clean.",
+    "remaining": "N/A",
+    "risks": "None. The changes are confined to the test file. No production code was modified.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_cli_memory.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Run tester bead to execute the updated test suite.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "tests/test_cli_memory.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "tests/test_cli_memory.py"
+    ],
+    "conflict_risks": "None \u2014 only tests/test_cli_memory.py was modified.",
+    "design_decisions": "Kept the two-layer args-building approach (`_args` + `_ns_args`) rather than merging everything into one helper, to keep the namespace tests readable and avoid breaking existing test helper call-sites. The `_ns_args` helper delegates to `_args` then stamps `namespace_command`, matching how the CLI dispatcher works (`memory_command=\"namespace\"`, `namespace_command=\"list\"|\"show\"`).",
+    "test_coverage_notes": "The tester should verify all 7 new namespace tests pass against the live memory backend (with real sqlite-vec), that the two removed migrate tests are gone (no AttributeError on args.migrate), and that the remaining ingest tests still pass for the single-file path.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only tests/test_cli_memory.py was modified.",
   "branch_name": "feature/b-4be1edbe",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4be1edbe",
-  "lease": {
-    "owner": "developer:B-24fb6423",
-    "expires_at": "2026-04-15T06:43:38.575532+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -97,6 +104,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-24fb6423/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-15T06:16:05.932810+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Updated tests/test_cli_memory.py to remove the two stale migrate-related tests and add a new TestMemoryCliNamespace class with 7 tests covering namespace list ordering, empty DB, missing DB, namespace show default limit, custom limit, non-existent namespace empty result, and missing DB exit code.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -167,7 +181,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated tests/test_cli_memory.py to remove the two stale migrate-related tests and add a new TestMemoryCliNamespace class with 7 tests covering namespace list ordering, empty DB, missing DB, namespace show default limit, custom limit, non-existent namespace empty result, and missing DB exit code.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.36814155,
+      "duration_ms": 138305,
+      "duration_api_ms": 132813,
+      "num_turns": 14,
+      "input_tokens": 12,
+      "output_tokens": 10072,
+      "cache_creation_tokens": 31087,
+      "cache_read_tokens": 326281,
+      "stop_reason": "end_turn",
+      "session_id": "98cc061c-70a1-4089-a76b-75f000439a46",
+      "permission_denials": [],
+      "prompt_chars": 7852,
+      "prompt_lines": 162,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.36814155,
+        "duration_ms": 138305,
+        "duration_api_ms": 132813,
+        "num_turns": 14,
+        "input_tokens": 12,
+        "output_tokens": 10072,
+        "cache_creation_tokens": 31087,
+        "cache_read_tokens": 326281,
+        "stop_reason": "end_turn",
+        "session_id": "98cc061c-70a1-4089-a76b-75f000439a46",
+        "permission_denials": [],
+        "prompt_chars": 7852,
+        "prompt_lines": 162,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "e479b3563669a8cdafa43ff2cb2f83cae53e9986"
   },
   "labels": [],
   "recovery_for": null,
