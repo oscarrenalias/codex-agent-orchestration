@@ -3,7 +3,7 @@
   "title": "Review memory CLI cleanup feature",
   "agent_type": "review",
   "description": "Perform a final review of the implementation, test coverage, and documentation for regressions, incomplete cleanup, command-shape mismatches, and dependency or file-scope issues across the feature tree.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
   "dependencies": [
@@ -3530,9 +3530,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 both files are within this bead's declared scope and the changes are deletions only.\nNo conflict risks \u2014 only memory.py was touched; no other in-progress beads claim this file.\nNone. The only changed files are `parser.py` and `commands/memory.py`. No sibling beads claim these files.\nLow. Changes are purely subtractive \u2014 no new logic added. The only downstream risk is if any code outside this bead's expected_files imported the deleted symbols; grep found no such references.\nNone \u2014 memory.py CLI commands file is not in contention with any other in-progress beads\nNone \u2014 changes are confined to test files with no overlap with other in-progress beads.\nNone \u2014 only tests/test_cli_memory.py was modified.",
-  "branch_name": "",
+  "branch_name": "feature/b-4be1edbe",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-d58061fb",
+    "expires_at": "2026-04-15T06:49:35.768634+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3541,9 +3544,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-15T06:19:36.059410+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-15T06:19:36.059440+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-d58061fb",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-d58061fb/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
