@@ -3,7 +3,7 @@
   "title": "Add namespace query helpers to memory backend",
   "agent_type": "developer",
   "description": "Implement database helpers for namespace introspection in the SQLite memory backend: one function to list namespaces with counts ordered descending, and one function to fetch recent entries for a namespace ordered by insertion time descending.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
   "dependencies": [],
@@ -22,37 +22,52 @@
     "src/agent_takt/memory.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/_assets.py",
+    "src/agent_takt/memory.py",
+    "src/agent_takt/onboarding/assets.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/_assets.py",
+    "src/agent_takt/memory.py",
+    "src/agent_takt/onboarding/assets.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Added `list_namespaces(db_path) -> list[dict]` and `recent_entries(db_path, namespace, *, limit=5) -> list[dict]` to the Public API section of memory.py, inserted before `stats()`. Both return empty lists on no-match and do not touch any existing functionality.",
+    "remaining": "Downstream beads in this feature tree will wire the CLI commands (`_cmd_namespace_list`, `_cmd_namespace_show`), update the parser (`namespace list` / `namespace show` subcommands), and add tests in `tests/test_cli_memory.py`.",
+    "risks": "None. Changes are purely additive \u2014 two new read-only functions appended to the public API section. No existing code paths are touched.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/_assets.py",
+      "src/agent_takt/memory.py",
+      "src/agent_takt/onboarding/assets.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify: (1) `list_namespaces` returns `[{namespace, count}]` ordered descending, empty list on empty DB; (2) `recent_entries` returns `[{id, namespace, text, created_at}]` newest-first up to limit, empty list for unknown namespace; (3) both functions leave existing rows/behavior untouched.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/memory.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/_assets.py",
+      "src/agent_takt/memory.py",
+      "src/agent_takt/onboarding/assets.py"
+    ],
+    "conflict_risks": "No conflict risks \u2014 only memory.py was touched; no other in-progress beads claim this file.",
+    "design_decisions": "`rowid DESC` is used as the ordering key in `recent_entries` rather than `created_at DESC`. `rowid` is the AUTOINCREMENT primary key and is a strict insertion-order guarantee, whereas `created_at` is an ISO-format string that could tie on the same microsecond. This makes the ordering deterministic and consistent even for rapid bulk inserts. `list_namespaces` uses `COUNT(*) DESC` directly in SQL rather than post-sorting in Python, which lets the DB engine handle it and avoids materialising the full result before sorting.",
+    "test_coverage_notes": "Tests to write in `tests/test_cli_memory.py` (or a focused unit test module): (1) `list_namespaces` on empty DB \u2192 `[]`; (2) entries spread across multiple namespaces \u2192 list ordered by count desc; (3) `recent_entries` on unknown namespace \u2192 `[]`; (4) `recent_entries` respects `limit` and returns newest-first; (5) dict keys are exactly `{id, namespace, text, created_at}` with no extras; (6) both functions leave all other rows and the `vectors` virtual table unchanged after being called.",
+    "known_limitations": "N/A \u2014 implementation is complete as specified. The functions are pure query helpers with no side-effects; CLI wiring, parser changes, and tests are handled by sibling beads in this feature tree."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "No conflict risks \u2014 only memory.py was touched; no other in-progress beads claim this file.",
   "branch_name": "feature/b-4be1edbe",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4be1edbe",
-  "lease": {
-    "owner": "developer:B-6551009b",
-    "expires_at": "2026-04-15T06:35:33.786299+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -94,6 +109,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-6551009b/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-15T06:07:38.547472+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added `list_namespaces` and `recent_entries` to `src/agent_takt/memory.py`. Both functions follow the same open/query/close pattern as existing helpers, use `_open_conn` for consistent sqlite-vec setup, and return empty lists when no rows match.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -161,7 +183,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added `list_namespaces` and `recent_entries` to `src/agent_takt/memory.py`. Both functions follow the same open/query/close pattern as existing helpers, use `_open_conn` for consistent sqlite-vec setup, and return empty lists when no rows match.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.3779557499999999,
+      "duration_ms": 103809,
+      "duration_api_ms": 75964,
+      "num_turns": 15,
+      "input_tokens": 17,
+      "output_tokens": 4379,
+      "cache_creation_tokens": 44615,
+      "cache_read_tokens": 474385,
+      "stop_reason": "end_turn",
+      "session_id": "fa73f030-3dbd-43c6-9a26-1f9cc423b3d7",
+      "permission_denials": [],
+      "prompt_chars": 8001,
+      "prompt_lines": 159,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.3779557499999999,
+        "duration_ms": 103809,
+        "duration_api_ms": 75964,
+        "num_turns": 15,
+        "input_tokens": 17,
+        "output_tokens": 4379,
+        "cache_creation_tokens": 44615,
+        "cache_read_tokens": 474385,
+        "stop_reason": "end_turn",
+        "session_id": "fa73f030-3dbd-43c6-9a26-1f9cc423b3d7",
+        "permission_denials": [],
+        "prompt_chars": 8001,
+        "prompt_lines": 159,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "1542ebd08db7afe356ef8f2d509a4e41e75f7a62"
   },
   "labels": [],
   "recovery_for": null,
