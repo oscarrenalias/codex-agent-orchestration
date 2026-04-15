@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
-  "dependencies": [],
+  "dependencies": [
+    "B-d4f81f32"
+  ],
   "acceptance_criteria": [
     "tests/test_onboarding_upgrade.py no longer expects docs/memory seeding behavior.",
     "tests/test_assets.py no longer references packaged_docs_memory_dir or legacy memory seed helpers.",
