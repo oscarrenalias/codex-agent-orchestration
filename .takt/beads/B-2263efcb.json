@@ -3,7 +3,7 @@
   "title": "Update onboarding and asset regression tests",
   "agent_type": "developer",
   "description": "Adjust tests covering onboarding scaffold and packaged assets so they assert the legacy docs/memory seed path is gone and no removed helper remains referenced.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
   "dependencies": [
@@ -25,37 +25,49 @@
     "tests/test_assets.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_assets.py",
+    "tests/test_onboarding_upgrade.py"
+  ],
+  "changed_files": [
+    "tests/test_assets.py",
+    "tests/test_onboarding_upgrade.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "1. test_onboarding_upgrade.py: Replaced `test_excludes_docs_memory_files` (which tested docs/memory exclusion, implying the concept still existed) with `test_non_bundled_prefix_files_excluded` that tests generic non-bundled path exclusion with a neutral `some/arbitrary/path.md` path. 2. test_onboarding_upgrade.py: Added `test_scaffold_does_not_seed_docs_memory` to TestScaffoldProjectManifest \u2014 positively asserts scaffold_project never creates a docs/memory/ directory. 3. test_assets.py: Added `TestRemovedLegacyHelpers` class with two tests: `test_packaged_docs_memory_dir_removed` (hasattr check) and `test_packaged_docs_memory_dir_not_importable` (ImportError check), verifying the helper was fully removed from _assets.",
+    "remaining": "None \u2014 all acceptance criteria met.",
+    "risks": "The `test_scaffold_does_not_seed_docs_memory` test calls `_run_scaffold()` which invokes `init_db` without patching it, creating a real memory DB in the temp directory. This matches the pattern of existing scaffold tests (e.g., `test_fresh_init_creates_manifest`) that already do the same, so this risk is pre-existing and accepted.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_assets.py",
+      "tests/test_onboarding_upgrade.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Route to tester for verification.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "tests/test_onboarding_upgrade.py",
+      "tests/test_assets.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "tests/test_assets.py",
+      "tests/test_onboarding_upgrade.py"
+    ],
+    "conflict_risks": "None \u2014 changes are confined to test files with no overlap with other in-progress beads.",
+    "design_decisions": "Replaced the docs/memory-specific manifest exclusion test with a neutral non-bundled-prefix test to preserve coverage of the underlying `write_assets_manifest` exclusion behavior without coupling tests to the legacy docs/memory concept. Chose `assertFalse(hasattr(...))` plus `assertRaises(ImportError)` as dual-layer verification for the removed helper \u2014 the hasattr check guards against accidental re-addition, the import check is the canonical Python way to verify a name is not importable.",
+    "test_coverage_notes": "Tester should verify: (1) `test_non_bundled_prefix_files_excluded` passes and correctly replaces the old docs/memory test; (2) `test_scaffold_does_not_seed_docs_memory` passes confirming the removal; (3) both `TestRemovedLegacyHelpers` tests pass; (4) no regressions in the remaining upgrade/manifest tests.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 changes are confined to test files with no overlap with other in-progress beads.",
   "branch_name": "feature/b-4be1edbe",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4be1edbe",
-  "lease": {
-    "owner": "developer:B-2263efcb",
-    "expires_at": "2026-04-15T06:41:46.771511+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -97,6 +109,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-2263efcb/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-15T06:15:28.552159+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Updated onboarding and asset regression tests to assert the legacy docs/memory seed path is gone. Replaced `test_excludes_docs_memory_files` with a neutral `test_non_bundled_prefix_files_excluded` test (same behavior, no docs/memory concept), added `test_scaffold_does_not_seed_docs_memory` to positively verify scaffold doesn't create docs/memory/, and added `TestRemovedLegacyHelpers` to test_assets.py asserting `packaged_docs_memory_dir` no longer exists in `_assets`.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -167,7 +186,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated onboarding and asset regression tests to assert the legacy docs/memory seed path is gone. Replaced `test_excludes_docs_memory_files` with a neutral `test_non_bundled_prefix_files_excluded` test (same behavior, no docs/memory concept), added `test_scaffold_does_not_seed_docs_memory` to positively verify scaffold doesn't create docs/memory/, and added `TestRemovedLegacyHelpers` to test_assets.py asserting `packaged_docs_memory_dir` no longer exists in `_assets`.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.7197616,
+      "duration_ms": 214509,
+      "duration_api_ms": 206717,
+      "num_turns": 25,
+      "input_tokens": 22,
+      "output_tokens": 13723,
+      "cache_creation_tokens": 57870,
+      "cache_read_tokens": 980817,
+      "stop_reason": "end_turn",
+      "session_id": "607e1948-5aaa-4cf3-ab87-3ad1ada1a93e",
+      "permission_denials": [],
+      "prompt_chars": 7869,
+      "prompt_lines": 162,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.7197616,
+        "duration_ms": 214509,
+        "duration_api_ms": 206717,
+        "num_turns": 25,
+        "input_tokens": 22,
+        "output_tokens": 13723,
+        "cache_creation_tokens": 57870,
+        "cache_read_tokens": 980817,
+        "stop_reason": "end_turn",
+        "session_id": "607e1948-5aaa-4cf3-ab87-3ad1ada1a93e",
+        "permission_denials": [],
+        "prompt_chars": 7869,
+        "prompt_lines": 162,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "367dfec10d6c876e6dbe150a40bb5681f1f108e6"
   },
   "labels": [],
   "recovery_for": null,
