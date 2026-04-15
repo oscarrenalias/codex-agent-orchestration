@@ -6,7 +6,17 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
-  "dependencies": [],
+  "dependencies": [
+    "B-d4f81f32",
+    "B-ac6558fd",
+    "B-6551009b",
+    "B-449be6c6",
+    "B-89260cc6",
+    "B-2263efcb",
+    "B-24fb6423",
+    "B-90be047f",
+    "B-38b81c5b"
+  ],
   "acceptance_criteria": [
     "Review confirms all legacy docs/memory scaffolding and migrate-only code paths are removed.",
     "Review confirms namespace list/show behavior and output contracts match the spec.",
