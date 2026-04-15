@@ -3,7 +3,7 @@
   "title": "Update operator documentation for the memory workflow",
   "agent_type": "documentation",
   "description": "Remove references to docs/memory seeding and migration from operator-facing documentation, and document the new memory namespace list/show commands and their intended use.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-4be1edbe",
   "dependencies": [
@@ -3524,9 +3524,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 both files are within this bead's declared scope and the changes are deletions only.\nNo conflict risks \u2014 only memory.py was touched; no other in-progress beads claim this file.\nNone. The only changed files are `parser.py` and `commands/memory.py`. No sibling beads claim these files.\nLow. Changes are purely subtractive \u2014 no new logic added. The only downstream risk is if any code outside this bead's expected_files imported the deleted symbols; grep found no such references.\nNone \u2014 memory.py CLI commands file is not in contention with any other in-progress beads\nNone \u2014 changes are confined to test files with no overlap with other in-progress beads.\nNone \u2014 only tests/test_cli_memory.py was modified.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-4be1edbe",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4be1edbe",
+  "lease": {
+    "owner": "documentation:B-38b81c5b",
+    "expires_at": "2026-04-15T06:47:39.582486+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3535,9 +3538,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-15T06:17:39.845211+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-15T06:17:39.845236+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-38b81c5b",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "191f95261a4d31e4f4a691e9c39926c722504f21a3c370b6975facad92e3c1f0",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-38b81c5b/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
