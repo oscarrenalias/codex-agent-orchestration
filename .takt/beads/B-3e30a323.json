@@ -1177,12 +1177,15 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "pyproject.toml",
+    "src/agent_takt/_data/claude_agents/spec-reviewer.md",
     "src/agent_takt/_data/claude_skills/skill-spec-management/SKILL.md",
     "tests/test_cli_init.py",
     "tests/test_cli_upgrade.py",
     "tests/test_orchestrator.py"
   ],
   "expected_globs": [
+    "src/agent_takt/_data/claude_agents/**",
     "tests/test_cli_*.py",
     "tests/test_orchestrator.py"
   ],
@@ -2338,6 +2341,8 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "pyproject.toml",
+    "src/agent_takt/_data/claude_agents/spec-reviewer.md",
     "src/agent_takt/_data/claude_skills/skill-spec-management/SKILL.md"
   ],
   "changed_files": [
@@ -3492,6 +3497,8 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "pyproject.toml",
+    "src/agent_takt/_data/claude_agents/spec-reviewer.md",
     "src/agent_takt/_data/claude_skills/skill-spec-management/SKILL.md"
   ],
   "updated_docs": [],
@@ -3516,7 +3523,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 only documentation files modified; no executable code changed.",
+  "conflict_risks": "None \u2014 only documentation files modified; no executable code changed.\nB-7779ac1e touches `_assets.py` (no overlap). B-0dfa829b touches `onboarding/scaffold.py` (no overlap). B-58955b85 touches `onboarding/upgrade.py` (no overlap). B-85b6026b touches `_data/claude_skills/skill-spec-management/SKILL.md` (no overlap). No file conflicts expected.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
