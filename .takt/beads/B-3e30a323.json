@@ -3,7 +3,7 @@
   "title": "Validate bundled Claude onboarding assets",
   "agent_type": "tester",
   "description": "Add or update automated tests covering packaged Claude agents, install helper behavior, init scaffold integration, and upgrade tracking; then run the relevant test suite and full project tests.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-0714d3de",
   "dependencies": [
@@ -3536,9 +3536,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 only documentation files modified; no executable code changed.\nB-7779ac1e touches `_assets.py` (no overlap). B-0dfa829b touches `onboarding/scaffold.py` (no overlap). B-58955b85 touches `onboarding/upgrade.py` (no overlap). B-85b6026b touches `_data/claude_skills/skill-spec-management/SKILL.md` (no overlap). No file conflicts expected.\nNone \u2014 both files were the sole writer for these additions.\nNone \u2014 only `scaffold.py` was modified, no overlap with other in-progress beads.\nNone. `upgrade.py` is not touched by any sibling bead in this feature tree.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-0714d3de",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-0714d3de",
+  "lease": {
+    "owner": "tester:B-3e30a323",
+    "expires_at": "2026-04-16T19:13:27.398480+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3547,9 +3550,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-16T18:43:27.664033+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-16T18:43:27.664058+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-3e30a323",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/tester-validation",
+      "capability/test-execution",
+      "task/defect-bead-creation",
+      "task/regression-triage",
+      "memory"
+    ],
+    "skill_bundle_hash": "c2bb19865add8770ba493957f3775e07d50168d42fe585583dcff9d82dc76d86",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-3e30a323/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
