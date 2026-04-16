@@ -3,7 +3,7 @@
   "title": "Track Claude agents in upgrade manifest",
   "agent_type": "developer",
   "description": "Update onboarding upgrade evaluation so `.claude/agents/` is tracked as a managed asset path and individual Claude agent files appear in the generated asset manifest and upgrade decisions.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-0714d3de",
   "dependencies": [
@@ -24,37 +24,44 @@
     "src/agent_takt/onboarding/upgrade.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/onboarding/upgrade.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/onboarding/upgrade.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "All three acceptance criteria met: (1) `evaluate_upgrade_actions()` includes `.claude/agents/` via `_BUNDLED_ASSET_PREFIXES` and `_disk_prefix_dirs`; (2) manifest generation includes the Claude agents catalog block via `_compute_bundled_catalog()`; (3) `takt upgrade` will surface bundled Claude agent files as upgradeable assets.",
+    "remaining": "N/A",
+    "risks": "None identified. The change mirrors the existing `.claude/skills/` pattern exactly.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/onboarding/upgrade.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify upgrade manifest generation includes `.claude/agents/` entries when bundled agent files exist, and that the decision table actions (new, update, unchanged, skipped_modified, restored, disabled, user_added) work correctly for agent files.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/onboarding/upgrade.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/onboarding/upgrade.py"
+    ],
+    "conflict_risks": "None. `upgrade.py` is not touched by any sibling bead in this feature tree.",
+    "design_decisions": "Mirrors the `.claude/skills/` pattern exactly \u2014 same import style, same catalog iteration pattern, same `_disk_prefix_dirs` entry. No special `user_owned` treatment for Claude agents (unlike guardrail templates) because agent files are not placeholder-substituted and should remain upgradeable.",
+    "test_coverage_notes": "Tester should cover: (1) `_compute_bundled_catalog()` returns `.claude/agents/`-prefixed keys when bundled agents exist; (2) `evaluate_upgrade_actions()` produces correct decisions (new/update/unchanged/skipped_modified/restored/disabled/user_added) for agent files; (3) `write_assets_manifest()` records `.claude/agents/` files when passed as `installed_files`; (4) the user-added scan in pass 3 detects on-disk agent files not in manifest or bundle.",
+    "known_limitations": "N/A \u2014 implementation is complete as specified. The bundled `_data/claude_agents/` directory must be populated by the prior bead (B-7779ac1e); this bead only adds the upgrade tracking layer."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None. `upgrade.py` is not touched by any sibling bead in this feature tree.",
   "branch_name": "feature/b-0714d3de",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-0714d3de",
-  "lease": {
-    "owner": "developer:B-58955b85",
-    "expires_at": "2026-04-16T19:11:24.899562+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -96,6 +103,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-58955b85/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-16T18:43:21.968011+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added `.claude/agents/` as a managed asset path in `upgrade.py`: imported `packaged_claude_agents_dir`, added the prefix to `_BUNDLED_ASSET_PREFIXES`, extended `_compute_bundled_catalog()` to enumerate bundled agent files under that prefix, and added `.claude/agents/` to the `_disk_prefix_dirs` scan in `evaluate_upgrade_actions()` so user-added agent files are also tracked.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -165,7 +179,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added `.claude/agents/` as a managed asset path in `upgrade.py`: imported `packaged_claude_agents_dir`, added the prefix to `_BUNDLED_ASSET_PREFIXES`, extended `_compute_bundled_catalog()` to enumerate bundled agent files under that prefix, and added `.claude/agents/` to the `_disk_prefix_dirs` scan in `evaluate_upgrade_actions()` so user-added agent files are also tracked.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.3369081500000001,
+      "duration_ms": 108858,
+      "duration_api_ms": 103738,
+      "num_turns": 12,
+      "input_tokens": 14,
+      "output_tokens": 4889,
+      "cache_creation_tokens": 26860,
+      "cache_read_tokens": 389757,
+      "stop_reason": "end_turn",
+      "session_id": "3eb76298-263d-462b-a940-5475fe2dd6f4",
+      "permission_denials": [],
+      "prompt_chars": 7875,
+      "prompt_lines": 161,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.3369081500000001,
+        "duration_ms": 108858,
+        "duration_api_ms": 103738,
+        "num_turns": 12,
+        "input_tokens": 14,
+        "output_tokens": 4889,
+        "cache_creation_tokens": 26860,
+        "cache_read_tokens": 389757,
+        "stop_reason": "end_turn",
+        "session_id": "3eb76298-263d-462b-a940-5475fe2dd6f4",
+        "permission_denials": [],
+        "prompt_chars": 7875,
+        "prompt_lines": 161,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
