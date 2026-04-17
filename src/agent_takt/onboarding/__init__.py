@@ -38,6 +38,12 @@ from .upgrade import (
     read_assets_manifest,
     write_assets_manifest,
 )
+from .version import (
+    VERSION_FILE,
+    check_version_drift,
+    read_version_file,
+    write_version_file,
+)
 
 __all__ = [
     # assets
@@ -74,4 +80,9 @@ __all__ = [
     "evaluate_upgrade_actions",
     "read_assets_manifest",
     "write_assets_manifest",
+    # version
+    "VERSION_FILE",
+    "check_version_drift",
+    "read_version_file",
+    "write_version_file",
 ]
