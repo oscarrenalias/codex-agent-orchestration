@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-d6687b5d",
-  "dependencies": [],
+  "dependencies": [
+    "B-8a7a7a60"
+  ],
   "acceptance_criteria": [
     "`TuiRuntimeState` tracks `_event_log_offset` initialized to the current event log EOF on startup.",
     "`refresh()` tails only newly appended JSONL lines and advances `_event_log_offset` correctly across repeated calls.",
