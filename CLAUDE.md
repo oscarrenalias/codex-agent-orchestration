@@ -62,11 +62,12 @@ src/agent_takt/
     assets.py     Asset installation helpers (templates, skills, config)
     config.py     Config YAML generation and template placeholder substitution
     upgrade.py    Asset upgrade evaluation (AssetDecision, evaluate_upgrade_actions) and manifest I/O
+    version.py    Version tracking helpers: write_version_file, read_version_file, check_version_drift
 
 templates/agents/   Guardrail templates per agent type (mandatory)
 templates/skills/   Subagent skill catalog (`core/`, `role/`, `capability/`, `task/`); primary source
 .agents/skills/     Operator skill overrides (custom exceptions only; falls back to templates/skills/)
-.takt/              Runtime state: beads/, logs/, worktrees/, telemetry/, agent-runs/, config.yaml
+.takt/              Runtime state: beads/, logs/, worktrees/, telemetry/, agent-runs/, config.yaml, version.json
 ```
 
 ## Key Concepts
@@ -114,6 +115,24 @@ Orchestrator settings live in `.takt/config.yaml`. Key dataclasses: `Orchestrato
 `CommonConfig` fields (under the `common:` block): `test_command`, `test_timeout_seconds`, `memory_cache_dir`. The `memory_cache_dir` key sets the directory where the ONNX embedding model is cached (default: `~/.cache/agent-takt/models`); override in CI environments or to share the model cache across projects.
 
 Key functions in `config.py`: `load_config(root)`, `default_config()`, `config.backend(name)`, `config.allowed_tools_for(backend, agent_type)`.
+
+## Version Tracking
+
+`takt init` and `takt upgrade` write `.takt/version.json` to record the installed takt version and timestamp:
+
+```json
+{
+  "takt_version": "0.x.y",
+  "last_upgraded_at": "2026-04-17T14:00:00+00:00"
+}
+```
+
+`takt summary` calls `check_version_drift()` at startup and emits a console warning when:
+
+- `.takt/version.json` is missing — prompt: `"No .takt/version.json found. Run 'takt upgrade' to record the current version."`
+- The recorded version is older than the installed version — prompt names both versions and suggests `takt upgrade`.
+
+No warning is shown when versions match or when the repo version is ahead of the installed version. To clear a drift warning, run `takt upgrade` — it overwrites the file and records the current installed version.
 
 ## Multi-Worker CLI Output
 
