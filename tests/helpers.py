@@ -19,6 +19,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from agent_takt.models import AgentRunResult, Bead, HandoffSummary, PlanProposal
+from agent_takt.onboarding.version import write_version_file
 from agent_takt.prompts import BUILT_IN_AGENT_TYPES
 from agent_takt.storage import RepositoryStorage
 
@@ -76,6 +77,7 @@ class OrchestratorTests(unittest.TestCase):
         subprocess.run(["git", "commit", "-m", "init"], cwd=self.root, check=True, capture_output=True)
         self.storage = RepositoryStorage(self.root)
         self.storage.initialize()
+        write_version_file(self.root)
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()

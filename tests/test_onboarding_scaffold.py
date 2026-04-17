@@ -36,6 +36,7 @@ from agent_takt.onboarding import (
     create_specs_howto,
     scaffold_project,
     update_gitignore,
+    write_version_file,
 )
 
 
@@ -382,6 +383,7 @@ class TestCommitScaffold(unittest.TestCase):
         (self.root / ".takt" / "config.yaml").write_text("fake: true")
         (self.root / ".takt" / "assets-manifest.json").write_text('{"takt_version":"0.0.0","installed_at":"","assets":{}}')
         (self.root / ".gitignore").write_text("node_modules/\n")
+        write_version_file(self.root)
 
     def test_happy_path_creates_commit(self):
         """Fresh git init + scaffold files → commit_scaffold creates a git commit."""
