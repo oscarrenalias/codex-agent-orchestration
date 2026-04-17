@@ -3,7 +3,7 @@
   "title": "Technical debt remediation",
   "agent_type": "developer",
   "description": "Feature group for targeted technical debt fixes identified by investigator bead B-14862851. See docs/investigator/technical-debt-analysis.md for full report. Child beads cover: TUI event log bug, panel badge cleanup, silent exception swallowing in scheduler, followups.py list_beads loop, runner.py JSON extraction logging, and dependency version pinning.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": null,
   "dependencies": [],
@@ -14,37 +14,76 @@
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-60307654",
   "expected_files": [],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
-  "updated_docs": [],
+  "touched_files": [
+    "pyproject.toml",
+    "src/agent_takt/runner.py",
+    "src/agent_takt/scheduler/core.py",
+    "src/agent_takt/scheduler/execution.py",
+    "src/agent_takt/scheduler/followups.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/render.py",
+    "uv.lock"
+  ],
+  "changed_files": [
+    "pyproject.toml",
+    "src/agent_takt/runner.py",
+    "src/agent_takt/scheduler/core.py",
+    "src/agent_takt/scheduler/execution.py",
+    "src/agent_takt/scheduler/followups.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/render.py",
+    "uv.lock"
+  ],
+  "updated_docs": [
+    "CLAUDE.md",
+    "docs/multi-backend-agents.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "All 6 child developer beads done. Code changes verified in worktree: tui/app.py (log panel fix), tui/render.py (badge cleanup), scheduler/core.py + execution.py (exception logging), scheduler/followups.py (list_beads cache), runner.py (debug logging), pyproject.toml + uv.lock (version pins).",
+    "remaining": "B-2c805b5c-test, B-2c805b5c-docs, B-2c805b5c-review are ready and awaiting scheduler dispatch. After those complete, the feature tree is ready to merge via takt merge B-60307654.",
+    "risks": "None. All child beads completed without conflicts. The three pending followup beads (test/docs/review) are standard pipeline work that will be handled by the scheduler.",
+    "verdict": "approved",
     "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "requires_followup": true,
+    "changed_files": [
+      "pyproject.toml",
+      "src/agent_takt/runner.py",
+      "src/agent_takt/scheduler/core.py",
+      "src/agent_takt/scheduler/execution.py",
+      "src/agent_takt/scheduler/followups.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/render.py",
+      "uv.lock"
+    ],
+    "updated_docs": [
+      "CLAUDE.md",
+      "docs/multi-backend-agents.md"
+    ],
+    "next_action": "Scheduler dispatches B-2c805b5c-test, B-2c805b5c-docs, B-2c805b5c-review. Once all done, operator runs takt merge B-60307654.",
+    "next_agent": "scheduler",
     "block_reason": "",
     "expected_files": [],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "pyproject.toml",
+      "src/agent_takt/runner.py",
+      "src/agent_takt/scheduler/core.py",
+      "src/agent_takt/scheduler/execution.py",
+      "src/agent_takt/scheduler/followups.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/render.py",
+      "uv.lock"
+    ],
+    "conflict_risks": "None. Child beads touched non-overlapping files. The three pending beads are read-only reviewers of an already-committed change.",
+    "design_decisions": "This is a coordination/group bead with no direct implementation. All design decisions were made within child beads: B-2c805b5c chose a single cache-at-top pattern passing through keyword args rather than a class-level cache; B-ffffd5fe chose appending ExecutionRecord events to the bead audit trail rather than just logging; B-74d0e388 used DEBUG-level per-strategy logging in runner.py without altering retry semantics.",
+    "test_coverage_notes": "B-2c805b5c-test (ready) should verify: list_beads() is called exactly once per _create_followups invocation; all helper methods receive the cached beads argument; regression check that followup creation still works correctly with the cached list. Other child beads already have their test beads in done state.",
+    "known_limitations": "N/A \u2014 all child beads implemented their full scope. No deferred work beyond the three ready followup beads."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None. Child beads touched non-overlapping files. The three pending beads are read-only reviewers of an already-committed change.",
   "branch_name": "feature/b-60307654",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-60307654",
-  "lease": {
-    "owner": "developer:B-60307654",
-    "expires_at": "2026-04-17T10:23:55.051271+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -107,6 +146,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-60307654/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-17T09:57:12.031929+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Feature root coordination bead for technical debt remediation. All 6 child developer beads completed successfully: TUI log panel fix (B-349007f5), TUI badge cleanup (B-2d8b229a), silent exception logging (B-ffffd5fe), list_beads caching in followups.py (B-2c805b5c), per-strategy debug logging in runner.py (B-74d0e388), and numpy/onnxruntime version pinning (B-eccab5b2). Code changes are confirmed present in the feature branch. Three follow-up beads (test/docs/review for B-2c805b5c) are ready for scheduler pickup.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,7 +215,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Feature root coordination bead for technical debt remediation. All 6 child developer beads completed successfully: TUI log panel fix (B-349007f5), TUI badge cleanup (B-2d8b229a), silent exception logging (B-ffffd5fe), list_beads caching in followups.py (B-2c805b5c), per-strategy debug logging in runner.py (B-74d0e388), and numpy/onnxruntime version pinning (B-eccab5b2). Code changes are confirmed present in the feature branch. Three follow-up beads (test/docs/review for B-2c805b5c) are ready for scheduler pickup.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": true,
+      "next_agent": "scheduler",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.4259655,
+      "duration_ms": 195857,
+      "duration_api_ms": 186060,
+      "num_turns": 20,
+      "input_tokens": 16,
+      "output_tokens": 10600,
+      "cache_creation_tokens": 32850,
+      "cache_read_tokens": 470440,
+      "stop_reason": "end_turn",
+      "session_id": "a77d8b56-0fb9-4ec2-928e-9fdc4968cd6a",
+      "permission_denials": [],
+      "prompt_chars": 7960,
+      "prompt_lines": 158,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.4259655,
+        "duration_ms": 195857,
+        "duration_api_ms": 186060,
+        "num_turns": 20,
+        "input_tokens": 16,
+        "output_tokens": 10600,
+        "cache_creation_tokens": 32850,
+        "cache_read_tokens": 470440,
+        "stop_reason": "end_turn",
+        "session_id": "a77d8b56-0fb9-4ec2-928e-9fdc4968cd6a",
+        "permission_denials": [],
+        "prompt_chars": 7960,
+        "prompt_lines": 158,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
