@@ -3,7 +3,7 @@
   "title": "Remove TUI scheduling controls and make refresh always-on",
   "agent_type": "developer",
   "description": "Strip scheduler execution and refresh toggles from the TUI, delete the obsolete TUI reporter, bind history loading, and update help/status text so the TUI operates strictly as a dashboard.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-d6687b5d",
   "dependencies": [
@@ -29,37 +29,71 @@
     "src/agent_takt/tui/reporter.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/scheduler/reporter.py",
+    "src/agent_takt/tui/__init__.py",
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/render.py",
+    "src/agent_takt/tui/reporter.py",
+    "src/agent_takt/tui/state.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/scheduler/reporter.py",
+    "src/agent_takt/tui/__init__.py",
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/render.py",
+    "src/agent_takt/tui/reporter.py",
+    "src/agent_takt/tui/state.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "- Deleted src/agent_takt/tui/reporter.py (TuiSchedulerReporter class)\\n- Removed TuiSchedulerReporter import and export from __init__.py\\n- Removed s/S/a keybindings from BINDINGS in app.py; added H keybinding\\n- Simplified _on_interval_tick to always refresh unconditionally\\n- Removed _start_scheduler_worker, _scheduler_worker_task, _on_scheduler_worker_done methods from app.py\\n- Removed _scheduler_worker_running instance variable\\n- Updated initial log message to reflect dashboard-only mode\\n- Simplified _live_status_bar_text (no scheduler mode indicator)\\n- Removed run_scheduler_cycle, toggle_timed_refresh, toggle_continuous_run functions from actions.py\\n- Removed action_toggle_timed_refresh, action_scheduler_once, action_toggle_continuous_run mixin methods\\n- Added action_load_event_history to OrchestratorTuiActionsMixin (calls load_event_log_history(50), clears+rewrites RichLog)\\n- Removed timed_refresh_enabled and continuous_run_enabled fields from TuiRuntimeState dataclass\\n- Removed toggle_timed_refresh, toggle_continuous_run, run_scheduler_cycle delegation methods from state.py\\n- Simplified format_footer (removed timed_refresh_enabled/continuous_run_enabled params and run_mode display)\\n- Simplified mode_summary to 'dashboard | refresh=Ns | focus=X'\\n- Updated format_help_overlay in render.py: removed a/s/S entries, added H entry\\n- Removed stale TuiSchedulerReporter mention from scheduler/reporter.py docstring",
+    "remaining": "Tests referencing TuiSchedulerReporter (test_cli_run.py:TuiSchedulerReporterTests, test_tui_app.py:TuiSchedulerReporterDeferredTests, test_tui_state.py) and tests for toggle_timed_refresh/toggle_continuous_run/run_scheduler_cycle will fail with ImportError or AttributeError and must be deleted or updated by the tester agent.",
+    "risks": "Test suite will fail to import until tester removes TuiSchedulerReporter test classes from test_cli_run.py, test_tui_app.py, and test_tui_state.py. The format_footer signature change may break tests that call it with the removed keyword arguments.",
+    "verdict": "approved",
     "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
+    "requires_followup": true,
+    "changed_files": [
+      "src/agent_takt/scheduler/reporter.py",
+      "src/agent_takt/tui/__init__.py",
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/render.py",
+      "src/agent_takt/tui/reporter.py",
+      "src/agent_takt/tui/state.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent must remove TuiSchedulerReporter test classes and update format_footer call sites that passed timed_refresh_enabled/continuous_run_enabled kwargs.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/state.py",
+      "src/agent_takt/tui/reporter.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/scheduler/reporter.py",
+      "src/agent_takt/tui/__init__.py",
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/render.py",
+      "src/agent_takt/tui/reporter.py",
+      "src/agent_takt/tui/state.py"
+    ],
+    "conflict_risks": "None \u2014 these files are owned by this feature tree. The scheduler/reporter.py change was a comment-only cleanup with no functional risk.",
+    "design_decisions": "The H keybinding clears the RichLog widget and rewrites all of state.scheduler_log after prepending history, rather than trying to insert at the top of the widget. This is the only approach RichLog supports (no prepend API). The 50-line limit per press matches the spec exactly. The _on_interval_tick simplification removes the conditional chain entirely \u2014 timed refresh is now always-on for the interval, matching dashboard semantics.",
+    "test_coverage_notes": "Tester should verify: (1) interval tick always triggers refresh (no timed_refresh_enabled gate), (2) H keybinding calls load_event_log_history(50) and rewrites the log widget, (3) H press when history is exhausted sets status_message='No more history to load.', (4) format_footer works without timed_refresh_enabled/continuous_run_enabled args, (5) mode_summary returns 'dashboard | refresh=Ns | focus=X' format, (6) TuiRuntimeState has no timed_refresh_enabled or continuous_run_enabled fields, (7) app BINDINGS list has no 'a'/'s'/'S' entries and has 'H'.",
+    "known_limitations": "Tests referencing TuiSchedulerReporter will fail at import time until the tester removes those test classes. The tester must also remove or update any tests calling format_footer with the now-removed keyword arguments."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 these files are owned by this feature tree. The scheduler/reporter.py change was a comment-only cleanup with no functional risk.",
   "branch_name": "feature/b-d6687b5d",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-d6687b5d",
-  "lease": {
-    "owner": "developer:B-e2c7d937",
-    "expires_at": "2026-04-17T07:52:11.711236+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -101,6 +135,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-e2c7d937/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-17T07:28:36.009488+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Stripped scheduler execution and refresh toggles from the TUI. Deleted TuiSchedulerReporter, removed s/S/a keybindings, removed timed_refresh_enabled/continuous_run_enabled state, made interval ticks unconditionally refresh, and added H keybinding for loading 50 historical log lines per press.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -175,7 +216,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Stripped scheduler execution and refresh toggles from the TUI. Deleted TuiSchedulerReporter, removed s/S/a keybindings, removed timed_refresh_enabled/continuous_run_enabled state, made interval ticks unconditionally refresh, and added H keybinding for loading 50 historical log lines per press.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": true,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 1.4789863499999996,
+      "duration_ms": 367203,
+      "duration_api_ms": 351134,
+      "num_turns": 47,
+      "input_tokens": 45,
+      "output_tokens": 19655,
+      "cache_creation_tokens": 71955,
+      "cache_read_tokens": 3038167,
+      "stop_reason": "end_turn",
+      "session_id": "775b1549-37e5-4ccc-b822-140bc48af0bb",
+      "permission_denials": [],
+      "prompt_chars": 8230,
+      "prompt_lines": 166,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.4789863499999996,
+        "duration_ms": 367203,
+        "duration_api_ms": 351134,
+        "num_turns": 47,
+        "input_tokens": 45,
+        "output_tokens": 19655,
+        "cache_creation_tokens": 71955,
+        "cache_read_tokens": 3038167,
+        "stop_reason": "end_turn",
+        "session_id": "775b1549-37e5-4ccc-b822-140bc48af0bb",
+        "permission_denials": [],
+        "prompt_chars": 8230,
+        "prompt_lines": 166,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "d3eaa7573137c509a6899f03f01c23a5f4f43254"
   },
   "labels": [],
   "recovery_for": null,
