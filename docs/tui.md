@@ -26,7 +26,7 @@ The top row holds two equal-width panels side by side:
 
 The **Scheduler Log** spans the full width below the top row, showing live scheduler activity. It is focusable and scrollable.
 
-A single-line status bar at the very bottom shows live scheduler counts — `{N} running | {N} ready | {N} blocked` — the current scheduler mode (`S:auto` or `S:manual`), and the latest status message. Counts update on every TUI refresh. It has no border or padding.
+A single-line status bar at the very bottom shows live scheduler counts — `{N} running | {N} ready | {N} blocked` — and the latest status message. Counts update on every TUI refresh. It has no border or padding.
 
 ## Panel Focus
 
@@ -54,29 +54,45 @@ The status bar remains visible at all times — it is never hidden by maximize.
 | `Home` / `End` | Jump to start or end of focused panel |
 | `g` / `G` | Jump to first or last bead in list |
 | `n` / `N` | Move active collapsible section in detail panel |
-| `Enter` | Toggle active detail section, or confirm a pending merge |
+| `Enter` | Toggle active detail section |
 | `f` / `Shift+F` | Cycle filters forward / backward |
-| `a` | Toggle timed refresh on/off |
 | `r` | Manual refresh (or choose `ready` in status update flow) |
-| `s` | Run one scheduler cycle |
-| `S` | Toggle continuous scheduler runs on timed refreshes |
+| `H` | Load up to 50 historical events into the Scheduler Log |
 | `t` | Start retry confirmation for selected blocked bead |
 | `u` | Start status update flow for selected bead |
 | `b` / `d` | Choose `blocked` / `done` in status update flow |
 | `y` | Confirm pending retry or status update |
 | `c` | Cancel pending action |
 | `m` | Toggle maximize on focused panel |
-| `M` | Merge current feature branch into main |
+| `M` | Show CLI merge command for the selected bead |
 | `?` | Toggle help overlay |
 | `Esc` | Close help overlay |
 
-## Refresh and Scheduler Modes
+## Refresh and Scheduler Log
 
-The TUI starts in manual refresh and manual scheduler mode. The status bar shows `S:manual` when the scheduler runs only on demand, and `S:auto` when continuous scheduler mode is active.
+The TUI is a **pure dashboard** — it observes bead state and scheduler activity but does not start scheduler cycles. To run beads, use `takt run` (or `takt --runner claude run`) in a separate terminal.
 
-- `a` — enables/disables timed refresh. Turning off also disables timed scheduler runs.
-- `s` — one-shot scheduler pass (respects `--feature-root` scope if set).
-- `S` — toggles continuous mode: each timed refresh runs a scheduler cycle instead of a read-only refresh.
+Timed refresh runs automatically on the interval set by `--refresh-seconds` (default: 3 s). Press `r` to trigger an immediate refresh at any time.
+
+### Cross-process event log visibility
+
+The Scheduler Log panel tails `.takt/logs/events.jsonl`, which is written by `takt run` as it dispatches beads. This means the TUI shows live activity from any concurrently running `takt run` process without sharing a process boundary.
+
+On startup the panel shows no historical entries — only events that occur while the TUI is open appear automatically. Press `H` to load up to 50 historical events from `events.jsonl` into the panel. Repeated presses walk further back through the log.
+
+### Recorded event categories
+
+| Event | Display colour | Payload shown |
+|-------|---------------|---------------|
+| `bead_started` | default | agent type, bead ID, title |
+| `worktree_ready` | dim | bead ID, worktree path, branch |
+| `bead_completed` | green | bead ID, summary |
+| `bead_blocked` | yellow | bead ID, summary |
+| `bead_failed` | bold red | bead ID, summary |
+| `bead_deferred` | dim | bead ID, deferral reason |
+| `lease_expired` | dim yellow | bead ID |
+
+Scheduler lifecycle events (`scheduler_cycle_started`, `scheduler_cycle_completed`) and `bead_deleted` are suppressed in the log panel.
 
 ## Filters
 
@@ -94,9 +110,9 @@ When `--feature-root` is set, the root bead stays visible regardless of filter.
 
 - **Retry** (`t` → `y`): requeues a blocked bead to `ready`.
 - **Status update** (`u` → `r`/`b`/`d` → `y`): manually transitions a bead. Developer beads cannot be manually marked `done` — they must complete through the scheduler to trigger followup beads.
-- **Merge** (`M` → `Enter`): merges a `done` bead's feature branch. Press `M` (Shift+M) to initiate the merge confirmation flow and confirm with `Enter`.
+- **Merge hint** (`M`): displays the CLI command to merge the selected bead's feature branch in the status bar (e.g. `takt merge B-abc12def`). Run that command in a separate terminal — merges are not executed inside the TUI.
 
-All actions require confirmation and report results in the status panel. Failed merges stay inside the TUI without closing the session.
+Retry and status update actions require confirmation and report results in the status panel.
 
 ## Bead List Display
 
