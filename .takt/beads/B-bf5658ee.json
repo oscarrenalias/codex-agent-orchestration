@@ -3567,7 +3567,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "Low \u2014 changes are isolated to TUI label generation. No overlap with other in-progress beads in this feature tree expected. `app.py` is also touched so any concurrent bead modifying `_node_label` or `BeadTree` would conflict.\nfinalize.py is a shared file \u2014 any sibling beads modifying scheduler/finalize.py (e.g. recovery bead changes) may conflict with the removed record_event lines.",
+  "conflict_risks": "Low \u2014 changes are isolated to TUI label generation. No overlap with other in-progress beads in this feature tree expected. `app.py` is also touched so any concurrent bead modifying `_node_label` or `BeadTree` would conflict.\nfinalize.py is a shared file \u2014 any sibling beads modifying scheduler/finalize.py (e.g. recovery bead changes) may conflict with the removed record_event lines.\nNone",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
