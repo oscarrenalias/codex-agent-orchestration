@@ -4,6 +4,7 @@ import dataclasses
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -707,6 +708,107 @@ class SchedulerFollowupTests(OrchestratorTests):
         shared_review = self.storage.load_bead(shared_review.bead_id)
         self.assertEqual([], shared_review.touched_files)
         self.assertEqual([], shared_review.changed_files)
+
+    # ------------------------------------------------------------------
+    # list_beads() caching in _create_followups
+    # ------------------------------------------------------------------
+
+    def test_list_beads_called_exactly_once_for_standalone_developer(self) -> None:
+        # Standalone developer bead — no planner parent, so three helpers
+        # (_planner_owned_followups_for, _existing_followups_for, three
+        # _existing_or_new_child_id calls) would each have called list_beads()
+        # separately before the cache was introduced.
+        bead = self.storage.create_bead(
+            title="Implement feature",
+            agent_type="developer",
+            description="standalone developer bead",
+        )
+        agent_result = AgentRunResult(outcome="completed", summary="done")
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        followup_manager = scheduler._executor._followups
+
+        original_list_beads = self.storage.list_beads
+        call_count = [0]
+
+        def counting_list_beads():
+            call_count[0] += 1
+            return original_list_beads()
+
+        with patch.object(self.storage, "list_beads", side_effect=counting_list_beads):
+            followup_manager._create_followups(bead, agent_result)
+
+        self.assertEqual(1, call_count[0], "list_beads() must be called exactly once per _create_followups invocation")
+
+    def test_list_beads_called_exactly_once_for_planner_owned_developer(self) -> None:
+        # Planner-owned flow: the scheduler walks planner-owned followup beads
+        # and falls back to legacy helpers — all using the same cached list.
+        epic = self.storage.create_bead(
+            title="Epic",
+            agent_type="planner",
+            description="root",
+            status=BEAD_DONE,
+            bead_type="epic",
+        )
+        feature = self.storage.create_bead(
+            title="Feature root",
+            agent_type="developer",
+            description="feature",
+            parent_id=epic.bead_id,
+            status=BEAD_DONE,
+        )
+        implement = self.storage.create_bead(
+            title="Implement A",
+            agent_type="developer",
+            description="first change",
+            parent_id=feature.bead_id,
+            dependencies=[feature.bead_id],
+            expected_files=["src/a.py"],
+        )
+        # Pre-create shared planner-owned followup beads so the planner-owned
+        # reuse path is exercised (multiple helper calls that formerly each
+        # called list_beads).
+        self.storage.create_bead(
+            title="Shared tester",
+            agent_type="tester",
+            description="validate combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=[implement.bead_id],
+        )
+        self.storage.create_bead(
+            title="Shared docs",
+            agent_type="documentation",
+            description="document combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=[implement.bead_id],
+        )
+        self.storage.create_bead(
+            title="Shared review",
+            agent_type="review",
+            description="review combined implementation",
+            parent_id=feature.bead_id,
+            dependencies=[implement.bead_id],
+        )
+
+        agent_result = AgentRunResult(
+            outcome="completed",
+            summary="done",
+            touched_files=["src/a.py"],
+            changed_files=["src/a.py"],
+        )
+        scheduler = Scheduler(self.storage, FakeRunner(), WorktreeManager(self.root, self.storage.worktrees_dir))
+        followup_manager = scheduler._executor._followups
+
+        original_list_beads = self.storage.list_beads
+        call_count = [0]
+
+        def counting_list_beads():
+            call_count[0] += 1
+            return original_list_beads()
+
+        with patch.object(self.storage, "list_beads", side_effect=counting_list_beads):
+            followup_manager._create_followups(implement, agent_result)
+
+        self.assertEqual(1, call_count[0], "list_beads() must be called exactly once per _create_followups invocation")
 
     # ------------------------------------------------------------------
     # Corrective bead creation and lifecycle
