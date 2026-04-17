@@ -6,7 +6,13 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-10d1f1fb",
-  "dependencies": [],
+  "dependencies": [
+    "B-ede6ee67",
+    "B-238b233a",
+    "B-11abd9ab",
+    "B-0d07da2c",
+    "B-1cae40ec"
+  ],
   "acceptance_criteria": [
     "Review confirms the feature meets the spec without introducing scheduler, TUI, runner, or storage changes.",
     "Review checks that version comparison and warning messages are correct for matching, missing, outdated, and pre-release-like inputs.",
