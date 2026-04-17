@@ -21,10 +21,16 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/scheduler/followups.py"
+    "CLAUDE.md",
+    "docs/development.md",
+    "src/agent_takt/scheduler/followups.py",
+    "tests/test_scheduler_followups.py"
   ],
   "changed_files": [
-    "src/agent_takt/scheduler/followups.py"
+    "CLAUDE.md",
+    "docs/development.md",
+    "src/agent_takt/scheduler/followups.py",
+    "tests/test_scheduler_followups.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
