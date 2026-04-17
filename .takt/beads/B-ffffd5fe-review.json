@@ -22,12 +22,18 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "CLAUDE.md",
     "src/agent_takt/scheduler/core.py",
-    "src/agent_takt/scheduler/execution.py"
+    "src/agent_takt/scheduler/execution.py",
+    "tests/test_scheduler_core.py",
+    "tests/test_scheduler_execution.py"
   ],
   "changed_files": [
+    "CLAUDE.md",
     "src/agent_takt/scheduler/core.py",
-    "src/agent_takt/scheduler/execution.py"
+    "src/agent_takt/scheduler/execution.py",
+    "tests/test_scheduler_core.py",
+    "tests/test_scheduler_execution.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
