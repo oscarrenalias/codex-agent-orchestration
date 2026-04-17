@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4a328166",
-  "dependencies": [],
+  "dependencies": [
+    "B-c47e24e7"
+  ],
   "acceptance_criteria": [
     "Pressing `L` toggles between wide and compact layout modes.",
     "Wide mode shows the three-column arrangement with the detail panel visible.",
