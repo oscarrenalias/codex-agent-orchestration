@@ -7,14 +7,14 @@
   "bead_type": "task",
   "parent_id": "B-d6687b5d",
   "dependencies": [
+    "B-04855ffa",
+    "B-20efd4ff",
+    "B-71d6f6a5",
+    "B-76060b68",
     "B-8a7a7a60",
     "B-8fe37173",
-    "B-20efd4ff",
-    "B-04855ffa",
-    "B-e2c7d937",
     "B-df30ceba",
-    "B-76060b68",
-    "B-71d6f6a5"
+    "B-e2c7d937"
   ],
   "acceptance_criteria": [
     "Review confirms the TUI cannot trigger scheduler execution and refreshes automatically without a toggle.",
