@@ -3,7 +3,7 @@
   "title": "Document Cache list_beads() result in followups.py _create_followups",
   "agent_type": "documentation",
   "description": "Update docs for B-2c805b5c",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-2c805b5c",
   "dependencies": [
@@ -19,40 +19,53 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/scheduler/followups.py"
+    "CLAUDE.md",
+    "docs/development.md"
   ],
   "changed_files": [
-    "src/agent_takt/scheduler/followups.py"
+    "CLAUDE.md",
+    "docs/development.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md",
+    "docs/development.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Updated followups.py entry in CLAUDE.md and docs/development.md to reflect the list_beads() caching optimization introduced in B-2c805b5c. The code comment in followups.py itself already explains the rationale; the docs now surface this behavior at the module-overview level.",
+    "remaining": "None.",
+    "risks": "Low \u2014 purely additive documentation change to two overview files.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
+    "changed_files": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "next_action": "No followup required.",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/scheduler/followups.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
+    "touched_files": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "conflict_risks": "Low \u2014 changes are in documentation files only.",
+    "design_decisions": "Documentation added to both CLAUDE.md and docs/development.md since both carry equivalent module-layout tables. The implementation's inline comment already captures the why; the docs surface it at the overview level for navigability.",
+    "test_coverage_notes": "No test changes required; this is documentation only.",
     "known_limitations": ""
   },
-  "block_reason": "file-scope conflict with in-progress B-eccab5b2-test",
-  "conflict_risks": "Low \u2014 single file changed, no interface changes visible outside the scheduler package.",
+  "block_reason": "",
+  "conflict_risks": "Low \u2014 changes are in documentation files only.",
   "branch_name": "feature/b-60307654",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-60307654",
-  "lease": {
-    "owner": "documentation:B-2c805b5c-docs",
-    "expires_at": "2026-04-17T10:31:04.711177+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -100,6 +113,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-2c805b5c-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-04-17T10:02:50.792141+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Updated CLAUDE.md and docs/development.md to document that _create_followups caches list_beads() once and passes the result via beads= parameter to avoid repeated O(n) storage scans.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -164,7 +184,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Updated CLAUDE.md and docs/development.md to document that _create_followups caches list_beads() once and passes the result via beads= parameter to avoid repeated O(n) storage scans.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.4075794,
+      "duration_ms": 104007,
+      "duration_api_ms": 96947,
+      "num_turns": 20,
+      "input_tokens": 22,
+      "output_tokens": 4899,
+      "cache_creation_tokens": 30298,
+      "cache_read_tokens": 726833,
+      "stop_reason": "end_turn",
+      "session_id": "228fc5c1-0e65-4f83-a26a-d6c90642059a",
+      "permission_denials": [],
+      "prompt_chars": 6746,
+      "prompt_lines": 156,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.4075794,
+        "duration_ms": 104007,
+        "duration_api_ms": 96947,
+        "num_turns": 20,
+        "input_tokens": 22,
+        "output_tokens": 4899,
+        "cache_creation_tokens": 30298,
+        "cache_read_tokens": 726833,
+        "stop_reason": "end_turn",
+        "session_id": "228fc5c1-0e65-4f83-a26a-d6c90642059a",
+        "permission_denials": [],
+        "prompt_chars": 6746,
+        "prompt_lines": 156,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "5235bd41be75642a4f811db42a7ca565f32a03bb"
   },
   "labels": [],
   "recovery_for": null,
