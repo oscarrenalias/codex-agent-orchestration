@@ -48,7 +48,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-ffffd5fe-test",
   "conflict_risks": "Low. Changes are confined to the two target files. _dep_is_done signature change is backward-compatible (optional parameter). No overlap with other in-progress beads' file claims expected.",
   "branch_name": "",
   "worktree_path": "",
@@ -60,6 +60,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T09:41:51.743251+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-ffffd5fe-test",
       "details": {}
     }
   ],
