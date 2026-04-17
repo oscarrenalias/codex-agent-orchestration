@@ -2455,11 +2455,16 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "CLAUDE.md",
     "src/agent_takt/cli/commands/init.py",
     "src/agent_takt/cli/commands/misc.py",
     "src/agent_takt/onboarding/__init__.py",
     "src/agent_takt/onboarding/scaffold.py",
-    "src/agent_takt/onboarding/version.py"
+    "src/agent_takt/onboarding/version.py",
+    "tests/helpers.py",
+    "tests/test_cli_misc.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_onboarding_version.py"
   ],
   "changed_files": [
     ".takt/beads/.gitkeep",
@@ -3673,11 +3678,16 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "CLAUDE.md",
     "src/agent_takt/cli/commands/init.py",
     "src/agent_takt/cli/commands/misc.py",
     "src/agent_takt/onboarding/__init__.py",
     "src/agent_takt/onboarding/scaffold.py",
-    "src/agent_takt/onboarding/version.py"
+    "src/agent_takt/onboarding/version.py",
+    "tests/helpers.py",
+    "tests/test_cli_misc.py",
+    "tests/test_onboarding_scaffold.py",
+    "tests/test_onboarding_version.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
