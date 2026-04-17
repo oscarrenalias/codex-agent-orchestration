@@ -66,7 +66,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-2c805b5c-test",
   "conflict_risks": "None. Child beads touched non-overlapping files. The three pending beads are read-only reviewers of an already-committed change.",
   "branch_name": "",
   "worktree_path": "",
@@ -78,6 +78,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T09:57:17.157121+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "file-scope conflict with in-progress B-2c805b5c-test",
       "details": {}
     }
   ],
