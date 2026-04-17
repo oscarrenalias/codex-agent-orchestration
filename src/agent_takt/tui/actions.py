@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable
 from ..console import ConsoleReporter
 from ..models import BEAD_BLOCKED, BEAD_DONE, BEAD_READY
 from ..storage import RepositoryStorage
-from .state import PANEL_DETAIL, PANEL_LIST, PANEL_SCHEDULER_LOG
+from .state import LAYOUT_COMPACT, PANEL_DETAIL, PANEL_LIST, PANEL_SCHEDULER_LOG
 
 if TYPE_CHECKING:
     from .state import TuiRuntimeState
@@ -531,6 +531,26 @@ class OrchestratorTuiActionsMixin:
     def action_cancel_pending_action(self) -> None:
         self.runtime_state.cancel_pending_action()  # type: ignore[attr-defined]
         self._update_status_panel()  # type: ignore[attr-defined]
+
+    def action_toggle_layout(self) -> None:
+        new_mode = self.runtime_state.toggle_layout()  # type: ignore[attr-defined]
+        try:
+            detail_panel = self.query_one("#detail-panel", VerticalScroll)  # type: ignore[attr-defined]
+        except NoMatches:
+            return
+        if new_mode == LAYOUT_COMPACT:
+            detail_panel.add_class("hidden")
+            if self.runtime_state.focused_panel == PANEL_DETAIL:  # type: ignore[attr-defined]
+                self.runtime_state.set_focused_panel(PANEL_LIST)  # type: ignore[attr-defined]
+                self._sync_panel_focus()  # type: ignore[attr-defined]
+            self.runtime_state.status_message = "Compact layout active. Press L to restore wide layout."  # type: ignore[attr-defined]
+        else:
+            detail_panel.remove_class("hidden")
+            self.runtime_state.status_message = "Wide layout active. Press L to switch to compact layout."  # type: ignore[attr-defined]
+        self._render_focus()  # type: ignore[attr-defined]
+        self._update_status_panel()  # type: ignore[attr-defined]
+        self._last_list_render = ()  # type: ignore[attr-defined]
+        self.call_after_refresh(self._populate_bead_tree)  # type: ignore[attr-defined]
 
     def action_toggle_all_tree_nodes(self) -> None:
         """Toggle all tree nodes between fully expanded and fully collapsed."""

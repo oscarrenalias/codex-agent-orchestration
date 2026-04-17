@@ -300,7 +300,10 @@ class TuiRuntimeState:
             self.status_message = f"Focused {panel} panel."
 
     def cycle_focus(self, step: int = 1) -> None:
-        panels = (PANEL_LIST, PANEL_DETAIL, PANEL_SCHEDULER_LOG)
+        if self.layout_mode == LAYOUT_COMPACT:
+            panels = (PANEL_LIST, PANEL_SCHEDULER_LOG)
+        else:
+            panels = (PANEL_LIST, PANEL_DETAIL, PANEL_SCHEDULER_LOG)
         index = panels.index(self.focused_panel) if self.focused_panel in panels else 0
         self.set_focused_panel(panels[(index + step) % len(panels)])
 

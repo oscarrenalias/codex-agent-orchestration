@@ -269,6 +269,7 @@ def build_tui_app(
             Binding("y", "confirm_pending_action", "Confirm", show=False),
             Binding("c", "cancel_pending_action", "Cancel", show=False),
             Binding("E", "toggle_all_tree_nodes", "Expand/Collapse All", show=False),
+            Binding("L", "toggle_layout", "Layout"),
         ]
 
         def __init__(self) -> None:
