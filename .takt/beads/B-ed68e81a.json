@@ -3,7 +3,7 @@
   "title": "Review TUI dashboard interaction changes",
   "agent_type": "review",
   "description": "Review the completed implementation, tests, and documentation for regressions in TUI navigation, layout behavior, and dashboard-only semantics.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-4a328166",
   "dependencies": [
@@ -3682,9 +3682,12 @@
   },
   "block_reason": "",
   "conflict_risks": "Any existing test that constructs TuiRuntimeState and asserts default filter_mode == \"default\" will fail \u2014 it should be updated to expect \"all\".\nB-e3206949 edits app.py BINDINGS and adds action methods. B-28a32a4e edits app.py CSS and adds layout toggle action. Both sibling beads touch the same file. Coordinate: DetailPopup and _make_detail_popup_screen are now committed to the feature branch and should be visible to both.\nNone \u2014 changes are scoped to TUI action handlers and keybindings; no overlap with scheduler or storage logic.\nNone. The three files changed are owned by this bead; `state.py` is also touched by B-c47e24e7 (merged dependency) but that work is already merged.",
-  "branch_name": "",
+  "branch_name": "feature/b-4a328166",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-ed68e81a",
+    "expires_at": "2026-04-17T13:45:19.627963+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3693,9 +3696,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T13:15:19.870434+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-17T13:15:19.870457+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-ed68e81a",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-ed68e81a/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
