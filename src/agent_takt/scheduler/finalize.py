@@ -180,7 +180,6 @@ class BeadFinalizer:
 
         bead.status = BEAD_DONE
         self.storage.update_bead(bead, event="completed", summary=agent_result.summary)
-        self.storage.record_event("bead_completed", {"bead_id": bead.bead_id, "agent_type": bead.agent_type})
         # Requeue blocked verification parents before creating new followups so
         # tester/review beads resume instead of spawning duplicate downstream work.
         self._executor._followups._requeue_parent_after_corrective_completion(bead, reporter=reporter)
@@ -291,10 +290,6 @@ class BeadFinalizer:
         self.storage.update_bead(
             recovery_bead, event="completed", summary=agent_result.summary
         )
-        self.storage.record_event(
-            "bead_completed",
-            {"bead_id": recovery_bead.bead_id, "agent_type": recovery_bead.agent_type},
-        )
         result.completed.append(recovery_bead.bead_id)
         if reporter:
             reporter.bead_completed(recovery_bead, agent_result.summary, [])
@@ -374,10 +369,6 @@ class BeadFinalizer:
         original.status = BEAD_DONE
         recovery_summary = f"Completed via recovery bead {recovery_bead.bead_id}"
         self.storage.update_bead(original, event="completed", summary=recovery_summary)
-        self.storage.record_event(
-            "bead_completed",
-            {"bead_id": original.bead_id, "agent_type": original.agent_type},
-        )
         result.completed.append(original.bead_id)
 
         # Step 6: Resume normal follow-up creation for the original bead.

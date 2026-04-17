@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from ...console import ConsoleReporter, SpinnerPool
 from ...models import Bead
 from ...scheduler import Scheduler, SchedulerReporter
+from ...storage import RepositoryStorage
 
 
 class CliSchedulerReporter(SchedulerReporter):
-    def __init__(self, console: ConsoleReporter, max_workers: int = 1, verbose: bool = False) -> None:
+    def __init__(self, console: ConsoleReporter, storage: RepositoryStorage | None = None, max_workers: int = 1, verbose: bool = False) -> None:
         self.console = console
+        self.storage = storage
         self.max_workers = max_workers
         self.verbose = verbose
         self._spinner = None
@@ -25,6 +28,8 @@ class CliSchedulerReporter(SchedulerReporter):
 
     def lease_expired(self, bead_id: str) -> None:
         self.console.warn(f"Lease expired for {bead_id}; requeued")
+        if self.storage is not None:
+            self.storage.record_event("lease_expired", {"bead_id": bead_id})
 
     def bead_started(self, bead: Bead) -> None:
         label = f"{bead.agent_type} {bead.bead_id} · {bead.title}"
@@ -33,9 +38,13 @@ class CliSchedulerReporter(SchedulerReporter):
         else:
             self._spinner = self.console.spin(label)
             self._spinner.__enter__()
+        if self.storage is not None:
+            self.storage.record_event("bead_started", {"bead_id": bead.bead_id, "agent_type": bead.agent_type, "title": bead.title})
 
     def worktree_ready(self, bead: Bead, branch_name: str, worktree_path: Path) -> None:
         self.console.detail(f"worktree {worktree_path} on {branch_name}")
+        if self.storage is not None:
+            self.storage.record_event("worktree_ready", {"bead_id": bead.bead_id, "branch_name": branch_name, "worktree_path": str(worktree_path)})
 
     def bead_completed(self, bead: Bead, summary: str, created: list[Bead]) -> None:
         if self._pool is not None:
@@ -47,10 +56,19 @@ class CliSchedulerReporter(SchedulerReporter):
         self.console.detail(summary)
         for child in created:
             self.console.detail(f"created handoff bead {child.bead_id} ({child.agent_type})")
+        if self.storage is not None:
+            self.storage.record_event("bead_completed", {
+                "bead_id": bead.bead_id,
+                "agent_type": bead.agent_type,
+                "summary": summary,
+                "created_bead_ids": [c.bead_id for c in created],
+            })
 
     def bead_deferred(self, bead: Bead, reason: str) -> None:
         if self.verbose:
             self.console.detail(f"{bead.bead_id} ({bead.title}) deferred: {reason}")
+        if self.storage is not None:
+            self.storage.record_event("bead_deferred", {"bead_id": bead.bead_id, "agent_type": bead.agent_type, "reason": reason})
 
     def bead_blocked(self, bead: Bead, summary: str) -> None:
         if self._pool is not None:
@@ -60,6 +78,8 @@ class CliSchedulerReporter(SchedulerReporter):
             self._spinner.warn(f"{bead.bead_id} blocked")
             self._spinner = None
         self.console.warn(summary)
+        if self.storage is not None:
+            self.storage.record_event("bead_blocked", {"bead_id": bead.bead_id, "agent_type": bead.agent_type, "summary": summary})
 
     def bead_failed(self, bead: Bead, summary: str) -> None:
         if self._pool is not None:
@@ -69,10 +89,12 @@ class CliSchedulerReporter(SchedulerReporter):
             self._spinner.fail(f"{bead.bead_id} failed")
             self._spinner = None
         self.console.error(summary)
+        if self.storage is not None:
+            self.storage.record_event("bead_failed", {"bead_id": bead.bead_id, "agent_type": bead.agent_type, "summary": summary})
 
 
 def command_run(args: argparse.Namespace, scheduler: Scheduler, console: ConsoleReporter) -> int:
-    reporter = CliSchedulerReporter(console, max_workers=args.max_workers, verbose=getattr(args, "verbose", False))
+    reporter = CliSchedulerReporter(console, scheduler.storage, max_workers=args.max_workers, verbose=getattr(args, "verbose", False))
     # Use dicts keyed by bead ID so each bead appears at most once (last event wins).
     started: dict[str, str] = {}
     completed: dict[str, str] = {}
@@ -89,6 +111,11 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             return 1
     scope = f", feature_root={feature_root_id}" if feature_root_id else ""
     console.info(f"Starting scheduler loop with max_workers={args.max_workers}{scope}")
+    scheduler.storage.record_event("scheduler_cycle_started", {
+        "max_workers": args.max_workers,
+        "feature_root_id": feature_root_id,
+        "pid": os.getpid(),
+    })
     try:
         result = scheduler.run_once(
             max_workers=args.max_workers,
@@ -106,6 +133,14 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
         deferred_count += len(result.deferred)
     finally:
         reporter.stop()
+
+    scheduler.storage.record_event("scheduler_cycle_completed", {
+        "started_count": len(started),
+        "completed_count": len(completed),
+        "blocked_count": len(blocked),
+        "deferred_count": deferred_count,
+        "pid": os.getpid(),
+    })
 
     # Build final-state counts from storage.
     all_beads = scheduler.storage.list_beads()
