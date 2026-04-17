@@ -33,6 +33,7 @@ from agent_takt.models import (
 from agent_takt.storage import RepositoryStorage
 from agent_takt.tui import (
     DETAIL_SECTION_HISTORY,
+    DETAIL_SECTION_ORDER,
     DETAIL_SECTION_TELEMETRY,
     EXECUTION_HISTORY_DISPLAY_LIMIT,
     FILTER_ACTIONABLE,
@@ -1697,6 +1698,129 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual("next_detail_section", bindings.get("n"))
         self.assertEqual("previous_detail_section", bindings.get("N"))
         self.assertEqual("cancel_pending_action", bindings.get("c"))
+
+    def test_detail_popup_has_collapsible_sections_expanded_by_default(self) -> None:
+        """DetailPopup.compose() should yield one Collapsible per section, all expanded."""
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Popup Test Bead",
+            agent_type="developer",
+            description="test popup content",
+            status=BEAD_READY,
+            acceptance_criteria=["criterion 1", "criterion 2"],
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[int, list[bool], list[str]]:
+            from textual.widgets import Collapsible
+
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(100, 30)
+                await pilot.pause()
+
+                await pilot.press("enter")
+                await pilot.pause()
+
+                popup_screen = app.screen
+                collapsibles = list(popup_screen.query(Collapsible))
+                collapsed_states = [c.collapsed for c in collapsibles]
+                titles = [c.title for c in collapsibles]
+
+                return len(collapsibles), collapsed_states, titles
+
+        count, collapsed_states, titles = asyncio.run(exercise_app())
+
+        self.assertEqual(len(DETAIL_SECTION_ORDER), count, "One Collapsible per section expected")
+        self.assertFalse(
+            any(collapsed_states),
+            f"All sections should be expanded by default; got: {collapsed_states}",
+        )
+        self.assertIn("Acceptance Criteria", titles)
+        self.assertIn("Files", titles)
+        self.assertIn("Handoff", titles)
+        self.assertIn("Telemetry", titles)
+        self.assertIn("Execution History", titles)
+
+    def test_detail_popup_summary_header_contains_bead_metadata(self) -> None:
+        """The popup summary Static should show bead ID, title, status, and agent type."""
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Metadata Bead",
+            agent_type="tester",
+            description="test",
+            status=BEAD_BLOCKED,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> str:
+            from textual.containers import Vertical
+            from textual.widgets import Collapsible, Static
+
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(100, 30)
+                await pilot.pause()
+
+                await pilot.press("enter")
+                await pilot.pause()
+
+                popup_screen = app.screen
+                content = popup_screen.query_one("#detail-popup-content", Vertical)
+                summary_static = next(w for w in content.children if isinstance(w, Static) and not isinstance(w, Collapsible))
+                return str(summary_static.renderable)
+
+        summary_text = asyncio.run(exercise_app())
+
+        self.assertIn("B0001", summary_text)
+        self.assertIn("Metadata Bead", summary_text)
+        self.assertIn("blocked", summary_text)
+        self.assertIn("tester", summary_text)
+
+    def test_detail_popup_telemetry_section_shows_cost_and_duration(self) -> None:
+        """Telemetry Collapsible in popup should show cost and duration when data is present."""
+        bead = self.storage.create_bead(
+            bead_id="B0001",
+            title="Telemetry Bead",
+            agent_type="developer",
+            description="with telemetry",
+            status=BEAD_DONE,
+        )
+        bead.metadata["telemetry"] = {
+            "cost_usd": 0.05,
+            "duration_ms": 90000,
+            "num_turns": 5,
+            "input_tokens": 1000,
+            "output_tokens": 500,
+        }
+        self.storage.save_bead(bead)
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> str:
+            from textual.widgets import Collapsible, Static
+            from textual.widgets._collapsible import CollapsibleTitle
+
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(100, 30)
+                await pilot.pause()
+
+                await pilot.press("enter")
+                await pilot.pause()
+
+                popup_screen = app.screen
+                collapsibles = list(popup_screen.query(Collapsible))
+                telemetry_col = next(c for c in collapsibles if c.title == "Telemetry")
+                # CollapsibleTitle is a Static subclass — exclude it to get our content Static
+                body_static = next(
+                    s for s in telemetry_col.query(Static)
+                    if not isinstance(s, CollapsibleTitle)
+                )
+                return str(body_static.renderable)
+
+        tel_text = asyncio.run(exercise_app())
+
+        self.assertIn("cost_usd", tel_text)
+        self.assertIn("$0.05", tel_text)
+        self.assertIn("duration", tel_text)
+        self.assertIn("1:30", tel_text)  # 90000ms = 1 min 30 sec
 
     def test_command_tui_rejects_descendant_scope_before_launch(self) -> None:
         feature_root_id, _ = self._create_feature_tree()
