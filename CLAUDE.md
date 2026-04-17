@@ -37,7 +37,7 @@ src/agent_takt/
     core.py       Main Scheduler class and scheduling loop
     execution.py  Bead execution and lease management
     finalize.py   Bead finalization and status transitions
-    followups.py  Followup bead creation and scope syncing
+    followups.py  Followup bead creation and scope syncing; _create_followups caches list_beads() once and threads the result through helper methods (beads= param) to avoid repeated O(n) storage scans
     reporter.py   SchedulerReporter: cycle summary formatting
   storage.py      Bead JSON persistence under .takt/beads/ + telemetry artifacts; git commit failures are non-fatal and recorded as `git_commit_failed` execution events
   models.py       Bead (incl. recovery_for), Lease, HandoffSummary, AgentRunResult
