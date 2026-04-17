@@ -6,7 +6,12 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4a328166",
-  "dependencies": [],
+  "dependencies": [
+    "B-c47e24e7",
+    "B-a7d17bc7",
+    "B-e3206949",
+    "B-28a32a4e"
+  ],
   "acceptance_criteria": [
     "Automated tests cover default visibility of done beads on initial TUI load.",
     "Automated tests cover opening the detail popup with `Enter` and dismissing it with `Escape`.",
