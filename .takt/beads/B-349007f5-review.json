@@ -21,10 +21,16 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/tui/app.py"
+    "docs/tui.md",
+    "src/agent_takt/tui/app.py",
+    "tests/test_telemetry_merge.py",
+    "tests/test_tui_app.py"
   ],
   "changed_files": [
-    "src/agent_takt/tui/app.py"
+    "docs/tui.md",
+    "src/agent_takt/tui/app.py",
+    "tests/test_telemetry_merge.py",
+    "tests/test_tui_app.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
