@@ -41,7 +41,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "worktree in use by in-progress B-349007f5 (no file scope defined)",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -53,6 +53,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T09:37:22.027872+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "worktree in use by in-progress B-349007f5 (no file scope defined)",
       "details": {}
     }
   ],
