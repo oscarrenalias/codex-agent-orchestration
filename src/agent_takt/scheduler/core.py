@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait as cf_wait
 from datetime import datetime, timezone
 from fnmatch import fnmatch
@@ -22,6 +23,8 @@ from ..runner import AgentRunner
 from ..storage import RepositoryStorage
 from .execution import BeadExecutor
 from .reporter import SchedulerReporter
+
+logger = logging.getLogger(__name__)
 
 
 class Scheduler:
@@ -385,17 +388,34 @@ class Scheduler:
                 continue
             if self.storage.dependency_satisfied(bead):
                 continue
-            unsatisfied = [dep_id for dep_id in bead.dependencies if not self._dep_is_done(dep_id)]
+            unsatisfied = [dep_id for dep_id in bead.dependencies if not self._dep_is_done(dep_id, bead)]
             if not unsatisfied:
                 continue
             reason = "dependency not done: " + ", ".join(unsatisfied)
             deferred_this_cycle.add(bead.bead_id)
             reporter.bead_deferred(bead, reason)
 
-    def _dep_is_done(self, dep_id: str) -> bool:
+    def _dep_is_done(self, dep_id: str, depending_bead: Bead | None = None) -> bool:
         try:
             return self.storage.load_bead(dep_id).status == BEAD_DONE
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "dependency lookup failed: dep_id=%s, exc=%s",
+                dep_id,
+                exc,
+                exc_info=True,
+            )
+            if depending_bead is not None:
+                depending_bead.execution_history.append(
+                    ExecutionRecord(
+                        timestamp=utc_now(),
+                        event="dependency_resolution_error",
+                        agent_type="scheduler",
+                        summary=f"Failed to load dependency {dep_id}: {exc}",
+                        details={"dep_id": dep_id, "error": str(exc)},
+                    )
+                )
+                self.storage.update_bead(depending_bead)
             return False
 
     def _beads_conflict(self, bead: Bead, active: Bead) -> bool:

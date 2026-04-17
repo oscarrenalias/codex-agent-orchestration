@@ -1068,5 +1068,50 @@ class TuiSubtreeTelemetryTests(unittest.TestCase):
     # -- TuiRuntimeState subtree_telemetry_for and _subtree_cache -------------
 
 
+class TuiPanelBadgeTests(unittest.TestCase):
+    """Tests for B-2d8b229a: Remove [idle] badge from unfocused TUI panels."""
+
+    def test_panel_badge_focused_returns_active_suffix(self) -> None:
+        from agent_takt.tui.render import _panel_badge
+        self.assertEqual("X [ACTIVE]", _panel_badge("X", focused=True))
+
+    def test_panel_badge_unfocused_returns_name_only(self) -> None:
+        from agent_takt.tui.render import _panel_badge
+        self.assertEqual("X", _panel_badge("X", focused=False))
+
+    def test_panel_badge_focused_does_not_return_idle(self) -> None:
+        from agent_takt.tui.render import _panel_badge
+        self.assertNotIn("[idle]", _panel_badge("Beads", focused=True))
+
+    def test_panel_badge_unfocused_does_not_return_idle(self) -> None:
+        from agent_takt.tui.render import _panel_badge
+        self.assertNotIn("[idle]", _panel_badge("Beads", focused=False))
+
+    def test_panel_badge_unfocused_does_not_return_active(self) -> None:
+        from agent_takt.tui.render import _panel_badge
+        self.assertNotIn("[ACTIVE]", _panel_badge("Details", focused=False))
+
+    def test_beads_panel_title_focused(self) -> None:
+        from agent_takt.tui.render import _beads_panel_title
+        title = _beads_panel_title("all", focused=True)
+        self.assertIn("[ACTIVE]", title)
+        self.assertNotIn("[idle]", title)
+
+    def test_beads_panel_title_unfocused(self) -> None:
+        from agent_takt.tui.render import _beads_panel_title
+        title = _beads_panel_title("all", focused=False)
+        self.assertNotIn("[ACTIVE]", title)
+        self.assertNotIn("[idle]", title)
+        self.assertIn("Beads", title)
+
+    def test_render_tree_panel_focused_marker_uses_arrow(self) -> None:
+        bead = Bead(bead_id="B0001", title="Task", agent_type="developer", description="d", status=BEAD_READY)
+        rows = build_tree_rows([bead])
+        focused_output = render_tree_panel(rows, selected_index=0, focused=True)
+        unfocused_output = render_tree_panel(rows, selected_index=0, focused=False)
+        self.assertIn(">>", focused_output)
+        self.assertNotIn(">>", unfocused_output)
+
+
 if __name__ == '__main__':
     unittest.main()

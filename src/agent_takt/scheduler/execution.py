@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -26,6 +27,8 @@ from ..storage import RepositoryStorage
 from .finalize import BeadFinalizer
 from .followups import FollowupManager
 from .reporter import SchedulerReporter
+
+logger = logging.getLogger(__name__)
 
 
 class BeadExecutor:
@@ -296,7 +299,24 @@ class BeadExecutor:
         for dep_id in bead.dependencies:
             try:
                 dep_bead = self.storage.load_bead(dep_id)
-            except Exception:
+            except Exception as exc:
+                logger.warning(
+                    "dependency lookup failed: bead_id=%s, dep_id=%s, exc=%s",
+                    bead.bead_id,
+                    dep_id,
+                    exc,
+                    exc_info=True,
+                )
+                bead.execution_history.append(
+                    ExecutionRecord(
+                        timestamp=utc_now(),
+                        event="dependency_resolution_error",
+                        agent_type="scheduler",
+                        summary=f"Failed to load dependency {dep_id}: {exc}",
+                        details={"dep_id": dep_id, "error": str(exc)},
+                    )
+                )
+                self.storage.update_bead(bead)
                 continue
             if dep_bead.status == BEAD_DONE:
                 handoffs.append(dep_bead.handoff_summary)
