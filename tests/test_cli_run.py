@@ -21,7 +21,6 @@ from agent_takt.gitutils import WorktreeManager
 from agent_takt.models import AgentRunResult
 from agent_takt.scheduler import Scheduler
 from agent_takt.storage import RepositoryStorage
-from agent_takt.tui.app import TuiSchedulerReporter
 from agent_takt.tui.state import TuiRuntimeState
 
 RepositoryStorage._auto_commit = False
@@ -328,61 +327,6 @@ class RunParserVerboseTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as ctx:
             parser.parse_args(["run", "--once"])
         self.assertEqual(2, ctx.exception.code)
-
-
-class TuiSchedulerReporterTests(unittest.TestCase):
-    """Unit tests for TuiSchedulerReporter scheduler_log behaviour."""
-
-    def _make_state(self):
-        mock_storage = MagicMock()
-        mock_storage.list_beads.return_value = []
-        return TuiRuntimeState(storage=mock_storage)
-
-    def _make_bead(self, bead_id: str = "B-aabb1122", title: str = "Sample bead"):
-        bead = MagicMock()
-        bead.bead_id = bead_id
-        bead.title = title
-        bead.agent_type = "developer"
-        return bead
-
-    def test_no_events_leaves_scheduler_log_empty(self) -> None:
-        """Creating a TuiSchedulerReporter without calling any event method leaves scheduler_log empty."""
-        state = self._make_state()
-        TuiSchedulerReporter(MagicMock(), state)
-        self.assertEqual([], state.scheduler_log)
-
-    def test_first_post_appends_cycle_header_then_event(self) -> None:
-        """The first _post call should append a cycle-start header followed by the event line."""
-        state = self._make_state()
-        reporter = TuiSchedulerReporter(MagicMock(), state)
-        bead = self._make_bead()
-        reporter.bead_started(bead)
-        self.assertEqual(2, len(state.scheduler_log))
-        self.assertIn("cycle starting", state.scheduler_log[0])
-        self.assertIn("B-aabb1122", state.scheduler_log[1])
-
-    def test_subsequent_posts_do_not_re_emit_header(self) -> None:
-        """Only the first _post should emit the cycle-start header."""
-        state = self._make_state()
-        reporter = TuiSchedulerReporter(MagicMock(), state)
-        bead = self._make_bead()
-        reporter.bead_started(bead)
-        reporter.bead_completed(bead, "done", [])
-        # Two events: header + started + completed = 3 entries; header must appear only once.
-        header_count = sum(1 for line in state.scheduler_log if "cycle starting" in line)
-        self.assertEqual(1, header_count)
-
-    def test_bead_deferred_appends_deferred_line(self) -> None:
-        """bead_deferred must append a line containing the bead_id and the reason string."""
-        state = self._make_state()
-        reporter = TuiSchedulerReporter(MagicMock(), state)
-        bead = self._make_bead(bead_id="B-ff001122", title="Some bead")
-        reporter.bead_deferred(bead, "file-scope conflict with in-progress B-other")
-        # scheduler_log: header + deferred line
-        deferred_lines = [l for l in state.scheduler_log if "Deferred" in l]
-        self.assertEqual(1, len(deferred_lines))
-        self.assertIn("B-ff001122", deferred_lines[0])
-        self.assertIn("file-scope conflict", deferred_lines[0])
 
 
 if __name__ == "__main__":

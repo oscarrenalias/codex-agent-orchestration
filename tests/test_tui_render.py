@@ -833,7 +833,7 @@ class TuiMarkupRenderingTests(unittest.TestCase):
         # The Strip should contain segments with proper dim styling, not raw markup
         first_strip = captured_writes[0]
         plain_text = "".join(seg.text for seg in first_strip)
-        self.assertIn("Press s to run a scheduler cycle", plain_text)
+        self.assertIn("Live event log", plain_text)
         # The raw markup tags should NOT appear in the rendered text
         self.assertNotIn("[dim]", plain_text)
         self.assertNotIn("[/dim]", plain_text)

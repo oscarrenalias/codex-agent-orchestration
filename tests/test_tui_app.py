@@ -44,7 +44,6 @@ from agent_takt.tui import (
     PANEL_LIST,
     PANEL_SCHEDULER_LOG,
     TuiRuntimeState,
-    TuiSchedulerReporter,
     _detail_section_body,
     _detail_section_title,
     _format_duration_ms,
@@ -951,26 +950,13 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual(BEAD_READY, bead_status)
         self.assertIn(f"Updated {bead.bead_id} to {BEAD_READY}.", status_message)
 
-    def test_interval_tick_dispatches_refresh_and_scheduler_by_runtime_mode(self) -> None:
+    def test_interval_tick_always_triggers_refresh(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
         app = build_tui_app(self.storage, refresh_seconds=60)
 
         with patch.object(app.runtime_state, "refresh") as refresh_mock:
-            with patch.object(app, "_start_scheduler_worker") as scheduler_mock:
-                app._on_interval_tick()
-                refresh_mock.assert_not_called()
-                scheduler_mock.assert_not_called()
-
-                app.runtime_state.toggle_timed_refresh()
-                app._on_interval_tick()
-                refresh_mock.assert_called_once_with()
-                scheduler_mock.assert_not_called()
-
-                refresh_mock.reset_mock()
-                app.runtime_state.toggle_continuous_run()
-                app._on_interval_tick()
-                refresh_mock.assert_not_called()
-                scheduler_mock.assert_called_once_with()
+            app._on_interval_tick()
+            refresh_mock.assert_called_once()
 
     def test_panel_updates_skip_redundant_rerenders_until_content_changes(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
@@ -1633,71 +1619,6 @@ class TuiRegressionTests(unittest.TestCase):
         self.assertEqual("previous_detail_section", bindings.get("N"))
         self.assertEqual("cancel_pending_action", bindings.get("c"))
 
-    # ── Async scheduler worker tests (B0131) ──────────────────
-
-    def test_app_start_scheduler_worker_guard_prevents_double_launch(self) -> None:
-        """_start_scheduler_worker is a no-op when a worker is already running."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        app = build_tui_app(self.storage, refresh_seconds=60)
-
-        app._scheduler_worker_running = True
-        with patch.object(app, "run_worker") as run_worker_mock:
-            app._start_scheduler_worker()
-            run_worker_mock.assert_not_called()
-
-        self.assertIn("already in progress", app.runtime_state.status_message)
-
-    def test_app_start_scheduler_worker_does_not_prematurely_set_scheduler_running(self) -> None:
-        """_start_scheduler_worker must NOT set runtime_state.scheduler_running=True.
-
-        Regression test for B-79b03bf2: before the fix, _start_scheduler_worker set
-        runtime_state.scheduler_running=True *before* calling run_scheduler_cycle(), which
-        caused run_scheduler_cycle() to see the flag already set and return False immediately,
-        so the cycle never actually executed.
-        """
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        app = build_tui_app(self.storage, refresh_seconds=60)
-
-        captured_scheduler_running: list[bool] = []
-
-        def capture_and_skip(*args, **kwargs) -> None:
-            # Capture runtime_state.scheduler_running at the moment run_worker is called.
-            # If the bug were present, this would be True (set prematurely), preventing the
-            # cycle from executing.
-            captured_scheduler_running.append(app.runtime_state.scheduler_running)
-
-        with patch.object(app, "run_worker", side_effect=capture_and_skip):
-            app._start_scheduler_worker()
-
-        self.assertEqual([False], captured_scheduler_running, (
-            "runtime_state.scheduler_running must be False when run_worker is called; "
-            "setting it to True here causes run_scheduler_cycle() to abort immediately."
-        ))
-
-    def test_app_on_scheduler_worker_done_resets_flags_and_rerenders(self) -> None:
-        """_on_scheduler_worker_done clears both running flags and triggers re-render."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        app = build_tui_app(self.storage, refresh_seconds=60)
-
-        app._scheduler_worker_running = True
-        app.runtime_state.scheduler_running = True
-
-        with patch.object(app, "_render_all") as render_mock:
-            app._on_scheduler_worker_done()
-
-        self.assertFalse(app._scheduler_worker_running)
-        self.assertFalse(app.runtime_state.scheduler_running)
-        render_mock.assert_called_once_with(force_detail=True)
-
-    def test_app_action_scheduler_once_delegates_to_start_scheduler_worker(self) -> None:
-        """Pressing 's' (action_scheduler_once) delegates to _start_scheduler_worker."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        app = build_tui_app(self.storage, refresh_seconds=60)
-
-        with patch.object(app, "_start_scheduler_worker") as worker_mock:
-            app.action_scheduler_once()
-            worker_mock.assert_called_once_with()
-
     def test_command_tui_rejects_descendant_scope_before_launch(self) -> None:
         feature_root_id, _ = self._create_feature_tree()
         stream = io.StringIO()
@@ -1757,7 +1678,6 @@ class TuiLegacyTests(_OrchestratorBase):
             filter_mode=FILTER_DEFAULT,
             selected_index=0,
             total_rows=1,
-            continuous_run_enabled=False,
         )
 
         self.assertIn("Bead: B0099", detail)
@@ -1770,7 +1690,7 @@ class TuiLegacyTests(_OrchestratorBase):
         self.assertIn("  next_agent: review", detail)
         self.assertIn("  conflict_risks: Coordinate with review bead on footer text.", detail)
         self.assertEqual(
-            "filter=default | run=manual | rows=1 | selected=1 | open=0 | ready=0 | in_progress=0 | blocked=1 | handed_off=0 | done=0",
+            "filter=default | rows=1 | selected=1 | open=0 | ready=0 | in_progress=0 | blocked=1 | handed_off=0 | done=0",
             footer.removesuffix(" | ? help"),
         )
         self.assertTrue(footer.endswith(" | ? help"))
@@ -1821,13 +1741,12 @@ class TuiLiveStatusBarTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def _make_state(self, beads: list, *, continuous_run: bool = False, status_message: str = "") -> TuiRuntimeState:
+    def _make_state(self, beads: list, *, status_message: str = "") -> TuiRuntimeState:
         for bead in beads:
             self.storage.save_bead(bead)
         state = TuiRuntimeState(storage=self.storage)
         state.filter_mode = FILTER_ALL
         state.refresh()
-        state.continuous_run_enabled = continuous_run
         state.status_message = status_message
         return state
 
@@ -1846,23 +1765,6 @@ class TuiLiveStatusBarTests(unittest.TestCase):
         self.assertIn("2 running", result)
         self.assertIn("1 ready", result)
         self.assertIn("1 blocked", result)
-
-    def test_live_status_bar_text_shows_manual_mode_when_not_continuous(self) -> None:
-        from agent_takt.tui.app import _live_status_bar_text
-
-        state = self._make_state([])
-        state.continuous_run_enabled = False
-        result = _live_status_bar_text(state)
-
-        self.assertIn("S:manual", result)
-
-    def test_live_status_bar_text_shows_auto_mode_when_continuous(self) -> None:
-        from agent_takt.tui.app import _live_status_bar_text
-
-        state = self._make_state([], continuous_run=True)
-        result = _live_status_bar_text(state)
-
-        self.assertIn("S:auto", result)
 
     def test_live_status_bar_text_appends_status_message(self) -> None:
         from agent_takt.tui.app import _live_status_bar_text
@@ -1910,8 +1812,8 @@ class TuiLiveStatusBarTests(unittest.TestCase):
         )
 
 
-class TuiSchedulerReporterDeferredTests(unittest.TestCase):
-    """Tests for TuiSchedulerReporter deferred-cycle lifecycle (B-8150a4da)."""
+class TuiBindingsTests(unittest.TestCase):
+    """Tests verifying TUI keybindings match current design (always-on refresh, H for history)."""
 
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -1929,127 +1831,41 @@ class TuiSchedulerReporterDeferredTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def _make_reporter(self, state: TuiRuntimeState) -> TuiSchedulerReporter:
-        from unittest.mock import MagicMock
-        app = MagicMock()
-        # Prevent call_from_thread from raising
-        app.call_from_thread.return_value = None
-        return TuiSchedulerReporter(app, state)
+    def test_app_has_H_binding_for_load_event_history(self) -> None:
+        app = build_tui_app(self.storage)
+        binding_keys = [b.key for b in app.BINDINGS]
+        self.assertIn("H", binding_keys)
+        history_binding = next(b for b in app.BINDINGS if b.key == "H")
+        self.assertEqual("load_event_history", history_binding.action)
 
-    def _make_state(self) -> TuiRuntimeState:
-        return TuiRuntimeState(storage=self.storage)
+    def test_app_has_no_scheduling_toggle_bindings(self) -> None:
+        app = build_tui_app(self.storage)
+        binding_keys = [b.key for b in app.BINDINGS]
+        for removed_key in ("a", "s", "S"):
+            self.assertNotIn(removed_key, binding_keys, f"Key '{removed_key}' should have been removed")
 
-    def _make_bead(self, bead_id: str) -> Bead:
-        return Bead(
-            bead_id=bead_id,
-            title=f"Task {bead_id}",
-            agent_type="developer",
-            description="d",
-            status=BEAD_READY,
-        )
+    def test_H_key_calls_load_event_log_history_in_app(self) -> None:
+        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
+        app = build_tui_app(self.storage, refresh_seconds=60)
 
-    def test_deferred_this_cycle_empty_before_any_cycle(self) -> None:
-        state = self._make_state()
-        self.assertEqual(set(), state.deferred_this_cycle)
+        import json as _json
+        event_path = self.storage.logs_dir / "events.jsonl"
+        record = {"event_type": "bead_started", "timestamp": "2024-01-15T10:00:00+00:00", "payload": {"bead_id": "B0001", "agent_type": "developer"}}
+        event_path.write_text(_json.dumps(record) + "\n", encoding="utf-8")
+        app.runtime_state._history_offset = event_path.stat().st_size
 
-    def test_bead_deferred_adds_bead_id_to_deferred_this_cycle(self) -> None:
-        state = self._make_state()
-        reporter = self._make_reporter(state)
+        async def exercise_app() -> str:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                await pilot.press("H")
+                await pilot.pause()
+                return app.runtime_state.status_message
 
-        # Fire the cycle header first (as happens in a real scheduler run)
-        reporter.lease_expired("B-trigger-00")
-
-        bead = self._make_bead("B-def-reporter-01")
-        reporter.bead_deferred(bead, "dependency not met")
-
-        self.assertIn("B-def-reporter-01", state.deferred_this_cycle)
-
-    def test_multiple_deferrals_accumulate_in_deferred_this_cycle(self) -> None:
-        state = self._make_state()
-        reporter = self._make_reporter(state)
-
-        # Fire cycle header first so subsequent bead_deferred calls don't clear state
-        reporter.lease_expired("B-trigger-00")
-
-        beads = [self._make_bead(f"B-def-reporter-0{i}") for i in range(1, 4)]
-        for bead in beads:
-            reporter.bead_deferred(bead, "not ready")
-
-        for bead in beads:
-            self.assertIn(bead.bead_id, state.deferred_this_cycle)
-
-    def test_next_cycle_first_post_clears_deferred_this_cycle(self) -> None:
-        state = self._make_state()
-
-        # Cycle 1: log header then defer a bead
-        reporter1 = self._make_reporter(state)
-        reporter1.lease_expired("B-trigger-00")  # logs cycle header
-        bead = self._make_bead("B-def-reporter-10")
-        reporter1.bead_deferred(bead, "not ready")
-        self.assertIn("B-def-reporter-10", state.deferred_this_cycle)
-
-        # Cycle 2: fresh reporter; the first _post call clears deferred_this_cycle
-        reporter2 = self._make_reporter(state)
-        another_bead = self._make_bead("B-def-reporter-11")
-        reporter2.bead_started(another_bead)  # first _post of new cycle → clears
-
-        self.assertEqual(set(), state.deferred_this_cycle)
-
-    def test_deferred_log_entry_wrapped_in_dim_markup(self) -> None:
-        state = self._make_state()
-        reporter = self._make_reporter(state)
-        bead = self._make_bead("B-def-reporter-20")
-
-        reporter.bead_deferred(bead, "dep not met")
-
-        # The log should contain a dim-wrapped entry for the deferred event
-        deferred_entries = [line for line in state.scheduler_log if "Deferred" in line]
-        self.assertTrue(deferred_entries, "Expected at least one deferred log entry")
+        status = asyncio.run(exercise_app())
         self.assertTrue(
-            any("[dim]" in entry for entry in deferred_entries),
-            f"Expected [dim] markup in deferred log entries: {deferred_entries}"
+            "history" in status.lower() or "loaded" in status.lower() or "No more" in status,
+            f"Unexpected status after H: {status!r}",
         )
-
-    def test_non_deferred_log_entries_not_wrapped_in_dim(self) -> None:
-        state = self._make_state()
-        reporter = self._make_reporter(state)
-        bead = self._make_bead("B-def-reporter-30")
-
-        reporter.bead_started(bead)
-
-        started_entries = [line for line in state.scheduler_log if "Started" in line]
-        self.assertTrue(started_entries, "Expected at least one started log entry")
-        self.assertFalse(
-            any("[dim]" in entry for entry in started_entries),
-            f"Expected no [dim] markup in started log entries: {started_entries}"
-        )
-
-    def test_blocked_log_entry_not_wrapped_in_dim(self) -> None:
-        state = self._make_state()
-        reporter = self._make_reporter(state)
-        bead = self._make_bead("B-def-reporter-40")
-
-        reporter.bead_blocked(bead, "needs changes")
-
-        blocked_entries = [line for line in state.scheduler_log if "Blocked" in line]
-        self.assertTrue(blocked_entries, "Expected at least one blocked log entry")
-        self.assertFalse(
-            any("[dim]" in entry for entry in blocked_entries),
-            f"Expected no [dim] markup in blocked log entries: {blocked_entries}"
-        )
-
-    def test_bead_deferred_as_first_call_in_cycle_preserves_bead_id(self) -> None:
-        """bead_deferred() as the first reporter call in a cycle must not lose the
-        bead ID due to _post()'s cycle-start clear running after the state write
-        (ordering bug fixed in B-3e855a6c-corrective)."""
-        state = self._make_state()
-        reporter = self._make_reporter(state)
-
-        # No preceding reporter call — bead_deferred IS the first event this cycle
-        bead = self._make_bead("B-def-first-call-01")
-        reporter.bead_deferred(bead, "dependency not done: B-xxx")
-
-        self.assertIn("B-def-first-call-01", state.deferred_this_cycle)
 
 
 if __name__ == "__main__":

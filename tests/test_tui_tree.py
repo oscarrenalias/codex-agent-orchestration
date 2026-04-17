@@ -34,6 +34,7 @@ from agent_takt.tui import (
     resolve_selected_index,
     supported_filter_modes,
 )
+from agent_takt.tui.tree import _status_icon
 
 
 class TuiTreeBuildingTests(unittest.TestCase):
@@ -261,6 +262,47 @@ class TuiTreeBuildingTests(unittest.TestCase):
         self.assertIn("> B0002 · Two [blocked]", panel)
         self.assertIn("  B0001 · One [ready]", panel)
         self.assertNotIn("Beads [", panel)
+
+
+class TuiStatusIconTests(unittest.TestCase):
+    """Tests for _status_icon function in tree.py."""
+
+    def test_status_icon_open_returns_dim_circle(self) -> None:
+        result = _status_icon(BEAD_OPEN)
+        self.assertIn("[dim]", result)
+        self.assertIn("○", result)
+
+    def test_status_icon_ready_returns_cyan_filled_circle(self) -> None:
+        result = _status_icon(BEAD_READY)
+        self.assertIn("[cyan]", result)
+        self.assertIn("●", result)
+
+    def test_status_icon_in_progress_returns_yellow_dotted_circle(self) -> None:
+        result = _status_icon(BEAD_IN_PROGRESS)
+        self.assertIn("[yellow]", result)
+        self.assertIn("◉", result)
+
+    def test_status_icon_done_returns_green_checkmark(self) -> None:
+        result = _status_icon(BEAD_DONE)
+        self.assertIn("[green]", result)
+        self.assertIn("✓", result)
+
+    def test_status_icon_blocked_returns_red_cross(self) -> None:
+        result = _status_icon(BEAD_BLOCKED)
+        self.assertIn("[red]", result)
+        self.assertIn("✗", result)
+
+    def test_status_icon_handed_off_returns_magenta_arrow(self) -> None:
+        from agent_takt.models import BEAD_HANDED_OFF
+        result = _status_icon(BEAD_HANDED_OFF)
+        self.assertIn("[magenta]", result)
+        self.assertIn("→", result)
+
+    def test_status_icon_unknown_status_returns_non_empty_fallback(self) -> None:
+        result = _status_icon("unknown_status_xyz")
+        self.assertIsNotNone(result)
+        self.assertGreater(len(result), 0)
+        self.assertIn("?", result)
 
 
 if __name__ == "__main__":

@@ -32,7 +32,6 @@ from agent_takt.tui import (
     PANEL_LIST,
     PANEL_SCHEDULER_LOG,
     TuiRuntimeState,
-    TuiSchedulerReporter,
     format_detail_panel,
 )
 
@@ -264,55 +263,6 @@ class TuiRuntimeStateTests(unittest.TestCase):
         self.assertFalse(state.awaiting_merge_confirmation)
         self.assertIsNone(state.pending_merge_bead_id)
 
-    def test_runtime_toggle_continuous_run_updates_footer_and_last_action(self) -> None:
-        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
-
-        state.toggle_continuous_run()
-
-        self.assertTrue(state.continuous_run_enabled)
-        self.assertEqual("continuous run", state.last_action)
-        self.assertEqual("enabled", state.last_result)
-        self.assertIn("run=continuous", state.footer_text())
-
-    def test_runtime_timed_refresh_mode_summary_tracks_focus_and_disable_resets_manual_mode(self) -> None:
-        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT, refresh_seconds=7)
-
-        state.set_focused_panel(PANEL_DETAIL)
-        state.toggle_timed_refresh()
-
-        self.assertTrue(state.timed_refresh_enabled)
-        self.assertFalse(state.continuous_run_enabled)
-        self.assertEqual("timed refresh", state.last_action)
-        self.assertEqual("refresh/7s", state.last_result)
-        self.assertIn("timed refresh every 7s | scheduler=manual | focus=detail", state.status_panel_text())
-
-        state.toggle_continuous_run()
-        self.assertIn("timed scheduler every 7s | focus=detail", state.status_panel_text())
-
-        state.toggle_timed_refresh()
-        self.assertFalse(state.timed_refresh_enabled)
-        self.assertFalse(state.continuous_run_enabled)
-        self.assertEqual("manual", state.last_result)
-        self.assertIn("manual refresh | scheduler=manual | focus=detail", state.status_panel_text())
-
-    def test_runtime_defaults_to_manual_refresh_until_explicit_auto_mode_is_enabled(self) -> None:
-        self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT, refresh_seconds=11)
-
-        self.assertFalse(state.timed_refresh_enabled)
-        self.assertFalse(state.continuous_run_enabled)
-        self.assertEqual(PANEL_LIST, state.focused_panel)
-        self.assertIn("run=manual", state.footer_text())
-        self.assertIn("manual refresh | scheduler=manual | focus=list", state.status_panel_text())
-
-        state.toggle_timed_refresh()
-        self.assertIn("timed refresh every 11s | scheduler=manual | focus=list", state.status_panel_text())
-
-        state.toggle_continuous_run()
-        self.assertIn("timed scheduler every 11s | focus=list", state.status_panel_text())
-
     def test_runtime_focus_cycles_through_all_three_panels(self) -> None:
         self.storage.create_bead(bead_id="B0001", title="Ready", agent_type="developer", description="ready", status=BEAD_READY)
         state = TuiRuntimeState(self.storage, filter_mode=FILTER_DEFAULT)
@@ -401,83 +351,6 @@ class TuiRuntimeStateTests(unittest.TestCase):
         self.assertEqual(0, state.selected_index)
         self.assertEqual(5, state.detail_scroll_offset)
         self.assertEqual("Selection already at the first bead.", state.status_message)
-
-    def test_runtime_scheduler_cycle_uses_feature_root_scope_and_records_result(self) -> None:
-        feature_root_id, _ = self._create_feature_tree()
-        state = TuiRuntimeState(self.storage, feature_root_id=feature_root_id, filter_mode=FILTER_ALL)
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.return_value = SchedulerResult()
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())) as make_services_mock:
-            ran = state.run_scheduler_cycle()
-
-        self.assertTrue(ran)
-        make_services_mock.assert_called_once_with(self.storage.root)
-        fake_scheduler.run_once.assert_called_once()
-        call_kwargs = fake_scheduler.run_once.call_args.kwargs
-        self.assertEqual(1, call_kwargs["max_workers"])
-        self.assertEqual(feature_root_id, call_kwargs["feature_root_id"])
-        self.assertEqual("scheduler run", state.last_action)
-        self.assertEqual("success", state.last_result)
-
-    def test_runtime_scheduler_cycle_without_scope_refreshes_global_state_after_completion(self) -> None:
-        bead = self.storage.create_bead(
-            bead_id="B0001",
-            title="Ready",
-            agent_type="developer",
-            description="ready",
-            status=BEAD_READY,
-        )
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        def fake_run_once(*, max_workers=1, feature_root_id=None, reporter=None):
-            self.assertIsNone(feature_root_id)
-            updated = self.storage.load_bead(bead.bead_id)
-            updated.status = BEAD_DONE
-            self.storage.save_bead(updated)
-            result = SchedulerResult()
-            result.started.append(bead.bead_id)
-            result.completed.append(bead.bead_id)
-            return result
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.side_effect = fake_run_once
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            ran = state.run_scheduler_cycle()
-
-        refreshed = self.storage.load_bead(bead.bead_id)
-        self.assertTrue(ran)
-        self.assertEqual(BEAD_DONE, refreshed.status)
-        self.assertEqual(bead.bead_id, state.selected_bead_id)
-        self.assertEqual(BEAD_DONE, state.selected_bead().status)
-        self.assertEqual("scheduler run", state.last_action)
-        self.assertEqual("success", state.last_result)
-        self.assertIn("Cycle done", state.status_panel_text())
-
-    def test_runtime_scheduler_cycle_failure_surfaces_in_status_panel_without_crashing(self) -> None:
-        bead = self.storage.create_bead(
-            bead_id="B0001",
-            title="Ready",
-            agent_type="developer",
-            description="ready",
-            status=BEAD_READY,
-        )
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.side_effect = RuntimeError("scheduler exploded")
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            ran = state.run_scheduler_cycle()
-
-        self.assertFalse(ran)
-        self.assertEqual(bead.bead_id, state.selected_bead_id)
-        self.assertEqual("scheduler run", state.last_action)
-        self.assertIn("failed", state.last_result)
-        self.assertIn("scheduler exploded", state.last_result)
-        self.assertIn("Scheduler run failed", state.status_message)
 
     def test_runtime_retry_requires_confirmation_before_requeue(self) -> None:
         bead = self.storage.create_bead(
@@ -803,181 +676,6 @@ class TuiRuntimeStateTests(unittest.TestCase):
         self.assertIsNone(state.pending_merge_bead_id)
         self.assertIn(f"takt merge {bead.bead_id}", state.status_message)
 
-    def test_tui_scheduler_reporter_posts_events_to_state_log(self) -> None:
-        """TuiSchedulerReporter methods append timestamped lines to scheduler_log."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        fake_app = Mock()
-        fake_app.call_from_thread = Mock()
-        reporter = TuiSchedulerReporter(fake_app, state)
-
-        bead = self.storage.load_bead("B0001")
-        reporter.bead_started(bead)
-        reporter.worktree_ready(bead, "feature/b0001", Path("/tmp/wt"))
-        reporter.bead_completed(bead, "done", [])
-        reporter.bead_blocked(bead, "conflict")
-        reporter.bead_failed(bead, "crash")
-        reporter.bead_deferred(bead, "waiting")
-        reporter.lease_expired("B0001")
-
-        # Index 0 is the "Scheduler cycle starting..." header added on the first _post call.
-        self.assertEqual(8, len(state.scheduler_log))
-        self.assertIn("Scheduler cycle starting", state.scheduler_log[0])
-        self.assertIn("Started developer", state.scheduler_log[1])
-        self.assertIn("Worktree ready", state.scheduler_log[2])
-        self.assertIn("Completed", state.scheduler_log[3])
-        self.assertIn("Blocked: conflict", state.scheduler_log[4])
-        self.assertIn("Failed: crash", state.scheduler_log[5])
-        self.assertIn("Deferred: waiting", state.scheduler_log[6])
-        self.assertIn("Lease expired: B0001", state.scheduler_log[7])
-        self.assertEqual(8, fake_app.call_from_thread.call_count)
-
-    def test_tui_scheduler_reporter_survives_app_call_failure(self) -> None:
-        """Reporter does not crash if app.call_from_thread raises."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        fake_app = Mock()
-        fake_app.call_from_thread.side_effect = RuntimeError("no main thread")
-        reporter = TuiSchedulerReporter(fake_app, state)
-
-        bead = self.storage.load_bead("B0001")
-        reporter.bead_started(bead)
-
-        # Index 0 is the "Scheduler cycle starting..." header; index 1 is the event line.
-        self.assertEqual(2, len(state.scheduler_log))
-        self.assertIn("Scheduler cycle starting", state.scheduler_log[0])
-        self.assertIn("Started developer", state.scheduler_log[1])
-
-    def test_tui_scheduler_reporter_stop_is_noop(self) -> None:
-        """Reporter.stop() does nothing but must exist for interface compliance."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-        reporter = TuiSchedulerReporter(Mock(), state)
-        reporter.stop()  # must not raise
-
-    def test_tui_scheduler_reporter_completed_logs_followup_children(self) -> None:
-        """Reporter logs followup bead creation when children are provided."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_DONE)
-        child = self.storage.create_bead(bead_id="B0001-test", title="Test", agent_type="tester", description="t", parent_id="B0001", status=BEAD_OPEN)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        reporter = TuiSchedulerReporter(Mock(), state)
-        bead = self.storage.load_bead("B0001")
-        reporter.bead_completed(bead, "done", [child])
-
-        # Index 0 is the "Scheduler cycle starting..." header added on the first _post call.
-        self.assertEqual(3, len(state.scheduler_log))
-        self.assertIn("Scheduler cycle starting", state.scheduler_log[0])
-        self.assertIn("Completed", state.scheduler_log[1])
-        self.assertIn("Created followup B0001-test (tester)", state.scheduler_log[2])
-
-    def test_runtime_scheduler_double_run_guard_rejects_concurrent_cycle(self) -> None:
-        """run_scheduler_cycle returns False when scheduler_running is already True."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        state.scheduler_running = True
-        ran = state.run_scheduler_cycle()
-
-        self.assertFalse(ran)
-        self.assertIn("already in progress", state.status_message)
-
-    def test_runtime_scheduler_running_shows_indicator_in_status_panel(self) -> None:
-        """[RUNNING] indicator appears in status panel text while scheduler is active."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        self.assertNotIn("[RUNNING]", state.status_panel_text())
-
-        state.scheduler_running = True
-        self.assertIn("[RUNNING]", state.status_panel_text())
-
-        state.scheduler_running = False
-        self.assertNotIn("[RUNNING]", state.status_panel_text())
-
-    def test_runtime_scheduler_cycle_passes_max_workers_from_state(self) -> None:
-        """run_scheduler_cycle forwards max_workers from TuiRuntimeState to scheduler."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL, max_workers=3)
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.return_value = SchedulerResult()
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            state.run_scheduler_cycle()
-
-        call_kwargs = fake_scheduler.run_once.call_args.kwargs
-        self.assertEqual(3, call_kwargs["max_workers"])
-
-    def test_runtime_scheduler_cycle_passes_reporter_to_scheduler(self) -> None:
-        """run_scheduler_cycle forwards the reporter argument to scheduler.run_once."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.return_value = SchedulerResult()
-        sentinel_reporter = object()
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            state.run_scheduler_cycle(reporter=sentinel_reporter)
-
-        call_kwargs = fake_scheduler.run_once.call_args.kwargs
-        self.assertIs(sentinel_reporter, call_kwargs["reporter"])
-
-    def test_runtime_scheduler_cycle_resets_running_flag_on_success_and_failure(self) -> None:
-        """scheduler_running is reset to False after both successful and failed cycles."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.return_value = SchedulerResult()
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            state.run_scheduler_cycle()
-        self.assertFalse(state.scheduler_running)
-
-        fake_scheduler.run_once.side_effect = RuntimeError("boom")
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            state.run_scheduler_cycle()
-        self.assertFalse(state.scheduler_running)
-
-    def test_runtime_scheduler_cycle_result_summary_includes_all_outcome_types(self) -> None:
-        """Cycle done message includes started/completed/blocked/deferred counts."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_READY)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        result = SchedulerResult()
-        result.started.append("B0001")
-        result.completed.append("B0001")
-        result.blocked.append("B0002")
-        result.deferred.append("B0003")
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.return_value = result
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            state.run_scheduler_cycle()
-
-        self.assertIn("started=1", state.status_message)
-        self.assertIn("completed=1", state.status_message)
-        self.assertIn("blocked=1", state.status_message)
-        self.assertIn("deferred=1", state.status_message)
-
-    def test_runtime_scheduler_cycle_empty_result_shows_no_ready_beads(self) -> None:
-        """When scheduler returns no outcomes, status says 'no ready beads'."""
-        self.storage.create_bead(bead_id="B0001", title="Dev", agent_type="developer", description="d", status=BEAD_DONE)
-        state = TuiRuntimeState(self.storage, filter_mode=FILTER_ALL)
-
-        fake_scheduler = Mock()
-        fake_scheduler.run_once.return_value = SchedulerResult()
-
-        with patch("agent_takt.tui._make_services", return_value=(self.storage, fake_scheduler, object())):
-            state.run_scheduler_cycle()
-
-        self.assertIn("no ready beads", state.status_message)
-
     # -- TuiRuntimeState subtree_telemetry_for and _subtree_cache -------------
 
     def test_runtime_subtree_telemetry_for_returns_none_for_leaf_bead(self) -> None:
@@ -1109,6 +807,306 @@ class TuiRuntimeStateTests(unittest.TestCase):
         self.assertFalse(state.awaiting_retry_confirmation)
         self.assertFalse(state.status_flow_active)
         self.assertIn(f"takt merge {bead.bead_id}", state.status_message)
+
+
+class TuiFormatEventTests(unittest.TestCase):
+    """Tests for TuiRuntimeState._format_event."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        source_templates = REPO_ROOT / "templates" / "agents"
+        target_templates = self.root / "templates" / "agents"
+        target_templates.mkdir(parents=True, exist_ok=True)
+        for template_path in source_templates.glob("*.md"):
+            shutil.copy2(template_path, target_templates / template_path.name)
+        from agent_takt.storage import RepositoryStorage as _RS
+        self.storage = _RS(self.root)
+        self.storage.initialize()
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _make_state(self) -> TuiRuntimeState:
+        return TuiRuntimeState(storage=self.storage)
+
+    def _record(self, event_type: str, payload: dict | None = None) -> dict:
+        return {
+            "event_type": event_type,
+            "timestamp": "2024-01-15T10:30:00+00:00",
+            "payload": payload or {"bead_id": "B0001"},
+        }
+
+    def test_format_event_bead_started_includes_agent_type_and_title(self) -> None:
+        state = self._make_state()
+        record = self._record("bead_started", {"bead_id": "B0001", "agent_type": "developer", "title": "My task"})
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("B0001", result)
+        self.assertIn("developer", result)
+        self.assertIn("My task", result)
+        self.assertIn("started", result)
+
+    def test_format_event_bead_started_without_title_omits_title_part(self) -> None:
+        state = self._make_state()
+        record = self._record("bead_started", {"bead_id": "B0002", "agent_type": "tester"})
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("B0002", result)
+        self.assertNotIn('·', result)
+
+    def test_format_event_worktree_ready_includes_branch_and_path(self) -> None:
+        state = self._make_state()
+        record = self._record("worktree_ready", {
+            "bead_id": "B0001",
+            "branch_name": "feature/b0001",
+            "worktree_path": "/tmp/wt/B0001",
+        })
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("feature/b0001", result)
+        self.assertIn("/tmp/wt/B0001", result)
+        self.assertIn("[dim]", result)
+
+    def test_format_event_bead_completed_includes_summary_and_green_markup(self) -> None:
+        state = self._make_state()
+        record = self._record("bead_completed", {"bead_id": "B0001", "summary": "All tests pass"})
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("B0001", result)
+        self.assertIn("completed", result)
+        self.assertIn("All tests pass", result)
+        self.assertIn("[green]", result)
+
+    def test_format_event_bead_blocked_includes_summary_and_yellow_markup(self) -> None:
+        state = self._make_state()
+        record = self._record("bead_blocked", {"bead_id": "B0001", "summary": "Needs changes"})
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("blocked", result)
+        self.assertIn("Needs changes", result)
+        self.assertIn("[yellow]", result)
+
+    def test_format_event_bead_failed_includes_summary_and_bold_red_markup(self) -> None:
+        state = self._make_state()
+        record = self._record("bead_failed", {"bead_id": "B0001", "summary": "Exit code 1"})
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("failed", result)
+        self.assertIn("Exit code 1", result)
+        self.assertIn("[bold red]", result)
+
+    def test_format_event_bead_deferred_includes_reason_and_dim_markup(self) -> None:
+        state = self._make_state()
+        record = self._record("bead_deferred", {"bead_id": "B0001", "reason": "dep not done"})
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("deferred", result)
+        self.assertIn("dep not done", result)
+        self.assertIn("[dim]", result)
+
+    def test_format_event_lease_expired_includes_bead_id(self) -> None:
+        state = self._make_state()
+        record = self._record("lease_expired", {"bead_id": "B0001"})
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("B0001", result)
+        self.assertIn("lease expired", result)
+
+    def test_format_event_scheduler_cycle_started_returns_none(self) -> None:
+        state = self._make_state()
+        self.assertIsNone(state._format_event(self._record("scheduler_cycle_started")))
+
+    def test_format_event_scheduler_cycle_completed_returns_none(self) -> None:
+        state = self._make_state()
+        self.assertIsNone(state._format_event(self._record("scheduler_cycle_completed")))
+
+    def test_format_event_bead_deleted_returns_none(self) -> None:
+        state = self._make_state()
+        self.assertIsNone(state._format_event(self._record("bead_deleted")))
+
+    def test_format_event_unknown_type_returns_none(self) -> None:
+        state = self._make_state()
+        self.assertIsNone(state._format_event(self._record("some_future_event_type")))
+
+    def test_format_event_invalid_timestamp_uses_fallback(self) -> None:
+        state = self._make_state()
+        record = {"event_type": "bead_started", "timestamp": "not-a-date", "payload": {"bead_id": "B0001", "agent_type": "developer"}}
+        result = state._format_event(record)
+        self.assertIsNotNone(result)
+        self.assertIn("--:--:--", result)
+
+
+class TuiTailEventLogTests(unittest.TestCase):
+    """Tests for TuiRuntimeState._tail_event_log and load_event_log_history."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        source_templates = REPO_ROOT / "templates" / "agents"
+        target_templates = self.root / "templates" / "agents"
+        target_templates.mkdir(parents=True, exist_ok=True)
+        for template_path in source_templates.glob("*.md"):
+            shutil.copy2(template_path, target_templates / template_path.name)
+        from agent_takt.storage import RepositoryStorage as _RS
+        self.storage = _RS(self.root)
+        self.storage.initialize()
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _write_event(self, event_type: str, bead_id: str = "B0001", **extra) -> None:
+        import json as _json
+        event_path = self.storage.logs_dir / "events.jsonl"
+        record = {"event_type": event_type, "timestamp": "2024-01-15T10:30:00+00:00", "payload": {"bead_id": bead_id, **extra}}
+        with event_path.open("a", encoding="utf-8") as fh:
+            fh.write(_json.dumps(record) + "\n")
+
+    def test_post_init_sets_offset_to_eof_when_events_file_exists(self) -> None:
+        self._write_event("bead_started", agent_type="developer")
+        state = TuiRuntimeState(storage=self.storage)
+        event_path = self.storage.logs_dir / "events.jsonl"
+        self.assertEqual(event_path.stat().st_size, state._event_log_offset)
+        self.assertEqual(event_path.stat().st_size, state._history_offset)
+
+    def test_post_init_sets_offsets_to_zero_when_no_events_file(self) -> None:
+        event_path = self.storage.logs_dir / "events.jsonl"
+        if event_path.exists():
+            event_path.unlink()
+        state = TuiRuntimeState(storage=self.storage)
+        self.assertEqual(0, state._event_log_offset)
+        self.assertEqual(0, state._history_offset)
+
+    def test_tail_event_log_returns_new_lines_since_last_offset(self) -> None:
+        state = TuiRuntimeState(storage=self.storage)
+        initial_log_len = len(state.scheduler_log)
+
+        self._write_event("bead_started", agent_type="developer", title="Task one")
+        self._write_event("bead_completed", summary="Done")
+        new_lines = state._tail_event_log()
+
+        self.assertEqual(2, len(new_lines))
+        self.assertTrue(any("started" in line for line in new_lines))
+        self.assertTrue(any("completed" in line for line in new_lines))
+
+    def test_tail_event_log_advances_offset_so_second_call_returns_only_newer_lines(self) -> None:
+        state = TuiRuntimeState(storage=self.storage)
+
+        self._write_event("bead_started", agent_type="developer")
+        state._tail_event_log()  # consume first event
+
+        self._write_event("bead_completed", summary="Done")
+        second_call = state._tail_event_log()
+
+        self.assertEqual(1, len(second_call))
+        self.assertIn("completed", second_call[0])
+
+    def test_tail_event_log_returns_empty_when_no_new_content(self) -> None:
+        self._write_event("bead_started", agent_type="developer")
+        state = TuiRuntimeState(storage=self.storage)
+        result = state._tail_event_log()
+        self.assertEqual([], result)
+
+    def test_tail_event_log_skips_suppressed_event_types(self) -> None:
+        state = TuiRuntimeState(storage=self.storage)
+        self._write_event("scheduler_cycle_started")
+        self._write_event("scheduler_cycle_completed")
+        self._write_event("bead_deleted")
+        result = state._tail_event_log()
+        self.assertEqual([], result)
+
+    def test_load_event_log_history_prepends_lines_to_scheduler_log(self) -> None:
+        import json as _json
+        event_path = self.storage.logs_dir / "events.jsonl"
+        records = [
+            {"event_type": "bead_started", "timestamp": "2024-01-15T10:00:00+00:00", "payload": {"bead_id": "B0001", "agent_type": "developer"}},
+            {"event_type": "bead_completed", "timestamp": "2024-01-15T10:01:00+00:00", "payload": {"bead_id": "B0001", "summary": "Done"}},
+        ]
+        with event_path.open("w", encoding="utf-8") as fh:
+            for r in records:
+                fh.write(_json.dumps(r) + "\n")
+
+        # Create a new state so offset is set to EOF (no live tail)
+        state = TuiRuntimeState(storage=self.storage)
+        initial_log = list(state.scheduler_log)
+
+        n = state.load_event_log_history(50)
+
+        self.assertGreaterEqual(n, 1)
+        self.assertLessEqual(len(initial_log), len(state.scheduler_log))
+        self.assertTrue(any("B0001" in line for line in state.scheduler_log))
+
+    def test_load_event_log_history_sets_exhausted_when_beginning_reached(self) -> None:
+        import json as _json
+        event_path = self.storage.logs_dir / "events.jsonl"
+        record = {"event_type": "bead_started", "timestamp": "2024-01-15T10:00:00+00:00", "payload": {"bead_id": "B0001", "agent_type": "developer"}}
+        event_path.write_text(_json.dumps(record) + "\n", encoding="utf-8")
+
+        state = TuiRuntimeState(storage=self.storage)
+        state.load_event_log_history(100)
+
+        self.assertTrue(state._history_exhausted)
+        self.assertEqual(0, state._history_offset)
+
+    def test_load_event_log_history_returns_zero_when_exhausted(self) -> None:
+        import json as _json
+        event_path = self.storage.logs_dir / "events.jsonl"
+        record = {"event_type": "bead_started", "timestamp": "2024-01-15T10:00:00+00:00", "payload": {"bead_id": "B0001", "agent_type": "developer"}}
+        event_path.write_text(_json.dumps(record) + "\n", encoding="utf-8")
+
+        state = TuiRuntimeState(storage=self.storage)
+        state.load_event_log_history(100)
+        self.assertTrue(state._history_exhausted)
+
+        result = state.load_event_log_history(100)
+        self.assertEqual(0, result)
+
+
+class TuiModeSummaryTests(unittest.TestCase):
+    """Tests for mode_summary, format_footer, and removed field verification."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        source_templates = REPO_ROOT / "templates" / "agents"
+        target_templates = self.root / "templates" / "agents"
+        target_templates.mkdir(parents=True, exist_ok=True)
+        for template_path in source_templates.glob("*.md"):
+            shutil.copy2(template_path, target_templates / template_path.name)
+        from agent_takt.storage import RepositoryStorage as _RS
+        self.storage = _RS(self.root)
+        self.storage.initialize()
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def test_mode_summary_returns_dashboard_refresh_focus_format(self) -> None:
+        state = TuiRuntimeState(storage=self.storage, refresh_seconds=7)
+        result = state.mode_summary()
+        self.assertEqual(f"dashboard | refresh=7s | focus={state.focused_panel}", result)
+
+    def test_mode_summary_reflects_focused_panel(self) -> None:
+        state = TuiRuntimeState(storage=self.storage)
+        state.set_focused_panel(PANEL_DETAIL)
+        result = state.mode_summary()
+        self.assertIn("focus=detail", result)
+
+    def test_runtime_state_has_no_timed_refresh_enabled_field(self) -> None:
+        state = TuiRuntimeState(storage=self.storage)
+        self.assertFalse(hasattr(state, "timed_refresh_enabled"))
+
+    def test_runtime_state_has_no_continuous_run_enabled_field(self) -> None:
+        state = TuiRuntimeState(storage=self.storage)
+        self.assertFalse(hasattr(state, "continuous_run_enabled"))
+
+    def test_format_footer_works_without_continuous_run_args(self) -> None:
+        from agent_takt.tui import format_footer
+        from agent_takt.models import Bead, BEAD_READY
+        bead = Bead(bead_id="B0001", title="T", agent_type="developer", description="d", status=BEAD_READY)
+        footer = format_footer([bead], filter_mode=FILTER_DEFAULT, selected_index=0, total_rows=1)
+        self.assertIn("filter=default", footer)
+        self.assertIn("rows=1", footer)
+        self.assertIn("? help", footer)
 
 
 if __name__ == "__main__":
