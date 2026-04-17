@@ -309,7 +309,8 @@ class TuiRegressionTests(unittest.TestCase):
 
         self.assertIn("Beads [Default] [ACTIVE]", default_title)
         self.assertIn("Beads [Ready] [ACTIVE]", ready_title)
-        self.assertIn("Details [idle]", detail_title)
+        self.assertIn("Details", detail_title)
+        self.assertNotIn("[idle]", detail_title)
         # Status bar is now a borderless single-line widget; border_title is not set
         self.assertIsNone(status_title)
 
@@ -660,11 +661,11 @@ class TuiRegressionTests(unittest.TestCase):
         initial_list, initial_detail, keyboard_list, keyboard_detail, mouse_list, mouse_detail, status_panel = asyncio.run(exercise_app())
 
         self.assertEqual("Beads [Default] [ACTIVE]", initial_list)
-        self.assertEqual("Details [idle]", initial_detail)
-        self.assertEqual("Beads [Default] [idle]", keyboard_list)
+        self.assertEqual("Details", initial_detail)
+        self.assertEqual("Beads [Default]", keyboard_list)
         self.assertEqual("Details [ACTIVE]", keyboard_detail)
         self.assertEqual("Beads [Default] [ACTIVE]", mouse_list)
-        self.assertEqual("Details [idle]", mouse_detail)
+        self.assertEqual("Details", mouse_detail)
         self.assertIn("focus=list", status_panel)
 
     def test_detail_scroll_reuses_rendered_content_during_keyboard_scroll(self) -> None:
