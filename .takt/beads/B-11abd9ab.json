@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-10d1f1fb",
-  "dependencies": [],
+  "dependencies": [
+    "B-ede6ee67"
+  ],
   "acceptance_criteria": [
     "`command_summary` calls the drift helper before rendering summary counts.",
     "A missing `.takt/version.json` prints the expected warning message telling the operator to run `takt upgrade`.",
