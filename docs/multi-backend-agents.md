@@ -155,6 +155,32 @@ These defaults live in `default_config()` and can be overridden in `.takt/config
 
 Codex does not use an `--allowedTools` flag; tool access is controlled via the `agents/openai.yaml` policy files in each skill directory.
 
+## JSON Extraction Strategies (Claude Code)
+
+Before the structured-output retry path is reached, `ClaudeCodeAgentRunner._exec_json_with_response()` attempts to recover a JSON payload from the `result` field of the Claude Code response using `_extract_json_from_text()`. The function tries four strategies in order and returns on the first success:
+
+| Strategy | Description |
+|---|---|
+| 1. Direct parse | `json.loads(text)` — succeeds when the agent returns bare JSON |
+| 2. Strip outer code fence | Removes a leading ` ```json … ``` ` wrapper, then parses |
+| 3. Embedded code fence | Scans all ` ```json … ``` ` blocks in the text and parses each |
+| 4. Outermost `{…}` match | Regex finds the largest `{…}` span in the text and parses it |
+
+Each strategy emits a `DEBUG`-level log line via Python's standard `logging` module (logger name `agent_takt.runner`). The log lines report the strategy number, key metrics (text length, fence count, match position), and whether the attempt succeeded, produced a non-dict result, or failed with a parse error.
+
+**Enabling debug logging** to trace JSON extraction failures:
+
+```bash
+PYTHONLOGLEVEL=DEBUG uv run takt --runner claude run 2>&1 | grep _extract_json
+```
+
+Or configure the logger programmatically:
+
+```python
+import logging
+logging.getLogger("agent_takt.runner").setLevel(logging.DEBUG)
+```
+
 ## Structured-Output Retry (Claude Code)
 
 When `claude -p` completes successfully but returns a conversational summary instead of the required JSON schema, `ClaudeCodeAgentRunner._retry_structured_output()` makes a single lightweight follow-up call to reformat the result.

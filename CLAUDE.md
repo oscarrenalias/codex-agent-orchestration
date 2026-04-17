@@ -41,7 +41,7 @@ src/agent_takt/
     reporter.py   SchedulerReporter: cycle summary formatting
   storage.py      Bead JSON persistence under .takt/beads/ + telemetry artifacts; git commit failures are non-fatal and recorded as `git_commit_failed` execution events
   models.py       Bead (incl. recovery_for), Lease, HandoffSummary, AgentRunResult
-  runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner
+  runner.py       AgentRunner ABC + CodexAgentRunner, ClaudeCodeAgentRunner; _extract_json_from_text tries 4 ordered strategies (direct parse → strip outer fence → embedded fence → outermost {…} match) with per-strategy DEBUG-level logging
   prompts.py      Worker/planner prompt construction + guardrail loading (config-overridable)
   skills.py       Per-agent skill catalog allowlists and isolated execution root setup (config-driven)
   gitutils.py     Worktree creation, commits, merges, bead-state exclusion (_write_worktree_exclude)
