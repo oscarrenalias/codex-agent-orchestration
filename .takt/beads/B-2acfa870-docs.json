@@ -3702,7 +3702,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-2acfa870-test",
   "conflict_risks": "None \u2014 only DetailPopup was modified; no overlap with other beads.",
   "branch_name": "",
   "worktree_path": "",
@@ -3714,6 +3714,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T19:14:18.280083+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-2acfa870-test",
       "details": {}
     }
   ],
