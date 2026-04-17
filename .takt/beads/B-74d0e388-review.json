@@ -23,13 +23,19 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "CLAUDE.md",
+    "docs/multi-backend-agents.md",
     "src/agent_takt/runner.py",
     "src/agent_takt/scheduler/followups.py",
+    "tests/test_telemetry_merge.py",
     "uv.lock"
   ],
   "changed_files": [
+    "CLAUDE.md",
+    "docs/multi-backend-agents.md",
     "src/agent_takt/runner.py",
     "src/agent_takt/scheduler/followups.py",
+    "tests/test_telemetry_merge.py",
     "uv.lock"
   ],
   "updated_docs": [],
