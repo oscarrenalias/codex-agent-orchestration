@@ -3,7 +3,7 @@
   "title": "Tail and format live event log updates in TUI state",
   "agent_type": "developer",
   "description": "Implement event-log-driven log panel updates in `TuiRuntimeState` by tracking file offsets, tailing new lines from `events.jsonl`, formatting supported event types, and appending visible log entries during refresh.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-d6687b5d",
   "dependencies": [
@@ -25,37 +25,44 @@
     "src/agent_takt/tui/state.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/tui/state.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/tui/state.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Added `import json` to imports. Added `_event_log_offset: int` and `_history_offset: int` dataclass fields (default 0, init=False). Updated `__post_init__` to initialize both offsets to current EOF via `_current_event_log_size()`. Added `_current_event_log_size()`, `_format_event()`, `_tail_event_log()`, and `load_event_log_history()` methods. Modified `refresh()` to call `_tail_event_log()` and extend `scheduler_log` with formatted new lines after successful bead load.",
+    "remaining": "App-layer changes (app.py): showing new log entries from `scheduler_log` in the RichLog widget after each refresh, `H` keybinding to call `load_event_log_history(50)`, \"\u2500\u2500 beginning of event log \u2500\u2500\" message when history exhausted, external scheduler lock file detection and `[external run active]` indicator, disabling `s`/`S` bindings while external lock held.",
+    "risks": "The `load_event_log_history` offset tracking correctly tracks the byte start of the earliest consumed line; subsequent calls will re-read up to but not including that boundary. If `events.jsonl` is truncated or replaced between calls, `_event_log_offset` could exceed file size \u2014 `_tail_event_log` handles this gracefully by detecting `current_size <= offset` and returning empty.",
+    "verdict": "approved",
     "findings_count": 0,
-    "requires_followup": false,
-    "changed_files": [],
+    "requires_followup": true,
+    "changed_files": [
+      "src/agent_takt/tui/state.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Wire the log panel widget update in app.py: after `refresh()` returns, flush any new `scheduler_log` entries to the RichLog widget via `_append_log_line`. Also add H keybinding, external lock detection, and scheduler binding disable logic.",
+    "next_agent": "developer",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/tui/state.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/tui/state.py"
+    ],
+    "conflict_risks": "None \u2014 only `state.py` was modified. No overlap with other in-progress beads.",
+    "design_decisions": "`_tail_event_log()` reads forward from `_event_log_offset` in a single read; the offset is advanced atomically inside the file handle context so a crash mid-decode doesn't lose data (offset already advanced, lines just not formatted). `load_event_log_history()` uses chunk-based backward reading with a `pending` buffer to reconstruct lines split across chunk boundaries; `earliest_offset` tracks the byte start of the oldest consumed line so `_history_offset` correctly excludes already-seen content on the next call. `_format_event()` uses explicit `if` chains (not `elif`) for clarity and to match the pattern of a dispatch table \u2014 each event type is independently testable. Suppressed events (`scheduler_cycle_*`, `bead_deleted`) are listed explicitly rather than falling through to the unknown-event return, so the behaviour is intentional and visible in code review.",
+    "test_coverage_notes": "Tester should cover: (1) `_format_event` for all 7 visible and 3 suppressed event types including malformed timestamps; (2) `_tail_event_log` advancing offset correctly across repeated calls and returning empty when no new data; (3) `load_event_log_history` with single-chunk files, multi-chunk files (larger than 8192 bytes), partial history (fewer events than n_lines), and exhaustion to _history_offset=0; (4) `TuiRuntimeState.__post_init__` with no events.jsonl file (offset=0), existing file (offset=EOF), and pre-existing events not replayed into scheduler_log; (5) `refresh()` extending `scheduler_log` with newly appended events between calls.",
+    "known_limitations": "The `scheduler_log` list grows unbounded during a TUI session; no eviction or maximum size is enforced (left for a future bead). The `_history_offset` is set to the byte start of the earliest consumed line, meaning if that line contained only suppressed events with no displayable neighbours, the offset could be non-zero even though 0 history lines were returned \u2014 correct but slightly surprising. The app.py widget update (calling `_append_log_line` for new entries after refresh) is deferred to the app.py bead; until then, `scheduler_log` is populated but the RichLog widget will not auto-update from tailed events."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only `state.py` was modified. No overlap with other in-progress beads.",
   "branch_name": "feature/b-d6687b5d",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-d6687b5d",
-  "lease": {
-    "owner": "developer:B-20efd4ff",
-    "expires_at": "2026-04-17T07:36:42.684856+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -97,6 +104,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-20efd4ff/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-17T07:16:48.654551+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Implemented event-log-driven log panel updates in `TuiRuntimeState`. Added `_event_log_offset` and `_history_offset` fields initialized to current EOF on startup, `_tail_event_log()` for forward reading with offset advance, `_format_event()` handling all 7 visible event types plus 3 explicitly suppressed ones, `load_event_log_history()` for 8KB-chunk backward reading, and `_current_event_log_size()` helper. `refresh()` now calls `_tail_event_log()` and extends `scheduler_log` with new entries.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -167,7 +181,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Implemented event-log-driven log panel updates in `TuiRuntimeState`. Added `_event_log_offset` and `_history_offset` fields initialized to current EOF on startup, `_tail_event_log()` for forward reading with offset advance, `_format_event()` handling all 7 visible event types plus 3 explicitly suppressed ones, `load_event_log_history()` for 8KB-chunk backward reading, and `_current_event_log_size()` helper. `refresh()` now calls `_tail_event_log()` and extends `scheduler_log` with new entries.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": true,
+      "next_agent": "developer",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 1.4973093500000003,
+      "duration_ms": 590857,
+      "duration_api_ms": 536764,
+      "num_turns": 33,
+      "input_tokens": 30,
+      "output_tokens": 33239,
+      "cache_creation_tokens": 97519,
+      "cache_read_tokens": 1807376,
+      "stop_reason": "end_turn",
+      "session_id": "c4c4a28d-2a76-4e0b-97a9-3160a9d07885",
+      "permission_denials": [],
+      "prompt_chars": 8165,
+      "prompt_lines": 162,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.4973093500000003,
+        "duration_ms": 590857,
+        "duration_api_ms": 536764,
+        "num_turns": 33,
+        "input_tokens": 30,
+        "output_tokens": 33239,
+        "cache_creation_tokens": 97519,
+        "cache_read_tokens": 1807376,
+        "stop_reason": "end_turn",
+        "session_id": "c4c4a28d-2a76-4e0b-97a9-3160a9d07885",
+        "permission_denials": [],
+        "prompt_chars": 8165,
+        "prompt_lines": 162,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "b12a19ccc1422af08bf0b33c151148998011389f"
   },
   "labels": [],
   "recovery_for": null,
