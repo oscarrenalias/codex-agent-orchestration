@@ -3,7 +3,7 @@
   "title": "Technical debt remediation",
   "agent_type": "developer",
   "description": "Feature group for targeted technical debt fixes identified by investigator bead B-14862851. See docs/investigator/technical-debt-analysis.md for full report. Child beads cover: TUI event log bug, panel badge cleanup, silent exception swallowing in scheduler, followups.py list_beads loop, runner.py JSON extraction logging, and dependency version pinning.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": null,
   "dependencies": [],
@@ -37,7 +37,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "Group container \u2014 child beads manage individual fixes",
+  "block_reason": "",
   "conflict_risks": "",
   "branch_name": "",
   "worktree_path": "",
@@ -64,10 +64,19 @@
       "agent_type": "developer",
       "summary": "Created corrective bead B-60307654-corrective for blocked issue",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T09:53:53.591779+00:00",
+      "event": "retried",
+      "agent_type": "developer",
+      "summary": "Requeued blocked bead after corrective bead B-60307654-corrective completed",
+      "details": {}
     }
   ],
   "metadata": {
-    "auto_corrective_bead_id": "B-60307654-corrective"
+    "auto_corrective_bead_id": "B-60307654-corrective",
+    "last_corrective_retry_source": "B-60307654-corrective",
+    "last_corrective_retry_commit": ""
   },
   "labels": [],
   "recovery_for": null,
