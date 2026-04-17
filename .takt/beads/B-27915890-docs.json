@@ -3678,7 +3678,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-27915890-test",
   "conflict_risks": "None \u2014 change is isolated to DetailPopup.compose(), which is a self-contained modal screen class. No shared state mutation.",
   "branch_name": "",
   "worktree_path": "",
@@ -3690,6 +3690,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T13:42:22.765770+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-27915890-test",
       "details": {}
     }
   ],
