@@ -281,7 +281,10 @@ def build_tui_app(
             return HelpOverlay(self.runtime_state)
 
         def _on_interval_tick(self) -> None:
+            prev_len = len(self.runtime_state.scheduler_log)
             self.runtime_state.refresh()
+            for line in self.runtime_state.scheduler_log[prev_len:]:
+                self._append_log_line(line)
             self._render_all(force_detail=True)
 
         def _render_panels(self) -> None:

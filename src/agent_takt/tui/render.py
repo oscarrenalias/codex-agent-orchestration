@@ -21,8 +21,9 @@ _DEFAULT_PANEL_WIDTH = 120
 
 
 def _panel_badge(panel_name: str, *, focused: bool) -> str:
-    state = "ACTIVE" if focused else "idle"
-    return f"{panel_name} [{state}]"
+    if focused:
+        return f"{panel_name} [ACTIVE]"
+    return panel_name
 
 
 def _format_filter_label(filter_mode: str) -> str:
