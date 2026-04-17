@@ -3,7 +3,7 @@
   "title": "Implement compact and wide TUI layout toggle",
   "agent_type": "developer",
   "description": "Add the `L` layout toggle binding and apply compact versus wide layout behavior through screen classes and focus management so the detail panel hides in compact mode and the tree/log layout reflows correctly.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-4a328166",
   "dependencies": [
@@ -27,37 +27,53 @@
     "src/agent_takt/tui/actions.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/state.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/tui/actions.py",
+    "src/agent_takt/tui/app.py",
+    "src/agent_takt/tui/state.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Added `Binding(\"L\", \"toggle_layout\", \"Layout\")` to the app BINDINGS list. Added `action_toggle_layout()` to `OrchestratorTuiActionsMixin` in `actions.py` \u2014 it toggles `runtime_state.layout_mode`, hides/shows `#detail-panel` via the existing `.hidden` CSS class, redirects focus to list panel if detail was active in compact mode, and resets the tree render cache so the bead tree reflows to fill the new width. Updated `cycle_focus()` in `state.py` to use a two-panel cycle `(list, scheduler-log)` in compact mode and the full three-panel cycle in wide mode.",
+    "remaining": "None \u2014 all acceptance criteria are satisfied by these changes.",
+    "risks": "None identified. The `.hidden` CSS class (`display: none`) was already defined; all touched symbols were pre-existing. No cross-bead file conflicts.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/state.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Run the tester bead to verify layout toggle behaviour, focus transitions, and tree reflow.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/actions.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/tui/actions.py",
+      "src/agent_takt/tui/app.py",
+      "src/agent_takt/tui/state.py"
+    ],
+    "conflict_risks": "None. The three files changed are owned by this bead; `state.py` is also touched by B-c47e24e7 (merged dependency) but that work is already merged.",
+    "design_decisions": "Used the existing `.hidden` CSS class (`display: none`) to hide the detail panel rather than introducing a new CSS rule or dynamically re-composing the layout. This keeps the DOM stable so the panel's scroll state and content are preserved across toggles. `cycle_focus()` was made layout-aware rather than teaching individual action handlers about compact mode \u2014 a single authoritative location for panel ordering. `LAYOUT_COMPACT` was imported directly in `actions.py` rather than using the string literal, keeping consistency with how the state module exposes its constants.",
+    "test_coverage_notes": "Tester should verify: (1) pressing L in wide mode hides the detail panel and switches `runtime_state.layout_mode` to compact; (2) pressing L in compact mode shows the detail panel and restores wide mode; (3) if focus is on the detail panel before switching to compact, focus moves to the list panel; (4) Tab cycling in compact mode only visits list and scheduler-log panels, not detail; (5) the bead tree reflows to fill the wider width after switching to compact; (6) bead selection is preserved across both toggle directions; (7) pressing L while in compact mode with scheduler-log focused keeps focus on scheduler-log after switching to wide.",
+    "known_limitations": "The detail panel content is not updated while hidden (it preserves the last render). This matches the existing pattern for hidden panels under maximize mode and is not a regression. If the selected bead changes while in compact mode, the detail panel will refresh on the next `_render_all` call, so it will be current when restored."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None. The three files changed are owned by this bead; `state.py` is also touched by B-c47e24e7 (merged dependency) but that work is already merged.",
   "branch_name": "feature/b-4a328166",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-4a328166",
-  "lease": {
-    "owner": "developer:B-28a32a4e",
-    "expires_at": "2026-04-17T12:34:37.084945+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +115,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-28a32a4e/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-17T12:06:36.409570+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Implemented the `L` layout toggle binding. Pressing `L` now toggles between wide (three-column with detail panel) and compact (two-column, detail hidden) layouts. Focus is redirected to the list panel if the detail panel was focused when switching to compact, and Tab cycling skips the detail panel in compact mode.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -171,7 +194,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Implemented the `L` layout toggle binding. Pressing `L` now toggles between wide (three-column with detail panel) and compact (two-column, detail hidden) layouts. Focus is redirected to the list panel if the detail panel was focused when switching to compact, and Tab cycling skips the detail panel in compact mode.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.45275825000000003,
+      "duration_ms": 107586,
+      "duration_api_ms": 101278,
+      "num_turns": 13,
+      "input_tokens": 14,
+      "output_tokens": 5779,
+      "cache_creation_tokens": 49785,
+      "cache_read_tokens": 588935,
+      "stop_reason": "end_turn",
+      "session_id": "fd796d50-7901-4bc0-a45f-5cf1cc1eaca7",
+      "permission_denials": [],
+      "prompt_chars": 8124,
+      "prompt_lines": 164,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.45275825000000003,
+        "duration_ms": 107586,
+        "duration_api_ms": 101278,
+        "num_turns": 13,
+        "input_tokens": 14,
+        "output_tokens": 5779,
+        "cache_creation_tokens": 49785,
+        "cache_read_tokens": 588935,
+        "stop_reason": "end_turn",
+        "session_id": "fd796d50-7901-4bc0-a45f-5cf1cc1eaca7",
+        "permission_denials": [],
+        "prompt_chars": 8124,
+        "prompt_lines": 164,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "8f4d16269a0a3ec2781e465fca60aa68fc459c51"
   },
   "labels": [],
   "recovery_for": null,
