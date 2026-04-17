@@ -45,7 +45,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-eccab5b2-test",
   "conflict_risks": "Low \u2014 single file changed, no interface changes visible outside the scheduler package.",
   "branch_name": "",
   "worktree_path": "",
@@ -57,6 +57,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-17T09:41:46.359883+00:00",
+      "event": "deferred",
+      "agent_type": "tester",
+      "summary": "file-scope conflict with in-progress B-eccab5b2-test",
       "details": {}
     }
   ],
