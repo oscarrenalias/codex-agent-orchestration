@@ -2441,11 +2441,13 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "docs/tui.md",
     "src/agent_takt/tui/actions.py",
     "src/agent_takt/tui/app.py",
     "src/agent_takt/tui/render.py",
     "src/agent_takt/tui/state.py",
-    "tests/test_tui_app.py"
+    "tests/test_tui_app.py",
+    "tests/test_tui_state.py"
   ],
   "changed_files": [
     ".takt/beads/.gitkeep",
@@ -3649,11 +3651,13 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "docs/tui.md",
     "src/agent_takt/tui/actions.py",
     "src/agent_takt/tui/app.py",
     "src/agent_takt/tui/render.py",
     "src/agent_takt/tui/state.py",
-    "tests/test_tui_app.py"
+    "tests/test_tui_app.py",
+    "tests/test_tui_state.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
