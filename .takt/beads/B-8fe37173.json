@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-d6687b5d",
-  "dependencies": [],
+  "dependencies": [
+    "B-8a7a7a60"
+  ],
   "acceptance_criteria": [
     "Direct `record_event(\"bead_completed\", ...)` calls are removed from `scheduler/finalize.py` at all current sites mentioned in the spec.",
     "Scheduler finalization still marks beads done and returns the same follow-up metadata expected by the reporter.",
