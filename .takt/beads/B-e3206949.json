@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-4a328166",
-  "dependencies": [],
+  "dependencies": [
+    "B-a7d17bc7"
+  ],
   "acceptance_criteria": [
     "`M` is no longer exposed as a merge action in TUI bindings.",
     "`Enter` no longer triggers merge confirmation and instead opens a detail popup for the selected bead.",
