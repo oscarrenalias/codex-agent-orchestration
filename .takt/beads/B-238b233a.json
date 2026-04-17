@@ -3,7 +3,7 @@
   "title": "Persist repo version metadata during init and upgrade",
   "agent_type": "developer",
   "description": "Wire version-file writes into onboarding flows so `takt init` and non-dry-run `takt upgrade` record the installed version and timestamp, and ensure the init scaffold commit stages the generated file.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-10d1f1fb",
   "dependencies": [
@@ -25,37 +25,49 @@
     "src/agent_takt/cli/commands/init.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/cli/commands/init.py",
+    "src/agent_takt/onboarding/scaffold.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/cli/commands/init.py",
+    "src/agent_takt/onboarding/scaffold.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "1. `scaffold_project()` calls `write_version_file(project_root)` at step 9, before calling `commit_scaffold()`. 2. `commit_scaffold()` stages `.takt/version.json` in its `stage_paths` list. 3. `command_upgrade` calls `write_version_file(root)` immediately before `commit_scaffold(root, console)` inside the `if not dry_run:` block \u2014 skipped during dry-run.",
+    "remaining": "None.",
+    "risks": "Low. Changes are additive and isolated to the init/upgrade paths. `write_version_file` is idempotent (always overwrites). `commit_scaffold` already silently handles missing files in `stage_paths` (git add returns non-zero only on other errors, not missing optional files).",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/cli/commands/init.py",
+      "src/agent_takt/onboarding/scaffold.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify: (1) after `scaffold_project()`, `.takt/version.json` exists with correct keys; (2) the file appears in the init git commit; (3) `command_upgrade` writes the file and includes it in the commit; (4) `command_upgrade --dry-run` does NOT write the file.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/onboarding/scaffold.py",
+      "src/agent_takt/cli/commands/init.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/cli/commands/init.py",
+      "src/agent_takt/onboarding/scaffold.py"
+    ],
+    "conflict_risks": "None \u2014 no overlap with other in-progress beads.",
+    "design_decisions": "Placed `write_version_file()` call at step 9 in `scaffold_project()`, after all assets are installed but before `commit_scaffold()`. This ordering ensures the version file is present when git staging runs. In `command_upgrade`, the call is inlined at the `else` branch (non-dry-run path) using a local import, keeping it close to the commit call without adding a top-level import that would visually imply the function is used in dry-run paths too.",
+    "test_coverage_notes": "Key test scenarios: (1) `scaffold_project()` \u2192 check `.takt/version.json` exists, contains `takt_version` and `last_upgraded_at` keys. (2) `commit_scaffold()` \u2192 check git log includes `.takt/version.json` in staged files. (3) `command_upgrade` non-dry-run \u2192 check `.takt/version.json` written before commit. (4) `command_upgrade --dry-run` \u2192 check `.takt/version.json` NOT written. Edge case: repeated `scaffold_project()` calls should overwrite the version file (idempotent).",
+    "known_limitations": "If `git add` in `commit_scaffold()` encounters a non-existent `.takt/version.json` (e.g., if `write_version_file()` raised before writing), git will silently ignore the missing path or fail the add. This is an edge case already present in the design; the function is called unconditionally so this should not occur in practice."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 no overlap with other in-progress beads.",
   "branch_name": "feature/b-10d1f1fb",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-10d1f1fb",
-  "lease": {
-    "owner": "developer:B-238b233a",
-    "expires_at": "2026-04-17T14:13:05.271849+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -97,6 +109,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-238b233a/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-17T13:44:39.857522+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Wired `write_version_file()` into both `scaffold_project()` and `command_upgrade`, and added `.takt/version.json` to the `commit_scaffold()` stage paths. All acceptance criteria are met.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -167,7 +186,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Wired `write_version_file()` into both `scaffold_project()` and `command_upgrade`, and added `.takt/version.json` to the `commit_scaffold()` stage paths. All acceptance criteria are met.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.32323055,
+      "duration_ms": 84399,
+      "duration_api_ms": 78352,
+      "num_turns": 16,
+      "input_tokens": 15,
+      "output_tokens": 4319,
+      "cache_creation_tokens": 30933,
+      "cache_read_tokens": 465886,
+      "stop_reason": "end_turn",
+      "session_id": "30b27c76-f318-45cc-b992-79dbb5e793cd",
+      "permission_denials": [],
+      "prompt_chars": 7993,
+      "prompt_lines": 162,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.32323055,
+        "duration_ms": 84399,
+        "duration_api_ms": 78352,
+        "num_turns": 16,
+        "input_tokens": 15,
+        "output_tokens": 4319,
+        "cache_creation_tokens": 30933,
+        "cache_read_tokens": 465886,
+        "stop_reason": "end_turn",
+        "session_id": "30b27c76-f318-45cc-b992-79dbb5e793cd",
+        "permission_denials": [],
+        "prompt_chars": 7993,
+        "prompt_lines": 162,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
