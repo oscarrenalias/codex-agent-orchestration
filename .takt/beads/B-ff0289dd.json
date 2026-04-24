@@ -3,7 +3,7 @@
   "title": "Review Fleet Manager v0.1.0 for boundary and workflow correctness",
   "agent_type": "review",
   "description": "Review the completed fleet feature for behavioural correctness, boundary compliance, CLI consistency, and operational risks across registry, subprocess orchestration, live watching, and persisted run logging.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7a0391f9",
   "dependencies": [
@@ -2726,7 +2726,7 @@
     "test_coverage_notes": "Boundary tests (test_boundaries.py) are comprehensive and pass the three invariants: write-path centralization, no forbidden domain imports, subprocess CWD confinement. A Ctrl-C test for command_dispatch is missing and should be added as part of the fix bead.",
     "known_limitations": "Early-exit stale in-progress run records: both command_run and command_dispatch write the initial run record before filtering, so a no-match filter leaves a stale in-progress record. This is intentional per the corrective bead design decision (initial write for observability). Operators should be aware that stale in-progress records from no-match runs will appear in runs list."
   },
-  "block_reason": "FINDING 1 (MEDIUM): `command_dispatch` (src/agent_takt_fleet/cli/commands/dispatch.py) does not catch `KeyboardInterrupt` from `fan_out`. The initial `write_run(run)` creates an in-progress record before `fan_out` is called; if the user presses Ctrl-C, `fan_out` (executor.py:41) re-raises without the final `write_run` executing. The run record permanently retains `finished_at=None`, causing `takt-fleet runs show FR-...` to enter an infinite live-tail loop. All other long-running commands (run, watch, runs show) explicitly handle Ctrl-C. Fix: wrap the `fan_out` call in `command_dispatch` with `try/except KeyboardInterrupt`, stamp `run.finished_at`, set `run.crashed=True`, call `write_run(run)`, and return 130.",
+  "block_reason": "",
   "conflict_risks": "None \u2014 the required fix is localised to src/agent_takt_fleet/cli/commands/dispatch.py (adding a try/except block around the fan_out call) and a new test in tests/fleet/test_cli_dispatch.py. No other in-progress beads claim these files.",
   "branch_name": "feature/b-7a0391f9",
   "worktree_path": "",
@@ -2784,6 +2784,13 @@
       "event": "corrective_planned",
       "agent_type": "review",
       "summary": "Created corrective bead B-ff0289dd-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-04-24T16:44:54.347488+00:00",
+      "event": "retried",
+      "agent_type": "review",
+      "summary": "Requeued blocked bead after corrective bead B-ff0289dd-corrective completed",
       "details": {}
     }
   ],
@@ -5460,7 +5467,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-ff0289dd-corrective"
+    "auto_corrective_bead_id": "B-ff0289dd-corrective",
+    "last_corrective_retry_source": "B-ff0289dd-corrective",
+    "last_corrective_retry_commit": "d2dbad6843af14ee1d706ff2099f814b27b2b662"
   },
   "labels": [],
   "recovery_for": null,
