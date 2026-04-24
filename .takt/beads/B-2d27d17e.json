@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-7a0391f9",
-  "dependencies": [],
+  "dependencies": [
+    "B-b8432548"
+  ],
   "acceptance_criteria": [
     "`Project`, `RunInputs`, `ProjectResult`, and `FleetRun` dataclasses are implemented with the required fields.",
     "Fleet aggregate computation is available from the model layer.",
