@@ -2778,6 +2778,13 @@
       "agent_type": "review",
       "summary": "Fleet Manager v0.1.0 review: needs_changes \u2014 1 required fix (dispatch Ctrl-C leaves permanently stale in-progress run record that blocks `runs show`). All boundary, lifecycle, and failure-mode acceptance criteria otherwise met.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-24T16:43:43.339393+00:00",
+      "event": "corrective_planned",
+      "agent_type": "review",
+      "summary": "Created corrective bead B-ff0289dd-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -5452,7 +5459,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-ff0289dd-corrective"
   },
   "labels": [],
   "recovery_for": null,
