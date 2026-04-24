@@ -102,7 +102,27 @@ def format_fleet_summary(
     return format_table(headers, table_rows, plain=plain)
 
 
-# ── Dispatch summary ──────────────────────────────────────────────────────────
+# ── Run and dispatch summaries ────────────────────────────────────────────────
+
+
+def format_run_summary(run: Any) -> str:
+    """Render a post-run result table with per-project takt run statistics."""
+    headers = ["PROJECT", "STATUS", "DONE", "BLOCKED", "ERROR"]
+    rows: list[list[str]] = []
+    for p in run.projects:
+        run_summary = (p.outputs or {}).get("run_summary") or {}
+        final_state = run_summary.get("final_state") or {}
+        done_count = str(final_state.get("done", 0)) if final_state else "-"
+        blocked_count = str(final_state.get("blocked", 0)) if final_state else "-"
+        error_str = p.error or ""
+        rows.append([p.name, p.status, done_count, blocked_count, error_str])
+
+    agg = run.aggregate
+    summary_line = (
+        f"{agg['succeeded']} succeeded, {agg['failed']} failed"
+        f" (total {agg['total']})"
+    )
+    return format_table(headers, rows) + "\n\n" + summary_line
 
 
 def format_dispatch_summary(run: Any) -> str:
