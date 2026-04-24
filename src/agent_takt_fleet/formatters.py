@@ -309,3 +309,34 @@ def format_run_aggregate_line(run: Any) -> str:
         f"{agg['skipped']} skipped "
         f"(total {agg['total']}){dur_part}"
     )
+
+
+# ── Watch event formatter ─────────────────────────────────────────────────────
+
+
+def format_watch_event_line(event: Any) -> str:
+    """Render a TailedEvent as a project-prefixed line for watch output.
+
+    Parsed events show:  [project]  TIMESTAMP  event_type  summary
+    Unparseable lines show the raw text after the project prefix.
+    """
+    prefix = f"[{event.project_name}]"
+
+    if event.parsed is not None:
+        ts_str = ""
+        if event.timestamp is not None:
+            ts_str = event.timestamp.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        event_type = event.parsed.get("event", "")
+        summary = event.parsed.get("summary", "")
+
+        parts: list[str] = [prefix]
+        if ts_str:
+            parts.append(ts_str)
+        if event_type:
+            parts.append(f"{event_type:<20}")
+        if summary:
+            parts.append(summary)
+        return "  ".join(parts)
+
+    return f"{prefix}  {event.raw_line}"
