@@ -3,7 +3,7 @@
   "title": "Implement fleet models and XDG path helpers",
   "agent_type": "developer",
   "description": "Add the core fleet dataclasses and XDG path resolution helpers used by registry, run logging, and command execution flows.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-7a0391f9",
   "dependencies": [
@@ -26,37 +26,49 @@
     "src/agent_takt_fleet/paths.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt_fleet/models.py",
+    "src/agent_takt_fleet/paths.py"
+  ],
+  "changed_files": [
+    "src/agent_takt_fleet/models.py",
+    "src/agent_takt_fleet/paths.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "- `Project`, `RunInputs` implemented as frozen dataclasses (immutable, hashable). - `ProjectResult`, `FleetRun` implemented as mutable dataclasses. - `FleetRun.aggregate` property computes total/succeeded/failed/skipped from projects list. - `paths.py` resolves `$XDG_CONFIG_HOME` / `$XDG_DATA_HOME` with `~/.config` / `~/.local/share` fallbacks. - `registry_path()` returns `<xdg_config_home>/agent-takt/fleet.yaml`. - `runs_dir()` returns `<xdg_data_home>/agent-takt/fleet/runs`. - Both modules import cleanly and pass functional smoke checks.",
+    "remaining": "All later fleet modules (`registry.py`, `adapter.py`, `executor.py`, `tailer.py`, `runlog.py`, `formatters.py`, and CLI commands) still need to be implemented by sibling beads.",
+    "risks": "None identified. These are pure data/utility modules with no I/O or subprocess calls \u2014 they cannot violate the project interaction contract enforced by `test_boundaries.py`.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt_fleet/models.py",
+      "src/agent_takt_fleet/paths.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent verifies the models and path helpers via unit tests in `tests/fleet/`.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt_fleet/models.py",
+      "src/agent_takt_fleet/paths.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt_fleet/models.py",
+      "src/agent_takt_fleet/paths.py"
+    ],
+    "conflict_risks": "No conflict risks \u2014 these files are new and not touched by any other in-progress bead.",
+    "design_decisions": "`Project` and `RunInputs` are `frozen=True` dataclasses (matching spec). Using `tuple[str, ...]` for tag and filter fields makes them hashable, consistent with the spec and safe for use in sets/dicts. `FleetRun.projects` defaults to `field(default_factory=list)` rather than a mutable default so that the dataclass default is safe. `aggregate` is a `@property` (not a stored field) so it always reflects the current state of `projects` without a manual sync step \u2014 important because `projects` is mutated incrementally as each project completes during a live run. XDG path helpers in `paths.py` are thin one-liners with no caching so that tests can override environment variables between calls without worrying about stale state.",
+    "test_coverage_notes": "Tester should verify: (1) `Project` and `RunInputs` are hashable (frozen). (2) `FleetRun.aggregate` correctly counts success/error/skipped across mixed project lists. (3) `aggregate` on an empty `projects` list returns all zeros. (4) `xdg_config_home()` and `xdg_data_home()` respect `XDG_CONFIG_HOME` / `XDG_DATA_HOME` env overrides. (5) `registry_path()` and `runs_dir()` produce paths under the correct subdirectories. (6) Fallback paths are `~/.config/agent-takt/fleet.yaml` and `~/.local/share/agent-takt/fleet/runs` when XDG vars are unset.",
+    "known_limitations": "N/A \u2014 implementation is complete as specified. No executable I/O in these modules; all downstream consumers (registry.py, runlog.py) will import these types and manage the actual file I/O per spec."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "No conflict risks \u2014 these files are new and not touched by any other in-progress bead.",
   "branch_name": "feature/b-7a0391f9",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-7a0391f9",
-  "lease": {
-    "owner": "developer:B-2d27d17e",
-    "expires_at": "2026-04-24T15:03:09.350342+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -98,6 +110,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-2d27d17e/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-24T14:35:18.900565+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Implemented `src/agent_takt_fleet/models.py` and `src/agent_takt_fleet/paths.py` for the fleet package. Models include the four dataclasses from the spec (`Project`, `RunInputs`, `ProjectResult`, `FleetRun`) with the `aggregate` property computed from the projects list. Paths module resolves XDG config/data home directories with environment-variable overrides and provides `registry_path()` and `runs_dir()` helpers.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,7 +188,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Implemented `src/agent_takt_fleet/models.py` and `src/agent_takt_fleet/paths.py` for the fleet package. Models include the four dataclasses from the spec (`Project`, `RunInputs`, `ProjectResult`, `FleetRun`) with the `aggregate` property computed from the projects list. Paths module resolves XDG config/data home directories with environment-variable overrides and provides `registry_path()` and `runs_dir()` helpers.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.4001176999999999,
+      "duration_ms": 121237,
+      "duration_api_ms": 99657,
+      "num_turns": 19,
+      "input_tokens": 57,
+      "output_tokens": 5481,
+      "cache_creation_tokens": 39596,
+      "cache_read_tokens": 555369,
+      "stop_reason": "end_turn",
+      "session_id": "72d20570-e0a4-4ab7-a04d-553a951fc4e0",
+      "permission_denials": [],
+      "prompt_chars": 7948,
+      "prompt_lines": 163,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.4001176999999999,
+        "duration_ms": 121237,
+        "duration_api_ms": 99657,
+        "num_turns": 19,
+        "input_tokens": 57,
+        "output_tokens": 5481,
+        "cache_creation_tokens": 39596,
+        "cache_read_tokens": 555369,
+        "stop_reason": "end_turn",
+        "session_id": "72d20570-e0a4-4ab7-a04d-553a951fc4e0",
+        "permission_denials": [],
+        "prompt_chars": 7948,
+        "prompt_lines": 163,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "6cb90624d6364e2c049a5774852188a7a50bbfdf"
   },
   "labels": [],
   "recovery_for": null,
