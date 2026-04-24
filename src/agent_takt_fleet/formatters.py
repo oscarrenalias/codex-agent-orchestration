@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Any, Sequence
 
 
 def _col_widths(headers: list[str], rows: list[list[str]]) -> list[int]:

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import os
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Sequence
 
 import yaml
 
+from .adapter import AdapterError, TaktAdapter
 from .models import Project
 from .paths import registry_path
 
@@ -126,16 +126,8 @@ def compute_health(project: Project) -> str:
         return "no-takt"
 
     try:
-        result = subprocess.run(
-            ["uv", "run", "takt", "--version"],
-            cwd=project.path,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode != 0:
-            return "takt-error"
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        TaktAdapter(project_path=project.path, timeout=5).version()
+    except (AdapterError, OSError):
         return "takt-error"
 
     return "ok"
