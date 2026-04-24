@@ -45,7 +45,11 @@ def _dispatch_args(**kwargs) -> Namespace:
 
 
 def test_dispatch_no_projects_registered(capsys) -> None:
-    with patch("agent_takt_fleet.cli.commands.dispatch.load_registry", return_value=[]):
+    with (
+        patch("agent_takt_fleet.cli.commands.dispatch.load_registry", return_value=[]),
+        patch("agent_takt_fleet.cli.commands.dispatch.write_run"),
+        patch("agent_takt_fleet.cli.commands.dispatch.new_run_id", return_value="FR-nomatch"),
+    ):
         rc = command_dispatch(_dispatch_args())
     assert rc == 0
     err = capsys.readouterr().err
@@ -54,7 +58,11 @@ def test_dispatch_no_projects_registered(capsys) -> None:
 
 def test_dispatch_no_filter_match(tmp_path: Path, capsys) -> None:
     project = _make_project("api-svc", tmp_path)
-    with patch("agent_takt_fleet.cli.commands.dispatch.load_registry", return_value=[project]):
+    with (
+        patch("agent_takt_fleet.cli.commands.dispatch.load_registry", return_value=[project]),
+        patch("agent_takt_fleet.cli.commands.dispatch.write_run"),
+        patch("agent_takt_fleet.cli.commands.dispatch.new_run_id", return_value="FR-nomatch"),
+    ):
         rc = command_dispatch(_dispatch_args(tag=["nonexistent"]))
     assert rc == 0
     assert "No projects match" in capsys.readouterr().err

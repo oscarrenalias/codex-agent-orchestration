@@ -28,8 +28,13 @@ def load_registry() -> list[Project]:
     if not path.exists():
         return []
 
-    with path.open() as f:
-        data = yaml.safe_load(f) or {}
+    try:
+        with path.open() as f:
+            data = yaml.safe_load(f) or {}
+    except yaml.YAMLError as exc:
+        raise RegistryError(
+            f"Registry file {path} contains invalid YAML: {exc}"
+        ) from exc
 
     if "version" not in data:
         raise RegistryError(

@@ -60,26 +60,16 @@ def command_dispatch(args: argparse.Namespace) -> int:
 
     tags = args.tag or []
     names = args.project or []
-    projects = filter_projects(projects, tags=tags, names=names)
-
-    if not projects:
-        if tags or names:
-            print("No projects match the given filters.", file=sys.stderr)
-        else:
-            print("No projects registered. Run `takt-fleet register <path>` first.", file=sys.stderr)
-        return 0
-
     title = args.title
     description = args.description
     agent_type = args.agent
     labels = list(args.label or [])
-    max_parallel = args.max_parallel if args.max_parallel is not None else min(len(projects), 4)
 
     inputs = RunInputs(
         bead={"title": title, "agent_type": agent_type, "labels": labels},
         tag_filter=tuple(tags),
         project_filter=tuple(names),
-        max_parallel=max_parallel,
+        max_parallel=args.max_parallel or 0,
         runner=None,
         project_max_workers=None,
     )
@@ -93,6 +83,17 @@ def command_dispatch(args: argparse.Namespace) -> int:
         crashed=False,
     )
     write_run(run)
+
+    projects = filter_projects(projects, tags=tags, names=names)
+
+    if not projects:
+        if tags or names:
+            print("No projects match the given filters.", file=sys.stderr)
+        else:
+            print("No projects registered. Run `takt-fleet register <path>` first.", file=sys.stderr)
+        return 0
+
+    max_parallel = args.max_parallel if args.max_parallel is not None else min(len(projects), 4)
 
     def _worker(project: Project) -> ProjectResult:
         return _dispatch_one(project, title, description, agent_type, labels)

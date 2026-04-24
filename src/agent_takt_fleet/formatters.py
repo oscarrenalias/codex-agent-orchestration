@@ -23,7 +23,7 @@ def format_table(
     In plain mode, output is tab-separated (header + rows) without a separator
     line — suitable for piping to awk/cut.
     """
-    if not rows and not headers:
+    if not rows:
         return ""
 
     widths = _col_widths(headers, rows)
@@ -39,9 +39,9 @@ def format_table(
             lines.append("\t".join(row))
     else:
         lines.append(fmt_row_padded(headers))
-        lines.append(sep.join("-" * w for w in widths))
         for row in rows:
             lines.append(fmt_row_padded(row))
+        lines.append(sep.join("-" * max(w, 3) for w in widths))
 
     return "\n".join(lines)
 
