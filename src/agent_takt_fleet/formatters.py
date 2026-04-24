@@ -66,3 +66,36 @@ def format_project_list(
         for p in projects
     ]
     return format_table(headers, rows, plain=plain)
+
+
+def format_fleet_summary(
+    rows: list[dict[str, Any]],
+    plain: bool = False,
+) -> str:
+    """Render the `takt-fleet summary` table.
+
+    Each dict in rows must have:
+      name: str
+      health: str
+      counts: dict | None  — keys: open, ready, in_progress, blocked, done, handed_off
+
+    Rows with counts=None are rendered with "-" placeholders.
+    """
+    headers = ["PROJECT", "DONE", "READY", "IN_PROGRESS", "BLOCKED", "HANDED_OFF", "HEALTH"]
+    table_rows: list[list[str]] = []
+    for row in rows:
+        counts = row.get("counts")
+        health = row.get("health", "error")
+        if counts is None:
+            table_rows.append([row["name"], "-", "-", "-", "-", "-", health])
+        else:
+            table_rows.append([
+                row["name"],
+                str(counts.get("done", 0)),
+                str(counts.get("ready", 0)),
+                str(counts.get("in_progress", 0)),
+                str(counts.get("blocked", 0)),
+                str(counts.get("handed_off", 0)),
+                health,
+            ])
+    return format_table(headers, table_rows, plain=plain)
