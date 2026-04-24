@@ -102,6 +102,30 @@ def format_fleet_summary(
     return format_table(headers, table_rows, plain=plain)
 
 
+# ── Dispatch summary ──────────────────────────────────────────────────────────
+
+
+def format_dispatch_summary(run: Any) -> str:
+    """Render a post-dispatch result table with per-project bead IDs.
+
+    Intended for direct stdout output immediately after a dispatch completes.
+    """
+    headers = ["PROJECT", "STATUS", "BEAD", "ERROR"]
+    rows: list[list[str]] = []
+    for p in run.projects:
+        created = (p.outputs or {}).get("created_beads") or []
+        bead_str = ", ".join(created) if created else "-"
+        error_str = p.error or ""
+        rows.append([p.name, p.status, bead_str, error_str])
+
+    agg = run.aggregate
+    summary_line = (
+        f"{agg['succeeded']} succeeded, {agg['failed']} failed"
+        f" (total {agg['total']})"
+    )
+    return format_table(headers, rows) + "\n\n" + summary_line
+
+
 # ── Run log formatters ────────────────────────────────────────────────────────
 
 
