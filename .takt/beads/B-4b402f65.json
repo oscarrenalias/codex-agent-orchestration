@@ -3,7 +3,7 @@
   "title": "Implement event tailer and fleet watch command",
   "agent_type": "developer",
   "description": "Build the merged `.takt/logs/events.jsonl` tailer with optional replay window parsing and the `watch` command that streams project-tagged events from multiple projects concurrently.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-7a0391f9",
   "dependencies": [
@@ -31,37 +31,64 @@
     "tests/fleet/test_cli_watch.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt_fleet/cli/commands/watch.py",
+    "src/agent_takt_fleet/formatters.py",
+    "src/agent_takt_fleet/tailer.py",
+    "tests/fleet/test_cli_watch.py",
+    "tests/fleet/test_tailer.py"
+  ],
+  "changed_files": [
+    "src/agent_takt_fleet/cli/commands/watch.py",
+    "src/agent_takt_fleet/formatters.py",
+    "src/agent_takt_fleet/tailer.py",
+    "tests/fleet/test_cli_watch.py",
+    "tests/fleet/test_tailer.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Created `src/agent_takt_fleet/tailer.py` with `TailedEvent` dataclass, `_parse_timestamp`, `_emit_line`, `_replay_window` (with cutoff filtering, short-history warnings, and unparseable-timestamp best-effort), `_do_tail` (waits for file, replays window or seeks to EOF, live-polls), `_tail_worker` (thread wrapper with None sentinel), and `start_tailing` (one daemon thread per project, single merged queue). Created `src/agent_takt_fleet/cli/commands/watch.py` with `command_watch` that loads/filters the registry, calls `start_tailing`, drains the merged queue to stdout until Ctrl-C (sets stop_event, returns 0). Added `format_watch_event_line` to `formatters.py` \u2014 project-prefixed with timestamp, event type, and summary for parsed events; raw fallback for unparseable lines. Created `tests/fleet/test_tailer.py` (15 tests: timestamp parsing, emit_line, replay_window with cutoff/warning/stop-event/unparseable, start_tailing with multiple projects/live events/file-wait). Created `tests/fleet/test_cli_watch.py` (9 tests: empty registry, registry error, no-match filter, event output, multi-event, Ctrl-C, --since forwarding, project filter, raw unparseable line).",
+    "remaining": "N/A",
+    "risks": "The `_build_mock_start_tailing` helper in test_cli_watch.py pushes one sentinel per project; a single-threaded test environment might see timing differences but all sentinels are in-queue synchronously so there is no race. File rotation is not handled \u2014 the tailer re-opens the same path; rotation would require inode tracking which is out of scope.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt_fleet/cli/commands/watch.py",
+      "src/agent_takt_fleet/formatters.py",
+      "src/agent_takt_fleet/tailer.py",
+      "tests/fleet/test_cli_watch.py",
+      "tests/fleet/test_tailer.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should run the fleet test suite and verify all tailer and watch tests pass.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt_fleet/tailer.py",
+      "src/agent_takt_fleet/cli/commands/watch.py",
+      "src/agent_takt_fleet/formatters.py",
+      "tests/fleet/test_tailer.py",
+      "tests/fleet/test_cli_watch.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt_fleet/cli/commands/watch.py",
+      "src/agent_takt_fleet/formatters.py",
+      "src/agent_takt_fleet/tailer.py",
+      "tests/fleet/test_cli_watch.py",
+      "tests/fleet/test_tailer.py"
+    ],
+    "conflict_risks": "Downstream tester and review agents should be aware that `formatters.py` was extended (not modified at existing lines) so no conflicts with sibling beads that only read formatters.",
+    "design_decisions": "**Polling vs. inotify**: Used polling (1-second interval) for cross-platform simplicity. inotify/FSEvents would need platform detection and adds dependency complexity for no meaningful latency improvement in this use case.\n\n**File open mode (text vs binary)**: Opened in text mode (`\"r\"`) for simpler line iteration. Binary mode would require explicit decoding but adds no value for JSONL polling.\n\n**Replay then live-tail in a single open()**: The replay window reads from position 0 to EOF, then the live-tail loop continues from the same file handle positioned at EOF. This avoids a second open and a potential TOCTOU gap between reading historical events and starting the live tail.\n\n**None sentinel per worker**: Each worker pushes `None` when it exits (normal stop or error). `command_watch` counts sentinels to know when all workers are done \u2014 this makes the loop naturally finite after stop_event is set.\n\n**Short-history warning**: Emitted to stderr (not stdout) so it doesn't interfere with the event stream being piped. Condition: `first_ts_in_file > cutoff`.",
+    "test_coverage_notes": "Tester should verify: (1) replay window correctly excludes events before cutoff across boundary conditions; (2) short-history warning fires when log is shorter than the requested `--since` window; (3) unparseable JSON lines are included best-effort in replay; (4) live-tail picks up events appended after file position; (5) Ctrl-C exits with code 0 and `(interrupted)` message; (6) `--since` value is forwarded to `start_tailing`; (7) project filter reduces the worker count; (8) RegistryError returns exit code 1.",
+    "known_limitations": "File rotation is not handled \u2014 if `events.jsonl` is rotated while the tailer is running, the old file descriptor continues reading from the old inode until stop_event is set. This is acceptable for the v0.1 scope. The tailer does not track bead context (bead_id) in event output; the raw event summary is shown as-is."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "Downstream tester and review agents should be aware that `formatters.py` was extended (not modified at existing lines) so no conflicts with sibling beads that only read formatters.",
   "branch_name": "feature/b-7a0391f9",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-7a0391f9",
-  "lease": {
-    "owner": "developer:B-4b402f65",
-    "expires_at": "2026-04-24T16:30:15.667975+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -103,6 +130,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-4b402f65/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-04-24T16:09:40.717805+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Implemented event tailer (`tailer.py`) and fleet watch command (`cli/commands/watch.py`), plus `format_watch_event_line` in `formatters.py`, with full test suites for both.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -179,7 +213,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Implemented event tailer (`tailer.py`) and fleet watch command (`cli/commands/watch.py`), plus `format_watch_event_line` in `formatters.py`, with full test suites for both.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 1.4503958000000001,
+      "duration_ms": 555104,
+      "duration_api_ms": 533178,
+      "num_turns": 36,
+      "input_tokens": 33,
+      "output_tokens": 23117,
+      "cache_creation_tokens": 67820,
+      "cache_read_tokens": 1673569,
+      "stop_reason": "end_turn",
+      "session_id": "0ae6aa0e-1b0b-4b50-97ed-5963596bf59e",
+      "permission_denials": [],
+      "prompt_chars": 8188,
+      "prompt_lines": 168,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 1.4503958000000001,
+        "duration_ms": 555104,
+        "duration_api_ms": 533178,
+        "num_turns": 36,
+        "input_tokens": 33,
+        "output_tokens": 23117,
+        "cache_creation_tokens": 67820,
+        "cache_read_tokens": 1673569,
+        "stop_reason": "end_turn",
+        "session_id": "0ae6aa0e-1b0b-4b50-97ed-5963596bf59e",
+        "permission_denials": [],
+        "prompt_chars": 8188,
+        "prompt_lines": 168,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "7f1c75e231bc6872c67f7e0d4c8aa32983c506b2"
   },
   "labels": [],
   "recovery_for": null,
