@@ -1,0 +1,107 @@
+{
+  "bead_id": "B-d1984c5b-corrective",
+  "title": "Corrective fix for B-d1984c5b: Validate Fleet Manager v0.1.0 end-to-end",
+  "agent_type": "developer",
+  "description": "Blocked reason: 6 test failures across formatters.py (separator positioning/min-width/empty-rows), dispatch.py and run.py (run log not written before no-match exit), and registry.py (yaml parse errors uncaught). All 6 are implementation defects against the written test specifications and must be fixed before the fleet tester bead can approve.\n\nRemaining work: 6 defects require implementation fixes before the fleet suite can pass fully: (1) formatters.py: separator footer position + min 3 dashes + empty-rows guard; (2) dispatch.py and run.py: write initial run log before filter early-return; (3) registry.py: catch yaml.parser.ParserError and re-raise as RegistryError.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-d1984c5b",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-d1984c5b.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [
+    "spec-0ba9d2a3"
+  ],
+  "feature_root_id": "B-7a0391f9",
+  "execution_branch_name": "feature/b-7a0391f9",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-7a0391f9",
+  "expected_files": [
+    "src/agent_takt_fleet/formatters.py",
+    "src/agent_takt_fleet/registry.py",
+    "src/agent_takt_fleet/cli/commands/dispatch.py",
+    "src/agent_takt_fleet/cli/commands/run.py",
+    "tests/fleet/test_formatters.py",
+    "tests/fleet/test_cli_dispatch.py",
+    "tests/fleet/test_cli_run.py",
+    "tests/fleet/test_cli_summary.py"
+  ],
+  "expected_globs": [
+    "src/agent_takt_fleet/*.py",
+    "tests/fleet/test_*.py"
+  ],
+  "touched_files": [
+    "tests/fleet/test_adapter.py",
+    "tests/fleet/test_boundaries.py",
+    "tests/fleet/test_cli_dispatch.py",
+    "tests/fleet/test_cli_register.py",
+    "tests/fleet/test_cli_run.py",
+    "tests/fleet/test_cli_runs.py",
+    "tests/fleet/test_cli_summary.py",
+    "tests/fleet/test_cli_watch.py",
+    "tests/fleet/test_executor.py",
+    "tests/fleet/test_formatters.py",
+    "tests/fleet/test_registry.py",
+    "tests/fleet/test_runlog.py",
+    "tests/fleet/test_tailer.py"
+  ],
+  "changed_files": [
+    "tests/fleet/test_adapter.py",
+    "tests/fleet/test_boundaries.py",
+    "tests/fleet/test_cli_dispatch.py",
+    "tests/fleet/test_cli_register.py",
+    "tests/fleet/test_cli_run.py",
+    "tests/fleet/test_cli_runs.py",
+    "tests/fleet/test_cli_summary.py",
+    "tests/fleet/test_cli_watch.py",
+    "tests/fleet/test_executor.py",
+    "tests/fleet/test_formatters.py",
+    "tests/fleet/test_registry.py",
+    "tests/fleet/test_runlog.py",
+    "tests/fleet/test_tailer.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "Fixes to formatters.py separator behavior may affect the visual output of any currently passing CLI tests that render tables \u2014 those tests check for string presence only (not exact layout), so risk is low. Fixing registry.py to wrap yaml.safe_load in a try/except should not affect any passing tests.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-04-24T16:18:42.539172+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-d1984c5b"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
