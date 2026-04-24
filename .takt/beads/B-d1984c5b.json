@@ -187,6 +187,13 @@
       "agent_type": "tester",
       "summary": "Fleet Manager v0.1.0 test suite run. 211 of 217 fleet tests pass; 6 failures across three defect categories: (1) format_table separator placement and minimum-width bugs + format_fleet_summary empty-rows guard; (2) run log not written before \"no projects match\" early return in dispatch.py and run.py; (3) yaml.parser.ParserError not caught in load_registry(), causing unhandled exceptions instead of exit code 1. No regressions in 1463 existing agent_takt tests.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-04-24T16:18:42.857508+00:00",
+      "event": "corrective_planned",
+      "agent_type": "tester",
+      "summary": "Created corrective bead B-d1984c5b-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -2853,7 +2860,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-d1984c5b-corrective"
   },
   "labels": [],
   "recovery_for": null,
