@@ -3,7 +3,7 @@
   "title": "Review Investigate bead-state-leak: developer beads not persisted as done after takt merge",
   "agent_type": "review",
   "description": "Review implementation for B-fa05af17",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-fa05af17",
   "dependencies": [
@@ -3858,7 +3858,10 @@
   "conflict_risks": "Follow-up work will touch the same git workflow surface in `src/agent_takt/gitutils.py`, so it should be coordinated with any other merge-behavior changes.",
   "branch_name": "feature/b-fa05af17",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-fa05af17-review",
+    "expires_at": "2026-05-04T21:22:19.397528+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3919,6 +3922,29 @@
       "event": "retried",
       "agent_type": "review",
       "summary": "Requeued blocked bead after corrective bead B-fa05af17-review-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:52:19.755899+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:52:19.755922+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
       "details": {}
     }
   ],
