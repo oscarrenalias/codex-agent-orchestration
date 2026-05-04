@@ -3,7 +3,7 @@
   "title": "Review Harden bead-state merge safety net",
   "agent_type": "review",
   "description": "Review implementation for B-fa05af17-subtask",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-fa05af17-subtask",
   "dependencies": [
@@ -80,7 +80,7 @@
     "test_coverage_notes": "No tests were run by review, per guardrails. Existing added tests cover preflight/final all-bead-conflict resolution, but I did not find coverage for the mixed bead/non-bead conflict failure path.",
     "known_limitations": "Memory search could not be completed in this environment because `uv run` attempted offline dependency resolution and failed before the CLI could execute."
   },
-  "block_reason": "`src/agent_takt/gitutils.py:113-119` stages `.takt/beads/` conflicts before checking whether other conflicts remain. If a merge contains both bead and non-bead conflicts, the helper returns failure without undoing those staged bead-file resolutions, leaving the repository in a partially resolved merge state. That breaks the documented fallback behavior and is blocking for merge safety.",
+  "block_reason": "",
   "conflict_risks": "The merge-safety tests now depend on real git conflict behavior. Any fix for the mixed-conflict path should update `tests/test_merge_safety.py` alongside the helper logic so the docs' guarantee matches the actual repository state after failure.",
   "branch_name": "feature/b-fa05af17",
   "worktree_path": "",
@@ -138,6 +138,13 @@
       "event": "corrective_planned",
       "agent_type": "review",
       "summary": "Created corrective bead B-fa05af17-subtask-review-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:50:43.740690+00:00",
+      "event": "retried",
+      "agent_type": "review",
+      "summary": "Requeued blocked bead after corrective bead B-fa05af17-subtask-review-corrective completed",
       "details": {}
     }
   ],
@@ -240,7 +247,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-fa05af17-subtask-review-corrective"
+    "auto_corrective_bead_id": "B-fa05af17-subtask-review-corrective",
+    "last_corrective_retry_source": "B-fa05af17-subtask-review-corrective",
+    "last_corrective_retry_commit": "bc66afcb4ddd48cb8f750e1bbcb7001b9dc5cff4"
   },
   "labels": [],
   "recovery_for": null,
