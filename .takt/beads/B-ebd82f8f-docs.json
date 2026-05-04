@@ -3804,7 +3804,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-ebd82f8f-test",
   "conflict_risks": "None \u2014 only `adapter.py` and `tests/fleet/test_adapter.py` touched; no overlap with other in-progress beads.",
   "branch_name": "",
   "worktree_path": "",
@@ -3816,6 +3816,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T13:15:14.281327+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-ebd82f8f-test",
       "details": {}
     }
   ],
