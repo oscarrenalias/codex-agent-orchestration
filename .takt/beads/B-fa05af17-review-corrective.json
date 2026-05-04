@@ -1315,7 +1315,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-fa05af17-subtask-test",
   "conflict_risks": "Follow-up work will touch the same git workflow surface in `src/agent_takt/gitutils.py`, so it should be coordinated with any other merge-behavior changes.",
   "branch_name": "",
   "worktree_path": "",
@@ -1327,6 +1327,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:40:50.869010+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-fa05af17-subtask-test",
       "details": {}
     }
   ],
