@@ -8,8 +8,8 @@
   "parent_id": "B-ebd82f8f",
   "dependencies": [
     "B-ebd82f8f",
-    "B-ebd82f8f-test",
-    "B-ebd82f8f-docs"
+    "B-ebd82f8f-docs",
+    "B-ebd82f8f-test"
   ],
   "acceptance_criteria": [],
   "linked_docs": [],
