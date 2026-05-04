@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-54985587-test: Test TUI bug: bead detail popup does not scroll (event.stop swallows scroll keys)",
   "agent_type": "developer",
   "description": "Blocked reason: Popup scrolling is still broken under targeted TUI regression tests; pagedown, end/home, and j-based scrolling do not move `#detail-popup-dialog`.\n\nRemaining work: Developer needs to fix popup scrolling behavior in src/agent_takt/tui/app.py so the focused `#detail-popup-dialog` VerticalScroll actually gains scrollable content and responds to native keys. Current failures are at tests/test_tui_app.py:2204 (pagedown no-op), 2240-2241 (end/home cannot scroll because max_scroll_y stays 0), and 2326 (j does not scroll the popup).",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-54985587-test",
   "dependencies": [],
@@ -50,9 +50,12 @@
   },
   "block_reason": "file-scope conflict with in-progress B-54985587-docs",
   "conflict_risks": "Low. This bead only added focused regression tests in tests/test_tui_app.py, but any concurrent edits near the popup regression section may need a simple merge.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-54985587",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-54985587",
+  "lease": {
+    "owner": "developer:B-54985587-test-corrective",
+    "expires_at": "2026-05-04T20:57:38.291975+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -68,10 +71,48 @@
       "agent_type": "developer",
       "summary": "file-scope conflict with in-progress B-54985587-docs",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:27:38.532823+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:27:38.532848+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
   "metadata": {
-    "auto_corrective_for": "B-54985587-test"
+    "auto_corrective_for": "B-54985587-test",
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-54985587-test-corrective",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "ecae5633083d1bbec41a6e5ec6ea05bbab117f60499c19b2ed76dbbe3e1aec7c",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-54985587-test-corrective/home",
+    "runner_backend": "codex"
   },
   "labels": [],
   "recovery_for": null,
