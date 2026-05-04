@@ -59,7 +59,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-fa05af17-review-corrective",
   "conflict_risks": "The merge-safety tests now depend on real git conflict behavior. Any fix for the mixed-conflict path should update `tests/test_merge_safety.py` alongside the helper logic so the docs' guarantee matches the actual repository state after failure.",
   "branch_name": "",
   "worktree_path": "",
@@ -71,6 +71,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:46:54.091575+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-fa05af17-review-corrective",
       "details": {}
     }
   ],
