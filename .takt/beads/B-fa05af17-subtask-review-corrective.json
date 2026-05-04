@@ -1,0 +1,83 @@
+{
+  "bead_id": "B-fa05af17-subtask-review-corrective",
+  "title": "Corrective fix for B-fa05af17-subtask-review: Review Harden bead-state merge safety net",
+  "agent_type": "developer",
+  "description": "Blocked reason: `src/agent_takt/gitutils.py:113-119` stages `.takt/beads/` conflicts before checking whether other conflicts remain. If a merge contains both bead and non-bead conflicts, the helper returns failure without undoing those staged bead-file resolutions, leaving the repository in a partially resolved merge state. That breaks the documented fallback behavior and is blocking for merge safety.\n\nRemaining work: Fix the mixed-conflict path in `WorktreeManager._resolve_bead_state_conflicts()` / `_merge_with_bead_state_fallback()` so a failed merge does not leave `.takt/beads/` paths partially resolved and staged. Add regression coverage for a merge that contains both bead and non-bead conflicts.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-fa05af17-subtask-review",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-fa05af17-subtask-review.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [
+    "CLAUDE.md",
+    "docs/development.md"
+  ],
+  "feature_root_id": "B-fa05af17",
+  "execution_branch_name": "feature/b-fa05af17",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-fa05af17",
+  "expected_files": [
+    "CLAUDE.md",
+    "docs/development.md",
+    "src/agent_takt/gitutils.py",
+    "tests/test_merge_safety.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "CLAUDE.md",
+    "docs/development.md",
+    "src/agent_takt/gitutils.py",
+    "tests/test_merge_safety.py"
+  ],
+  "changed_files": [
+    "CLAUDE.md",
+    "docs/development.md",
+    "src/agent_takt/gitutils.py",
+    "tests/test_merge_safety.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "The merge-safety tests now depend on real git conflict behavior. Any fix for the mixed-conflict path should update `tests/test_merge_safety.py` alongside the helper logic so the docs' guarantee matches the actual repository state after failure.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-04T20:46:50.805140+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-fa05af17-subtask-review"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
