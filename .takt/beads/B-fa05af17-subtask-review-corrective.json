@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-fa05af17-subtask-review: Review Harden bead-state merge safety net",
   "agent_type": "developer",
   "description": "Blocked reason: `src/agent_takt/gitutils.py:113-119` stages `.takt/beads/` conflicts before checking whether other conflicts remain. If a merge contains both bead and non-bead conflicts, the helper returns failure without undoing those staged bead-file resolutions, leaving the repository in a partially resolved merge state. That breaks the documented fallback behavior and is blocking for merge safety.\n\nRemaining work: Fix the mixed-conflict path in `WorktreeManager._resolve_bead_state_conflicts()` / `_merge_with_bead_state_fallback()` so a failed merge does not leave `.takt/beads/` paths partially resolved and staged. Add regression coverage for a merge that contains both bead and non-bead conflicts.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-fa05af17-subtask-review",
   "dependencies": [],
@@ -61,9 +61,12 @@
   },
   "block_reason": "file-scope conflict with in-progress B-fa05af17-review-corrective",
   "conflict_risks": "The merge-safety tests now depend on real git conflict behavior. Any fix for the mixed-conflict path should update `tests/test_merge_safety.py` alongside the helper logic so the docs' guarantee matches the actual repository state after failure.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-fa05af17",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-fa05af17",
+  "lease": {
+    "owner": "developer:B-fa05af17-subtask-review-corrective",
+    "expires_at": "2026-05-04T21:18:31.727278+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -79,10 +82,48 @@
       "agent_type": "developer",
       "summary": "file-scope conflict with in-progress B-fa05af17-review-corrective",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:48:31.999845+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:48:31.999873+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
   "metadata": {
-    "auto_corrective_for": "B-fa05af17-subtask-review"
+    "auto_corrective_for": "B-fa05af17-subtask-review",
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-subtask-review-corrective",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "ecae5633083d1bbec41a6e5ec6ea05bbab117f60499c19b2ed76dbbe3e1aec7c",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-subtask-review-corrective/home",
+    "runner_backend": "codex"
   },
   "labels": [],
   "recovery_for": null,
