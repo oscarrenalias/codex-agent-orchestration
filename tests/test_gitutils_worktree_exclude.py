@@ -12,6 +12,7 @@ Covers:
 """
 from __future__ import annotations
 
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -182,6 +183,100 @@ class EnsureWorktreeExcludeIntegrationTests(unittest.TestCase):
             target = self.wm.ensure_worktree("B-abc12345", "feature/b-abc12345")
 
         mock_exclude.assert_called_once_with(self.wm.root, target)
+
+
+class WorktreeBeadLeakRegressionTests(unittest.TestCase):
+    """Regression coverage for bead-state leakage from feature worktree commits."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.worktrees_dir = self.root / ".takt" / "worktrees"
+        self.wm = WorktreeManager(self.root, self.worktrees_dir)
+        self._git("init", "-b", "main")
+        self._git("config", "user.email", "test@example.com")
+        self._git("config", "user.name", "Test User")
+        (self.root / ".gitattributes").write_text(".takt/beads/** merge=ours\n", encoding="utf-8")
+        bead_dir = self.root / ".takt" / "beads"
+        bead_dir.mkdir(parents=True, exist_ok=True)
+        (bead_dir / "B-root.json").write_text('{"status":"ready"}\n', encoding="utf-8")
+        (self.root / "src").mkdir()
+        (self.root / "src" / "worker.txt").write_text("base\n", encoding="utf-8")
+        self._git("add", ".")
+        self._git("commit", "-m", "init")
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _git(self, *args: str, cwd: Path | None = None) -> str:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=cwd or self.root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise AssertionError(proc.stderr.strip() or proc.stdout.strip())
+        return proc.stdout.strip()
+
+    def test_commit_all_excludes_bead_state_from_worker_commit(self) -> None:
+        worktree = self.wm.ensure_worktree("B-feature", "feature/b-feature")
+        (worktree / "src" / "worker.txt").write_text("changed\n", encoding="utf-8")
+        (worktree / ".takt" / "beads" / "B-root.json").write_text(
+            '{"status":"in_progress"}\n',
+            encoding="utf-8",
+        )
+
+        commit_hash = self.wm.commit_all(worktree, "[takt] B-feature: worker change")
+
+        self.assertIsNotNone(commit_hash)
+        names = self._git("show", "--name-only", "--pretty=format:", "HEAD", cwd=worktree).splitlines()
+        self.assertIn("src/worker.txt", names)
+        self.assertNotIn(".takt/beads/B-root.json", names)
+
+        feature_path_log = self._git(
+            "log",
+            "--format=%s",
+            "feature/b-feature",
+            "--",
+            ".takt/beads/B-root.json",
+        ).splitlines()
+        self.assertEqual(
+            ["chore: untrack bead state from feature branch [skip ci]", "init"],
+            feature_path_log,
+        )
+
+    def test_merge_keeps_main_bead_state_when_worker_changes_bead_locally(self) -> None:
+        worktree = self.wm.ensure_worktree("B-feature", "feature/b-feature")
+        (worktree / "src" / "worker.txt").write_text("changed\n", encoding="utf-8")
+        (worktree / ".takt" / "beads" / "B-root.json").write_text(
+            '{"status":"in_progress"}\n',
+            encoding="utf-8",
+        )
+        self.wm.commit_all(worktree, "[takt] B-feature: worker change")
+
+        (self.root / ".takt" / "beads" / "B-root.json").write_text('{"status":"done"}\n', encoding="utf-8")
+        self._git("add", ".takt/beads/B-root.json")
+        self._git("commit", "-m", "main bead done")
+
+        self.wm.merge_branch("feature/b-feature")
+
+        self.assertEqual(
+            '{"status":"done"}\n',
+            (self.root / ".takt" / "beads" / "B-root.json").read_text(encoding="utf-8"),
+        )
+        feature_path_log = self._git(
+            "log",
+            "--format=%s",
+            "feature/b-feature",
+            "--",
+            ".takt/beads/B-root.json",
+        ).splitlines()
+        self.assertEqual(
+            ["chore: untrack bead state from feature branch [skip ci]", "init"],
+            feature_path_log,
+        )
 
 
 if __name__ == "__main__":
