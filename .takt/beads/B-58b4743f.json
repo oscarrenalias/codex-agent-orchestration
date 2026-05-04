@@ -2657,6 +2657,13 @@
       "agent_type": "review",
       "summary": "Review complete: implementation is correct and tests are comprehensive, but docs/multi-backend-agents.md inaccurately lists serialize_within_feature_tree as a Scheduler instance attribute when it is not set as one in __init__.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T13:29:55.155431+00:00",
+      "event": "corrective_planned",
+      "agent_type": "review",
+      "summary": "Created corrective bead B-58b4743f-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -5292,7 +5299,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-58b4743f-corrective"
   },
   "labels": [],
   "recovery_for": null,
