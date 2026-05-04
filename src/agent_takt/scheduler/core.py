@@ -363,6 +363,13 @@ class Scheduler:
             same_feature_tree = (
                 self.storage.feature_root_id_for(bead) == self.storage.feature_root_id_for(active)
             )
+            if (
+                self.config.scheduler.serialize_within_feature_tree
+                and same_feature_tree
+                and bead.agent_type in MUTATING_AGENTS
+                and active.agent_type in MUTATING_AGENTS
+            ):
+                return f"worktree serialization enabled — waiting on in-progress {active.bead_id}"
             if same_feature_tree and (not bead.has_scope() or not active.has_scope()):
                 return f"worktree in use by in-progress {active.bead_id} (no file scope defined)"
             return f"file-scope conflict with in-progress {active.bead_id}"
@@ -421,6 +428,8 @@ class Scheduler:
     def _beads_conflict(self, bead: Bead, active: Bead) -> bool:
         same_feature_tree = self.storage.feature_root_id_for(bead) == self.storage.feature_root_id_for(active)
         if same_feature_tree and bead.agent_type in MUTATING_AGENTS and active.agent_type in MUTATING_AGENTS:
+            if self.config.scheduler.serialize_within_feature_tree:
+                return True
             if not bead.has_scope() or not active.has_scope():
                 return True
         if bead.agent_type not in MUTATING_AGENTS or active.agent_type not in MUTATING_AGENTS:
