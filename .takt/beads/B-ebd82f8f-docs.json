@@ -1,94 +1,85 @@
 {
-  "bead_id": "B-3c4de98c",
-  "title": "Document serialize_within_feature_tree in CLAUDE.md and multi-backend-agents.md",
+  "bead_id": "B-ebd82f8f-docs",
+  "title": "Document Fix takt-fleet adapter: --runner flag built in wrong position for takt run",
   "agent_type": "documentation",
-  "description": "Add a one-paragraph note to the `## Configuration` section of `CLAUDE.md` describing `scheduler.serialize_within_feature_tree`, when to enable it (Swift/Xcode/SPM and similar toolchain-locked stacks), and the trade-off (loses within-worktree packing). Add the field to the `SchedulerConfig` reference table in `docs/multi-backend-agents.md`.",
+  "description": "Update docs for B-ebd82f8f",
   "status": "done",
   "bead_type": "task",
-  "parent_id": "B-9472cbcc",
+  "parent_id": "B-ebd82f8f",
   "dependencies": [
-    "B-62c93f83",
-    "B-2c3c863c",
-    "B-59ab9476"
+    "B-ebd82f8f"
   ],
-  "acceptance_criteria": [
-    "`CLAUDE.md` Configuration section contains a paragraph describing `scheduler.serialize_within_feature_tree`, its default (`false`), and when to enable it",
-    "`docs/multi-backend-agents.md` SchedulerConfig table includes a row for `serialize_within_feature_tree` with type, default, and description",
-    "No other content in either file is changed"
-  ],
-  "linked_docs": [
-    "specs/drafts/scheduler-serialize-within-feature-tree.md",
-    "CLAUDE.md",
-    "docs/multi-backend-agents.md"
-  ],
-  "feature_root_id": "B-9472cbcc",
-  "execution_branch_name": "feature/b-9472cbcc",
-  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9472cbcc",
+  "acceptance_criteria": [],
+  "linked_docs": [],
+  "feature_root_id": "B-ebd82f8f",
+  "execution_branch_name": "feature/b-ebd82f8f",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ebd82f8f",
   "expected_files": [
-    "CLAUDE.md",
-    "docs/multi-backend-agents.md"
+    "src/agent_takt_fleet/adapter.py",
+    "tests/fleet/test_adapter.py"
   ],
   "expected_globs": [],
   "touched_files": [
-    "CLAUDE.md",
-    "docs/multi-backend-agents.md"
+    "docs/fleet.md"
   ],
   "changed_files": [
-    "CLAUDE.md",
-    "docs/multi-backend-agents.md"
+    "docs/fleet.md"
   ],
   "updated_docs": [
-    "CLAUDE.md",
-    "docs/multi-backend-agents.md"
+    "docs/fleet.md"
   ],
   "handoff_summary": {
-    "completed": "Added a paragraph to the `## Configuration` section of CLAUDE.md describing `scheduler.serialize_within_feature_tree`, its default (`false`), when to enable it (Swift/Xcode/SPM and similar toolchain-locked stacks), and the trade-off (serializes within-worktree bead dispatch, increasing cycle time). Added a row to the Scheduler config wiring table in docs/multi-backend-agents.md with the instance attribute, config source, and default value.",
-    "remaining": "None. Both acceptance criteria are satisfied.",
-    "risks": "None. Changes are additive documentation only; no runtime behavior modified.",
+    "completed": "Updated the --runner forwarding description in docs/fleet.md under the `takt-fleet run` section to explicitly state the correct argv position: `uv run takt --runner <value> run \u2026`.",
+    "remaining": "None.",
+    "risks": "None \u2014 one-line clarification to existing prose, no behaviour change.",
     "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
     "changed_files": [
-      "CLAUDE.md",
-      "docs/multi-backend-agents.md"
+      "docs/fleet.md"
     ],
     "updated_docs": [
-      "CLAUDE.md",
-      "docs/multi-backend-agents.md"
+      "docs/fleet.md"
     ],
-    "next_action": "None \u2014 documentation is complete.",
-    "next_agent": "",
+    "next_action": "Ready for review bead.",
+    "next_agent": "review",
     "block_reason": "",
     "expected_files": [
-      "CLAUDE.md",
-      "docs/multi-backend-agents.md"
+      "src/agent_takt_fleet/adapter.py",
+      "tests/fleet/test_adapter.py"
     ],
     "expected_globs": [],
     "touched_files": [
-      "CLAUDE.md",
-      "docs/multi-backend-agents.md"
+      "docs/fleet.md"
     ],
-    "conflict_risks": "None. Only CLAUDE.md and docs/multi-backend-agents.md were modified; no overlap with other in-progress beads expected.",
-    "design_decisions": "Placed the serialize_within_feature_tree paragraph between the CommonConfig description and the Key functions line in the Configuration section, keeping related scheduler config information logically grouped near the end of the section. Added the table row at the end of the Scheduler config wiring table to avoid disrupting existing rows.",
-    "test_coverage_notes": "Documentation bead \u2014 no test coverage required.",
-    "known_limitations": "None."
+    "conflict_risks": "None \u2014 only docs/fleet.md touched; no overlap with other in-progress beads.",
+    "design_decisions": "Chose to update the description of --runner forwarding in takt-fleet run to explicitly state the argv position, since the bug was precisely about flag position. No other documentation references the adapter's internal argv construction.",
+    "test_coverage_notes": "Tests in tests/fleet/test_adapter.py already assert the exact argv order via test_run_argv_runner_before_run_subcommand and companion tests.",
+    "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None. Only CLAUDE.md and docs/multi-backend-agents.md were modified; no overlap with other in-progress beads expected.",
-  "branch_name": "feature/b-9472cbcc",
-  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9472cbcc",
+  "conflict_risks": "None \u2014 only docs/fleet.md touched; no overlap with other in-progress beads.",
+  "branch_name": "feature/b-ebd82f8f",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ebd82f8f",
   "lease": null,
   "retries": 0,
   "execution_history": [
     {
-      "timestamp": "2026-05-04T13:13:34.156389+00:00",
+      "timestamp": "2026-05-04T13:15:11.608304+00:00",
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
     },
     {
-      "timestamp": "2026-05-04T13:25:53.128928+00:00",
+      "timestamp": "2026-05-04T13:15:14.281327+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-ebd82f8f-test",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T13:16:01.285635+00:00",
       "event": "skills_loaded",
       "agent_type": "documentation",
       "summary": "Loaded 6 skill(s) for isolated execution",
@@ -104,31 +95,31 @@
       }
     },
     {
-      "timestamp": "2026-05-04T13:25:53.128952+00:00",
+      "timestamp": "2026-05-04T13:16:01.285661+00:00",
       "event": "started",
       "agent_type": "documentation",
       "summary": "Worker started",
       "details": {}
     },
     {
-      "timestamp": "2026-05-04T13:26:02.605536+00:00",
+      "timestamp": "2026-05-04T13:16:01.527930+00:00",
       "event": "guardrails_applied",
       "agent_type": "documentation",
-      "summary": "Applied guardrails from .takt/agent-runs/B-3c4de98c/repo/templates/agents/documentation.md",
+      "summary": "Applied guardrails from .takt/agent-runs/B-ebd82f8f-docs/repo/templates/agents/documentation.md",
       "details": {
-        "template_path": ".takt/agent-runs/B-3c4de98c/repo/templates/agents/documentation.md"
+        "template_path": ".takt/agent-runs/B-ebd82f8f-docs/repo/templates/agents/documentation.md"
       }
     },
     {
-      "timestamp": "2026-05-04T13:27:00.201615+00:00",
+      "timestamp": "2026-05-04T13:17:04.701000+00:00",
       "event": "completed",
       "agent_type": "documentation",
-      "summary": "Added `serialize_within_feature_tree` documentation to CLAUDE.md Configuration section and to the SchedulerConfig table in docs/multi-backend-agents.md.",
+      "summary": "Updated docs/fleet.md to clarify that --runner is a global takt flag passed before the run subcommand, not a run subcommand flag \u2014 directly documenting the bug that was fixed in adapter.py.",
       "details": {}
     }
   ],
   "metadata": {
-    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-3c4de98c",
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-ebd82f8f-docs",
     "workspace_repo_path": "repo",
     "loaded_skills": [
       "core/base-orchestrator",
@@ -139,38 +130,28 @@
       "memory"
     ],
     "skill_bundle_hash": "191f95261a4d31e4f4a691e9c39926c722504f21a3c370b6975facad92e3c1f0",
-    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-3c4de98c/home",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-ebd82f8f-docs/home",
     "runner_backend": "claude",
     "guardrails": {
       "agent_type": "documentation",
-      "template_path": ".takt/agent-runs/B-3c4de98c/repo/templates/agents/documentation.md",
+      "template_path": ".takt/agent-runs/B-ebd82f8f-docs/repo/templates/agents/documentation.md",
       "template_text": "# Documentation Guardrails\n\nPrimary responsibility: Update documentation and examples that explain the assigned behavior without changing runtime feature behavior.\n\nAllowed actions:\n- Edit docs, examples, and explanatory text tied to the assigned bead.\n- Focus only on files listed in the bead's touched_files and changed_files fields. Do not read or modify unrelated documentation.\n- Align documentation with existing code and validated behavior.\n- Identify when implementation or tests must land first and block with a handoff.\n\nDisallowed actions:\n- Change runtime behavior, production code paths, or feature logic.\n- Invent undocumented behavior that is not present in the codebase.\n- Approve code quality or test completeness as a substitute for review.\n- Do not run the test suite. Testing is the tester agent's responsibility.\n\n## Memory\n\n**Read memory at bead start.** Before writing any documentation, run three searches using `$TAKT_CMD` (injected by the orchestrator):\n\n```bash\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace global\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace feature:<feature_root_id>\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace specs\n```\n\nTreat results as ambient context \u2014 apply relevant entries to inform documentation; skip entries that don't apply.\n\nDo **not** write to memory \u2014 documentation agents are read-only.\n\nEfficiency constraints:\n- Do not read the full codebase for context. Focus on the changed files and their immediate surroundings.\n- Keep documentation updates concise and proportional to the change.\n\nExpected outputs:\n- Return JSON with `outcome` set to `completed` (documentation beads always complete; use `verdict` for pass/fail) and `summary` as a one-line description of what was documented.\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when documentation is complete with no gaps.\n- Use `verdict=needs_changes`, set `findings_count` to the number of unresolved documentation gaps, set `requires_followup=true`, and include `block_reason` when implementation must land first or documentation cannot be completed.\n- Keep `completed`, `remaining`, and `risks` as concise narrative context only; they do not override the structured verdict fields.\n- Accurate updated docs and clear next-agent recommendations when code changes are required first.",
-      "captured_at": "2026-05-04T13:26:02.605520+00:00"
+      "captured_at": "2026-05-04T13:16:01.527906+00:00"
     },
     "worker_prompt_context": {
-      "bead_id": "B-3c4de98c",
-      "feature_root_id": "B-9472cbcc",
-      "title": "Document serialize_within_feature_tree in CLAUDE.md and multi-backend-agents.md",
+      "bead_id": "B-ebd82f8f-docs",
+      "feature_root_id": "B-ebd82f8f",
+      "title": "Document Fix takt-fleet adapter: --runner flag built in wrong position for takt run",
       "agent_type": "documentation",
-      "description": "Add a one-paragraph note to the `## Configuration` section of `CLAUDE.md` describing `scheduler.serialize_within_feature_tree`, when to enable it (Swift/Xcode/SPM and similar toolchain-locked stacks), and the trade-off (loses within-worktree packing). Add the field to the `SchedulerConfig` reference table in `docs/multi-backend-agents.md`.",
+      "description": "Update docs for B-ebd82f8f",
       "status": "in_progress",
-      "acceptance_criteria": [
-        "`CLAUDE.md` Configuration section contains a paragraph describing `scheduler.serialize_within_feature_tree`, its default (`false`), and when to enable it",
-        "`docs/multi-backend-agents.md` SchedulerConfig table includes a row for `serialize_within_feature_tree` with type, default, and description",
-        "No other content in either file is changed"
-      ],
+      "acceptance_criteria": [],
       "dependencies": [
-        "B-62c93f83",
-        "B-2c3c863c",
-        "B-59ab9476"
+        "B-ebd82f8f"
       ],
-      "linked_docs": [
-        "specs/drafts/scheduler-serialize-within-feature-tree.md",
-        "CLAUDE.md",
-        "docs/multi-backend-agents.md"
-      ],
-      "execution_branch_name": "feature/b-9472cbcc",
-      "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9472cbcc",
+      "linked_docs": [],
+      "execution_branch_name": "feature/b-ebd82f8f",
+      "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-ebd82f8f",
       "expected_files": [
         ".takt/beads/.gitkeep",
         ".takt/beads/B-009953f4-docs.json",
@@ -1424,11 +1405,8 @@
         ".takt/beads/B0152-review.json",
         ".takt/beads/B0152-test.json",
         ".takt/beads/B0152.json",
-        "CLAUDE.md",
-        "docs/multi-backend-agents.md",
-        "src/agent_takt/_data/default_config.yaml",
-        "src/agent_takt/config.py",
-        "src/agent_takt/scheduler/core.py"
+        "src/agent_takt_fleet/adapter.py",
+        "tests/fleet/test_adapter.py"
       ],
       "expected_globs": [],
       "touched_files": [
@@ -2684,11 +2662,10 @@
         ".takt/beads/B0152-review.json",
         ".takt/beads/B0152-test.json",
         ".takt/beads/B0152.json",
-        "src/agent_takt/_data/default_config.yaml",
-        "src/agent_takt/config.py",
-        "src/agent_takt/scheduler/core.py"
+        "src/agent_takt_fleet/adapter.py",
+        "tests/fleet/test_adapter.py"
       ],
-      "conflict_risks": "None \u2014 only `config.py` was modified; no overlap with other in-progress beads expected.\nNone. Only modified the bundled YAML data file; no Python source files changed.\nNone \u2014 only `src/agent_takt/scheduler/core.py` was modified.",
+      "conflict_risks": "None \u2014 only `adapter.py` and `tests/fleet/test_adapter.py` touched; no overlap with other in-progress beads.",
       "handoff_summary": {
         "completed": "",
         "remaining": "",
@@ -2712,50 +2689,50 @@
     },
     "last_agent_result": {
       "outcome": "completed",
-      "summary": "Added `serialize_within_feature_tree` documentation to CLAUDE.md Configuration section and to the SchedulerConfig table in docs/multi-backend-agents.md.",
+      "summary": "Updated docs/fleet.md to clarify that --runner is a global takt flag passed before the run subcommand, not a run subcommand flag \u2014 directly documenting the bug that was fixed in adapter.py.",
       "verdict": "approved",
       "findings_count": 0,
       "requires_followup": false,
-      "next_agent": "",
+      "next_agent": "review",
       "block_reason": ""
     },
     "telemetry": {
-      "cost_usd": 0.70131755,
-      "duration_ms": 56856,
-      "duration_api_ms": 56558,
-      "num_turns": 10,
-      "input_tokens": 9,
-      "output_tokens": 3150,
-      "cache_creation_tokens": 101147,
-      "cache_read_tokens": 668061,
+      "cost_usd": 0.62999005,
+      "duration_ms": 61528,
+      "duration_api_ms": 60505,
+      "num_turns": 6,
+      "input_tokens": 7,
+      "output_tokens": 2977,
+      "cache_creation_tokens": 100861,
+      "cache_read_tokens": 443511,
       "stop_reason": "end_turn",
-      "session_id": "132d0941-4f29-4182-8601-da18a280ff96",
+      "session_id": "ac6f50b0-9640-4072-a7e1-78e974e4488c",
       "permission_denials": [],
-      "prompt_chars": 147222,
-      "prompt_lines": 3926,
+      "prompt_chars": 146241,
+      "prompt_lines": 3915,
       "source": "provider",
       "attempt": 1
     },
     "telemetry_history": [
       {
-        "cost_usd": 0.70131755,
-        "duration_ms": 56856,
-        "duration_api_ms": 56558,
-        "num_turns": 10,
-        "input_tokens": 9,
-        "output_tokens": 3150,
-        "cache_creation_tokens": 101147,
-        "cache_read_tokens": 668061,
+        "cost_usd": 0.62999005,
+        "duration_ms": 61528,
+        "duration_api_ms": 60505,
+        "num_turns": 6,
+        "input_tokens": 7,
+        "output_tokens": 2977,
+        "cache_creation_tokens": 100861,
+        "cache_read_tokens": 443511,
         "stop_reason": "end_turn",
-        "session_id": "132d0941-4f29-4182-8601-da18a280ff96",
+        "session_id": "ac6f50b0-9640-4072-a7e1-78e974e4488c",
         "permission_denials": [],
-        "prompt_chars": 147222,
-        "prompt_lines": 3926,
+        "prompt_chars": 146241,
+        "prompt_lines": 3915,
         "source": "provider",
         "attempt": 1
       }
     ],
-    "last_commit": "25886e6709941855926eda8bd113eaa0289e38c5"
+    "last_commit": "ab0080deb869623bb378ccf9814069086d9c5417"
   },
   "labels": [],
   "recovery_for": null,
