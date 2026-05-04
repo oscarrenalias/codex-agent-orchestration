@@ -3831,7 +3831,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-54985587-test",
   "conflict_risks": "Low. This bead only touches the popup key handler and adjacent TUI regression tests; any parallel TUI work editing the same popup/test section may need a straightforward merge.",
   "branch_name": "",
   "worktree_path": "",
@@ -3843,6 +3843,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:09:55.147649+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-54985587-test",
       "details": {}
     }
   ],
