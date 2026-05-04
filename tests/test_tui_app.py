@@ -2169,6 +2169,78 @@ class TuiBindingsTests(unittest.TestCase):
         self.assertEqual(stack_after_open, stack_after_j, "j key must not dismiss the popup")
         self.assertEqual(stack_after_open, stack_after_k, "k key must not dismiss the popup")
 
+    def test_detail_popup_pagedown_scrolls_focused_vertical_scroll(self) -> None:
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Scrollable popup bead",
+            agent_type="developer",
+            description="scroll",
+            status=BEAD_READY,
+            acceptance_criteria=[f"criterion {index}" for index in range(120)],
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[float, float]:
+            from textual.containers import VerticalScroll
+
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+
+                await pilot.press("enter")
+                await pilot.pause()
+
+                popup_scroll = app.screen.query_one("#detail-popup-dialog", VerticalScroll)
+                before_scroll = popup_scroll.scroll_y
+
+                await pilot.press("pagedown")
+                await pilot.pause()
+
+                return before_scroll, popup_scroll.scroll_y
+
+        before_scroll, after_scroll = asyncio.run(exercise_app())
+
+        self.assertEqual(0, before_scroll)
+        self.assertGreater(after_scroll, before_scroll, "Pagedown should scroll the popup content")
+
+    def test_detail_popup_does_not_leak_navigation_to_underlying_tree(self) -> None:
+        self.storage.create_bead(
+            bead_id="B0001",
+            title="Scrollable popup bead",
+            agent_type="developer",
+            description="scroll",
+            status=BEAD_READY,
+            acceptance_criteria=[f"criterion {index}" for index in range(120)],
+        )
+        self.storage.create_bead(
+            bead_id="B0002",
+            title="Second bead",
+            agent_type="developer",
+            description="second",
+            status=BEAD_READY,
+        )
+        app = build_tui_app(self.storage, refresh_seconds=60)
+
+        async def exercise_app() -> tuple[str | None, str | None]:
+            async with app.run_test() as pilot:
+                await pilot.resize_terminal(80, 18)
+                await pilot.pause()
+
+                selected_before = app.runtime_state.selected_bead_id
+
+                await pilot.press("enter")
+                await pilot.pause()
+
+                await pilot.press("down")
+                await pilot.pause()
+
+                return selected_before, app.runtime_state.selected_bead_id
+
+        selected_before, selected_after = asyncio.run(exercise_app())
+
+        self.assertEqual("B0001", selected_before)
+        self.assertEqual(selected_before, selected_after, "Popup key handling must not move the underlying tree selection")
+
     def test_main_detail_panel_vertical_scroll_can_focus(self) -> None:
         """The main #detail-panel VerticalScroll must retain can_focus=True so wide-layout scrolling is unaffected."""
         self.storage.create_bead(bead_id="B0001", title="Main panel bead", agent_type="developer", description="main", status=BEAD_READY)

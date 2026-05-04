@@ -174,9 +174,10 @@ def build_tui_app(
             self.query_one("#detail-popup-dialog", VerticalScroll).focus()
 
         def on_key(self, event: object) -> None:
-            key = getattr(event, "key", None)
-            if key != "escape" and hasattr(event, "stop"):
-                event.stop()
+            # ModalScreen already isolates input from the underlying app.
+            # Leaving keys alone lets the focused VerticalScroll handle its
+            # native scroll bindings (j/k, arrows, page keys, home/end).
+            return
 
         def action_dismiss_popup(self) -> None:
             self.dismiss(None)
