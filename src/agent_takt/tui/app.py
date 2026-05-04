@@ -145,6 +145,7 @@ def build_tui_app(
         }
 
         #detail-popup-content {
+            height: auto;
             padding: 1 2;
         }
         """
