@@ -3,7 +3,7 @@
   "title": "Review Harden bead-state merge safety net",
   "agent_type": "review",
   "description": "Review implementation for B-fa05af17-subtask",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-fa05af17-subtask",
   "dependencies": [
@@ -84,7 +84,10 @@
   "conflict_risks": "The merge-safety tests now depend on real git conflict behavior. Any fix for the mixed-conflict path should update `tests/test_merge_safety.py` alongside the helper logic so the docs' guarantee matches the actual repository state after failure.",
   "branch_name": "feature/b-fa05af17",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-fa05af17-subtask-review",
+    "expires_at": "2026-05-04T21:22:18.910733+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -145,6 +148,29 @@
       "event": "retried",
       "agent_type": "review",
       "summary": "Requeued blocked bead after corrective bead B-fa05af17-subtask-review-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:52:19.549757+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:52:19.549784+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
       "details": {}
     }
   ],
