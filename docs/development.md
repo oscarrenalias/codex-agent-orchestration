@@ -236,7 +236,15 @@ When `WorktreeManager.ensure_worktree()` creates a new feature branch worktree i
 
 2. **Initial untrack commit**: runs `git rm -r --cached --ignore-unmatch .takt/beads/` followed by a `chore: untrack bead state from feature branch [skip ci]` commit. This removes any bead index entries that were inherited when the worktree was created from main, so the feature branch history never contains bead snapshots.
 
-The repository-level `.gitattributes` rule `.takt/beads/** merge=ours` provides an additional safety net, and the merge helpers now enforce the same policy explicitly. Both `WorktreeManager.merge_main_into_branch()` and `WorktreeManager.merge_branch()` detect unresolved conflicts under `.takt/beads/`, check out the current branch's version for those paths, stage them, and finish the merge automatically with `git commit --no-edit`. That keeps preflight merges deterministic in the feature worktree and final merges deterministic on `main` even if bead JSON files somehow leak into both branches.
+The repository-level `.gitattributes` rule `.takt/beads/** merge=ours` provides an additional safety net, and the merge helpers now enforce the same policy explicitly. Both `WorktreeManager.merge_main_into_branch()` and `WorktreeManager.merge_branch()` route their `git merge` calls through a bead-state fallback wrapper: if the merge stops with conflicts, the helper inspects the unresolved paths, checks out the current branch's version for any `.takt/beads/` conflicts, stages them, and finishes the merge automatically with `git commit --no-edit`.
+
+That preserves the same "ours" semantics on both merge paths:
+
+- During preflight (`merge_main_into_branch()` inside the feature worktree), leaked bead snapshots from `main` are discarded and the feature branch's bead state is kept.
+- During the final merge (`merge_branch()` on `main`), leaked bead snapshots from the feature branch are discarded and `main`'s bead state is kept.
+- If any non-bead conflict remains after staging `.takt/beads/`, the helper raises `GitError` instead of committing a partial resolution.
+
+`tests/test_merge_safety.py` includes integration coverage for both directions using real git merges, so changes to merge command construction or the fallback sequencing should be updated together with those tests.
 
 ## CI / Release Automation
 
