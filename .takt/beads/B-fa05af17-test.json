@@ -3,7 +3,7 @@
   "title": "Test Investigate bead-state-leak: developer beads not persisted as done after takt merge",
   "agent_type": "tester",
   "description": "Validate implementation for B-fa05af17",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-fa05af17",
   "dependencies": [
@@ -3845,9 +3845,12 @@
   },
   "block_reason": "file-scope conflict with in-progress B-fa05af17-subtask",
   "conflict_risks": "Any follow-up that changes merge-driver behavior will touch the same git workflow area (`src/agent_takt/gitutils.py`) and should be coordinated with this patch.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-fa05af17",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-fa05af17",
+  "lease": {
+    "owner": "tester:B-fa05af17-test",
+    "expires_at": "2026-05-04T21:05:05.337375+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3863,9 +3866,46 @@
       "agent_type": "tester",
       "summary": "file-scope conflict with in-progress B-fa05af17-subtask",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:35:05.650366+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:35:05.650390+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-test",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/tester-validation",
+      "capability/test-execution",
+      "task/defect-bead-creation",
+      "task/regression-triage",
+      "memory"
+    ],
+    "skill_bundle_hash": "c2bb19865add8770ba493957f3775e07d50168d42fe585583dcff9d82dc76d86",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-test/home",
+    "runner_backend": "codex"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
