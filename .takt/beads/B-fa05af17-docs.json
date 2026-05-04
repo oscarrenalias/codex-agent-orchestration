@@ -3,7 +3,7 @@
   "title": "Document Investigate bead-state-leak: developer beads not persisted as done after takt merge",
   "agent_type": "documentation",
   "description": "Update docs for B-fa05af17",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-fa05af17",
   "dependencies": [
@@ -3845,9 +3845,12 @@
   },
   "block_reason": "file-scope conflict with in-progress B-fa05af17-subtask",
   "conflict_risks": "Any follow-up that changes merge-driver behavior will touch the same git workflow area (`src/agent_takt/gitutils.py`) and should be coordinated with this patch.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-fa05af17",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-fa05af17",
+  "lease": {
+    "owner": "documentation:B-fa05af17-docs",
+    "expires_at": "2026-05-04T21:06:40.124784+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3863,9 +3866,46 @@
       "agent_type": "documentation",
       "summary": "file-scope conflict with in-progress B-fa05af17-subtask",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:36:40.508882+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:36:40.508910+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-docs",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "191f95261a4d31e4f4a691e9c39926c722504f21a3c370b6975facad92e3c1f0",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-docs/home",
+    "runner_backend": "codex"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
