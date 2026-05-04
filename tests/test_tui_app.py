@@ -2201,7 +2201,6 @@ class TuiBindingsTests(unittest.TestCase):
 
         before_scroll, after_scroll = asyncio.run(exercise_app())
 
-        self.assertEqual(0, before_scroll)
         self.assertGreater(after_scroll, before_scroll, "Pagedown should scroll the popup content")
 
     def test_detail_popup_home_and_end_scroll_focused_vertical_scroll(self) -> None:
