@@ -3,7 +3,7 @@
   "title": "Document Harden bead-state merge safety net",
   "agent_type": "documentation",
   "description": "Update docs for B-fa05af17-subtask",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-fa05af17-subtask",
   "dependencies": [
@@ -26,45 +26,55 @@
   "expected_globs": [],
   "touched_files": [
     "CLAUDE.md",
-    "docs/development.md",
-    "src/agent_takt/gitutils.py",
-    "tests/test_merge_safety.py"
+    "docs/development.md"
   ],
   "changed_files": [
     "CLAUDE.md",
-    "docs/development.md",
-    "src/agent_takt/gitutils.py",
-    "tests/test_merge_safety.py"
+    "docs/development.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md",
+    "docs/development.md"
+  ],
   "handoff_summary": {
-    "completed": "",
+    "completed": "Updated `CLAUDE.md` and `docs/development.md` to explain the bead-state fallback wrapper, the current-branch preservation semantics on preflight versus final merges, and the guard that aborts when non-bead conflicts remain. Also linked the behavior back to `tests/test_merge_safety.py` integration coverage.",
     "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "risks": "Memory searches were attempted per guardrails but could not return results in this sandbox because `uv run` needed offline-unavailable dependencies. Documentation was aligned from the scoped implementation and test files only.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
+    "changed_files": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
     "next_action": "",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "CLAUDE.md",
+      "docs/development.md",
+      "src/agent_takt/gitutils.py",
+      "tests/test_merge_safety.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "CLAUDE.md",
+      "docs/development.md"
+    ],
+    "conflict_risks": "`tests/test_merge_safety.py` now relies on real git merge behavior for the bead-state fallback scenarios; downstream edits to merge command construction or fallback sequencing should keep these docs and tests aligned.",
+    "design_decisions": "Documented the runtime guarantee in terms of branch-local \"ours\" semantics: feature worktrees keep the feature bead snapshot during preflight merges, while `main` keeps its own bead snapshot during the final merge.",
+    "test_coverage_notes": "Did not run tests, per documentation-agent guardrails. Documentation references existing integration coverage in `tests/test_merge_safety.py` for both merge directions.",
+    "known_limitations": "The docs describe the fallback only for `.takt/beads/` conflicts; any remaining non-bead merge conflict still fails the merge helper with `GitError`."
   },
-  "block_reason": "file-scope conflict with in-progress B-fa05af17-test",
-  "conflict_risks": "`tests/test_merge_safety.py` now relies on real git merge behavior for the bead-state fallback scenarios; downstream edits to merge command construction or test repo setup may need coordinated updates.",
+  "block_reason": "",
+  "conflict_risks": "`tests/test_merge_safety.py` now relies on real git merge behavior for the bead-state fallback scenarios; downstream edits to merge command construction or fallback sequencing should keep these docs and tests aligned.",
   "branch_name": "feature/b-fa05af17",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-fa05af17",
-  "lease": {
-    "owner": "documentation:B-fa05af17-subtask-docs",
-    "expires_at": "2026-05-04T21:12:23.339104+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -112,6 +122,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-fa05af17-subtask-docs/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-05-04T20:44:39.921127+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "Documented the bead-state merge fallback so preflight and final merges clearly describe which bead snapshot is preserved.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -185,7 +202,33 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Documented the bead-state merge fallback so preflight and final merges clearly describe which bead snapshot is preserved.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "duration_ms": 135279,
+      "prompt_chars": 7155,
+      "prompt_lines": 170,
+      "source": "measured",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "duration_ms": 135279,
+        "prompt_chars": 7155,
+        "prompt_lines": 170,
+        "source": "measured",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "b2e624ce8d2ef83862d94eaa36c5748c10f03b85"
   },
   "labels": [],
   "recovery_for": null,
