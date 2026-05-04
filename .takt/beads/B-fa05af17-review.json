@@ -3,7 +3,7 @@
   "title": "Review Investigate bead-state-leak: developer beads not persisted as done after takt merge",
   "agent_type": "review",
   "description": "Review implementation for B-fa05af17",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-fa05af17",
   "dependencies": [
@@ -3847,9 +3847,12 @@
   },
   "block_reason": "",
   "conflict_risks": "Any follow-up that changes merge-driver behavior will touch the same git workflow area (`src/agent_takt/gitutils.py`) and should be coordinated with this patch.",
-  "branch_name": "",
+  "branch_name": "feature/b-fa05af17",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-fa05af17-review",
+    "expires_at": "2026-05-04T21:08:43.026267+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3858,9 +3861,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:38:43.415316+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:38:43.415367+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-review",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fa05af17-review/home",
+    "runner_backend": "codex"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
