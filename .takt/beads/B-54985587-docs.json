@@ -3,7 +3,7 @@
   "title": "Document TUI bug: bead detail popup does not scroll (event.stop swallows scroll keys)",
   "agent_type": "documentation",
   "description": "Update docs for B-54985587",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-54985587",
   "dependencies": [
@@ -3833,9 +3833,12 @@
   },
   "block_reason": "file-scope conflict with in-progress B-54985587-test",
   "conflict_risks": "Low. This bead only touches the popup key handler and adjacent TUI regression tests; any parallel TUI work editing the same popup/test section may need a straightforward merge.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-54985587",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-54985587",
+  "lease": {
+    "owner": "documentation:B-54985587-docs",
+    "expires_at": "2026-05-04T20:55:48.005295+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -3858,9 +3861,46 @@
       "agent_type": "documentation",
       "summary": "file-scope conflict with in-progress B-54985587-test",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:25:48.266984+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-04T20:25:48.267011+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-54985587-docs",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "191f95261a4d31e4f4a691e9c39926c722504f21a3c370b6975facad92e3c1f0",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-54985587-docs/home",
+    "runner_backend": "codex"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
