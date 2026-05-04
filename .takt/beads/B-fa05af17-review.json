@@ -3,7 +3,7 @@
   "title": "Review Investigate bead-state-leak: developer beads not persisted as done after takt merge",
   "agent_type": "review",
   "description": "Review implementation for B-fa05af17",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-fa05af17",
   "dependencies": [
@@ -2589,7 +2589,7 @@
     "test_coverage_notes": "Coverage is good for fresh-worktree behavior and for the new `commit_all()` exclusion path, but there is no test for an already-existing worktree created before this patch.",
     "known_limitations": "Review was limited to the listed changed files and did not run the test suite, per guardrails."
   },
-  "block_reason": "The fix only bootstraps newly created worktrees; existing worktrees still bypass the exclude/untrack setup, leaving the original stale bead-state leak unresolved for active feature branches.",
+  "block_reason": "",
   "conflict_risks": "Follow-up work will touch the same git workflow surface in `src/agent_takt/gitutils.py`, so it should be coordinated with any other merge-behavior changes.",
   "branch_name": "feature/b-fa05af17",
   "worktree_path": "",
@@ -2647,6 +2647,13 @@
       "event": "corrective_planned",
       "agent_type": "review",
       "summary": "Created corrective bead B-fa05af17-review-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:48:28.982873+00:00",
+      "event": "retried",
+      "agent_type": "review",
+      "summary": "Requeued blocked bead after corrective bead B-fa05af17-review-corrective completed",
       "details": {}
     }
   ],
@@ -5272,7 +5279,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-fa05af17-review-corrective"
+    "auto_corrective_bead_id": "B-fa05af17-review-corrective",
+    "last_corrective_retry_source": "B-fa05af17-review-corrective",
+    "last_corrective_retry_commit": "b2592ea21cdf0a74fd6f44e02065f5cff772bb3d"
   },
   "labels": [],
   "recovery_for": null,
