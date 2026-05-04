@@ -9,6 +9,9 @@ class GitError(RuntimeError):
     pass
 
 
+_BEAD_STATE_PREFIX = ".takt/beads/"
+
+
 def _write_worktree_exclude(repo_root: Path, worktree_path: Path) -> None:
     """Write .takt/beads/ to the per-worktree git exclude file.
 
@@ -19,7 +22,7 @@ def _write_worktree_exclude(repo_root: Path, worktree_path: Path) -> None:
     exclude_dir = repo_root / ".git" / "worktrees" / worktree_name / "info"
     exclude_dir.mkdir(parents=True, exist_ok=True)
     exclude_file = exclude_dir / "exclude"
-    entry = ".takt/beads/"
+    entry = _BEAD_STATE_PREFIX
     if exclude_file.exists():
         lines = exclude_file.read_text().splitlines()
         if entry not in lines:
@@ -78,6 +81,63 @@ class WorktreeManager:
         with self._lock:
             return self._worktree_locks.setdefault(feature_root_id, Lock())
 
+    def _run_git_in(self, cwd: Path, *args: str) -> str:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise GitError(proc.stderr.strip() or proc.stdout.strip())
+        return proc.stdout.strip()
+
+    def _conflicted_files_in(self, cwd: Path) -> list[str]:
+        proc = subprocess.run(
+            ["git", "diff", "--name-only", "--diff-filter=U"],
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise GitError(proc.stderr.strip() or proc.stdout.strip())
+        return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+    def _resolve_bead_state_conflicts(self, cwd: Path) -> bool:
+        conflicted = self._conflicted_files_in(cwd)
+        bead_conflicts = [path for path in conflicted if path.startswith(_BEAD_STATE_PREFIX)]
+        if not bead_conflicts:
+            return False
+        self._run_git_in(cwd, "checkout", "--ours", "--", *bead_conflicts)
+        self._run_git_in(cwd, "add", "--", *bead_conflicts)
+        remaining = self._conflicted_files_in(cwd)
+        if remaining:
+            non_bead_conflicts = [path for path in remaining if not path.startswith(_BEAD_STATE_PREFIX)]
+            if non_bead_conflicts:
+                return False
+            raise GitError(
+                "Bead-state auto-resolution did not fully stage merge conflicts: "
+                + ", ".join(remaining)
+            )
+        self._run_git_in(cwd, "commit", "--no-edit")
+        return True
+
+    def _merge_with_bead_state_fallback(self, cwd: Path, *args: str) -> None:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode == 0:
+            return
+        if self._resolve_bead_state_conflicts(cwd):
+            return
+        raise GitError(proc.stderr.strip() or proc.stdout.strip())
+
     def ensure_worktree(self, feature_root_id: str, branch_name: str) -> Path:
         """Ensure a Git worktree exists for the given feature and branch.
 
@@ -132,7 +192,16 @@ class WorktreeManager:
 
     def merge_branch(self, branch_name: str) -> None:
         self.ensure_repository()
-        self._run_git("merge", "--no-ff", "-s", "resolve", branch_name, "-m", f"Merge {branch_name}")
+        self._merge_with_bead_state_fallback(
+            self.root,
+            "merge",
+            "--no-ff",
+            "-s",
+            "resolve",
+            branch_name,
+            "-m",
+            f"Merge {branch_name}",
+        )
 
     def commit_all(self, worktree_path: Path, message: str) -> str | None:
         proc = subprocess.run(
@@ -186,15 +255,14 @@ class WorktreeManager:
             GitError: If the merge fails (including conflict — caller should inspect
                       conflicted_files() and abort_merge() as needed).
         """
-        proc = subprocess.run(
-            ["git", "merge", "--no-ff", main_branch, "-m", f"Merge {main_branch} into feature branch"],
-            cwd=worktree_path,
-            text=True,
-            capture_output=True,
-            check=False,
+        self._merge_with_bead_state_fallback(
+            worktree_path,
+            "merge",
+            "--no-ff",
+            main_branch,
+            "-m",
+            f"Merge {main_branch} into feature branch",
         )
-        if proc.returncode != 0:
-            raise GitError(proc.stderr.strip() or proc.stdout.strip())
 
     def abort_merge(self, worktree_path: Path) -> None:
         """Abort an in-progress merge in the given worktree.

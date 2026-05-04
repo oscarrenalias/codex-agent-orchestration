@@ -18,7 +18,7 @@ if str(SRC_ROOT) not in sys.path:
 from agent_takt.cli import command_merge
 from agent_takt.config import CommonConfig, OrchestratorConfig, SchedulerConfig
 from agent_takt.console import ConsoleReporter
-from agent_takt.gitutils import GitError
+from agent_takt.gitutils import GitError, WorktreeManager
 from agent_takt.models import (
     BEAD_DONE,
     BEAD_OPEN,
@@ -524,23 +524,21 @@ class MergeSafetyTests(unittest.TestCase):
 
 
 class MergeBranchResolveStrategyTests(unittest.TestCase):
-    """Verify WorktreeManager.merge_branch uses the resolve strategy."""
+    """Verify WorktreeManager merge helpers pass the expected git arguments."""
 
     def test_merge_branch_uses_resolve_strategy(self) -> None:
-        """merge_branch must invoke git with -s resolve before the branch name."""
-        from unittest.mock import call, patch
-        from agent_takt.gitutils import WorktreeManager
-
+        """merge_branch must invoke the final merge with -s resolve."""
         root = Path(tempfile.mkdtemp())
         wm = WorktreeManager(root, root / ".takt" / "worktrees")
         with (
             patch.object(wm, "ensure_repository"),
-            patch.object(wm, "_run_git") as mock_git,
+            patch.object(wm, "_merge_with_bead_state_fallback") as mock_merge,
         ):
             wm.merge_branch("feature/b-test")
 
-        mock_git.assert_called_once()
-        args = mock_git.call_args[0]
+        mock_merge.assert_called_once()
+        args = mock_merge.call_args[0]
+        self.assertEqual(root, args[0])
         self.assertIn("merge", args)
         self.assertIn("--no-ff", args)
         self.assertIn("-s", args)
@@ -549,6 +547,102 @@ class MergeBranchResolveStrategyTests(unittest.TestCase):
         # branch name must appear after the strategy flag
         branch_idx = list(args).index("feature/b-test")
         self.assertGreater(branch_idx, resolve_idx)
+
+    def test_preflight_merge_uses_same_merge_driver_wrapper(self) -> None:
+        """merge_main_into_branch must route through the bead-state fallback wrapper."""
+        root = Path(tempfile.mkdtemp())
+        wm = WorktreeManager(root, root / ".takt" / "worktrees")
+        worktree = root / ".takt" / "worktrees" / "B-test"
+        with patch.object(wm, "_merge_with_bead_state_fallback") as mock_merge:
+            wm.merge_main_into_branch(worktree)
+
+        mock_merge.assert_called_once_with(
+            worktree,
+            "merge",
+            "--no-ff",
+            "main",
+            "-m",
+            "Merge main into feature branch",
+        )
+
+
+class BeadStateMergeFallbackIntegrationTests(unittest.TestCase):
+    """Integration coverage for leaked bead-state merges on both merge paths."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.worktrees_dir = self.root / ".takt" / "worktrees"
+        self.wm = WorktreeManager(self.root, self.worktrees_dir)
+        self._git("init", "-b", "main")
+        self._git("config", "user.email", "test@example.com")
+        self._git("config", "user.name", "Test User")
+        (self.root / ".gitattributes").write_text(".takt/beads/** merge=ours\n", encoding="utf-8")
+        bead_dir = self.root / ".takt" / "beads"
+        bead_dir.mkdir(parents=True, exist_ok=True)
+        (bead_dir / "B-root.json").write_text('{"status":"ready"}\n', encoding="utf-8")
+        (self.root / "README.md").write_text("base\n", encoding="utf-8")
+        self._git("add", ".")
+        self._git("commit", "-m", "init")
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _git(self, *args: str, cwd: Path | None = None) -> str:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=cwd or self.root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise AssertionError(proc.stderr.strip() or proc.stdout.strip())
+        return proc.stdout.strip()
+
+    def _tracked_feature_worktree(self) -> Path:
+        self._git("checkout", "-b", "feature/b-feature")
+        (self.root / ".takt" / "beads" / "B-root.json").write_text(
+            '{"status":"feature-branch"}\n',
+            encoding="utf-8",
+        )
+        self._git("add", ".takt/beads/B-root.json")
+        self._git("commit", "-m", "feature bead snapshot")
+        self._git("checkout", "main")
+        return self.root
+
+    def test_preflight_merge_keeps_feature_branch_bead_state_when_both_branches_track_it(self) -> None:
+        worktree = self._tracked_feature_worktree()
+        (self.root / ".takt" / "beads" / "B-root.json").write_text(
+            '{"status":"main-updated"}\n',
+            encoding="utf-8",
+        )
+        self._git("add", ".takt/beads/B-root.json")
+        self._git("commit", "-m", "main bead update")
+        self._git("checkout", "feature/b-feature")
+
+        self.wm.merge_main_into_branch(worktree)
+
+        self.assertEqual(
+            '{"status":"feature-branch"}\n',
+            (worktree / ".takt" / "beads" / "B-root.json").read_text(encoding="utf-8"),
+        )
+
+    def test_final_merge_keeps_main_branch_bead_state_when_both_branches_track_it(self) -> None:
+        self._tracked_feature_worktree()
+        (self.root / ".takt" / "beads" / "B-root.json").write_text(
+            '{"status":"main-wins"}\n',
+            encoding="utf-8",
+        )
+        self._git("add", ".takt/beads/B-root.json")
+        self._git("commit", "-m", "main bead update")
+
+        self.wm.merge_branch("feature/b-feature")
+
+        self.assertEqual(
+            '{"status":"main-wins"}\n',
+            (self.root / ".takt" / "beads" / "B-root.json").read_text(encoding="utf-8"),
+        )
 
 
 if __name__ == "__main__":
