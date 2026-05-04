@@ -3,7 +3,7 @@
   "title": "Review serialize_within_feature_tree implementation",
   "agent_type": "review",
   "description": "Review all changes for the serialize_within_feature_tree feature: config field and YAML loader semantics, short-circuit logic in `_beads_conflict()` and `_find_conflict_reason()`, onboarding template update, test coverage, and documentation accuracy. Verify the flag default is `False`, cross-tree parallelism is unaffected, non-mutating agents are excluded from the rule, and the conflict reason string matches the spec exactly.",
-  "status": "ready",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-9472cbcc",
   "dependencies": [
@@ -83,6 +83,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:17:09.616609+00:00",
+      "event": "updated",
+      "agent_type": "review",
+      "summary": "Bead updated via CLI",
       "details": {}
     }
   ],
