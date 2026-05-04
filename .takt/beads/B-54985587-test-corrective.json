@@ -48,7 +48,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-54985587-docs",
   "conflict_risks": "Low. This bead only added focused regression tests in tests/test_tui_app.py, but any concurrent edits near the popup regression section may need a simple merge.",
   "branch_name": "",
   "worktree_path": "",
@@ -60,6 +60,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:25:47.773144+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-54985587-docs",
       "details": {}
     }
   ],
