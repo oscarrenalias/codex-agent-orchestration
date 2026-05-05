@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a946a55d",
-  "dependencies": [],
+  "dependencies": [
+    "B-05f294cb",
+    "B-a13907c1"
+  ],
   "acceptance_criteria": [
     "command_bead_history is reachable via `takt bead history <id>`",
     "Default output matches the spec example: one line per entry with [timestamp] event summary",
