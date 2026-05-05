@@ -2629,7 +2629,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-a99c1212",
   "conflict_risks": "Low. Test-only change in `tests/test_cli_bead.py`; downstream merge risk is limited to concurrent edits in the same test module.",
   "branch_name": "",
   "worktree_path": "",
@@ -2641,6 +2641,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-05T10:59:21.737187+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-a99c1212",
       "details": {}
     }
   ],
