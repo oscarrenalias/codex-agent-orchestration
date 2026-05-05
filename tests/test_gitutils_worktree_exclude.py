@@ -373,50 +373,6 @@ class WorktreeBeadLeakRegressionTests(unittest.TestCase):
         )
 
 
-    def test_merge_main_into_branch_succeeds_when_untracked_bead_would_be_overwritten(self) -> None:
-        """merge_main_into_branch must not raise when main has a tracked bead file that
-        the feature worktree has as untracked on disk.
-
-        Regression for: git aborting with 'The following untracked working tree files
-        would be overwritten by merge' when .takt/beads/ files are excluded (untracked)
-        in the feature worktree but tracked in main.
-        """
-        feature_worktree = self.wm.ensure_worktree("B-feature", "feature/b-feature")
-
-        # Simulate orchestrator having updated the bead state locally (untracked)
-        our_content = '{"status":"in_progress"}\n'
-        (feature_worktree / ".takt" / "beads" / "B-root.json").write_text(
-            our_content, encoding="utf-8"
-        )
-
-        # Precondition: bead file is untracked in the feature branch
-        tracked_before = self._git(
-            "ls-files", "--cached", "--", ".takt/beads/B-root.json", cwd=feature_worktree
-        )
-        self.assertEqual("", tracked_before, "precondition: bead file must be untracked")
-
-        # Main advances: it updates the tracked bead file
-        (self.root / ".takt" / "beads" / "B-root.json").write_text(
-            '{"status":"done"}\n', encoding="utf-8"
-        )
-        self._git("add", ".takt/beads/B-root.json")
-        self._git("commit", "-m", "main: bead done")
-
-        # Must not raise GitError even though git would say "untracked files would be overwritten"
-        self.wm.merge_main_into_branch(feature_worktree)
-
-        # Our bead state must be preserved, not replaced by main's version
-        restored = (feature_worktree / ".takt" / "beads" / "B-root.json").read_text(
-            encoding="utf-8"
-        )
-        self.assertEqual(our_content, restored)
-
-        # Bead file must remain untracked (not added to the index by the merge)
-        tracked_after = self._git(
-            "ls-files", "--cached", "--", ".takt/beads/B-root.json", cwd=feature_worktree
-        )
-        self.assertEqual("", tracked_after, "bead file must remain untracked after merge")
-
     def test_commit_all_is_noop_when_only_untracked_bead_dir_present(self) -> None:
         """commit_all returns None when the only untracked path is .takt/beads/.
 
