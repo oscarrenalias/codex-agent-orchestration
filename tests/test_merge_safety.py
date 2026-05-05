@@ -553,7 +553,10 @@ class MergeBranchResolveStrategyTests(unittest.TestCase):
         root = Path(tempfile.mkdtemp())
         wm = WorktreeManager(root, root / ".takt" / "worktrees")
         worktree = root / ".takt" / "worktrees" / "B-test"
-        with patch.object(wm, "_merge_with_bead_state_fallback") as mock_merge:
+        with patch.object(wm, "_merge_with_bead_state_fallback") as mock_merge, \
+             patch.object(wm, "_save_and_remove_bead_files", return_value=[]), \
+             patch.object(wm, "_restore_saved_bead_files"), \
+             patch.object(wm, "_protect_worktree_bead_state"):
             wm.merge_main_into_branch(worktree)
 
         mock_merge.assert_called_once_with(
