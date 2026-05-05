@@ -3,7 +3,7 @@
   "title": "Extend command_bead_show with --field PATH projection",
   "agent_type": "developer",
   "description": "Extend `command_bead_show` in `src/agent_takt/cli/commands/bead.py` to handle the new `--field` flag. When `args.field` is set: convert the loaded bead to a dict (via dataclasses.asdict or model_dump), call `format_bead_field(bead_dict, args.field)` from formatting.py, print the rendered string to stdout, and exit. For path-not-found or index-out-of-range errors from the resolver: print the error message to stderr, emit nothing to stdout, and exit non-zero. For null/empty-string-but-valid paths: print the empty line to stdout and exit zero. When `--field` is not set, the existing full-JSON output path is completely unchanged.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-a946a55d",
   "dependencies": [
@@ -58,9 +58,12 @@
   },
   "block_reason": "",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-a946a55d",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a946a55d",
+  "lease": {
+    "owner": "developer:B-eb531671",
+    "expires_at": "2026-05-05T11:15:05.301950+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -69,9 +72,48 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-05T10:45:05.520940+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-05T10:45:05.520963+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-eb531671",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "ecae5633083d1bbec41a6e5ec6ea05bbab117f60499c19b2ed76dbbe3e1aec7c",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-eb531671/home",
+    "runner_backend": "codex"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
