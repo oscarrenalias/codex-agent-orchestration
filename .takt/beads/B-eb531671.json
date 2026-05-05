@@ -6,7 +6,11 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a946a55d",
-  "dependencies": [],
+  "dependencies": [
+    "B-05f294cb",
+    "B-a13907c1",
+    "B-a8b81425"
+  ],
   "acceptance_criteria": [
     "--field status returns the bead status as a bare string with trailing newline",
     "--field handoff_summary.completed returns the nested string value",
