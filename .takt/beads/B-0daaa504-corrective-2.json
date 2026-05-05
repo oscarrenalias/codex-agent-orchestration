@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-0daaa504: Test suite for bead history, show --field, and list filters",
   "agent_type": "documentation",
   "description": "Blocked reason: Auto-commit failed: On branch feature/b-a946a55d\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\t.takt/beads/\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n\nRemaining work: No tester-scope defects remain in the targeted module. I did not run the full suite because the tester guardrails require scoped validation only.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-0daaa504",
   "dependencies": [],
@@ -493,6 +493,7 @@
     ".takt/beads/B-79b03bf2-review.json",
     ".takt/beads/B-79b03bf2-test.json",
     ".takt/beads/B-79b03bf2.json",
+    ".takt/beads/B-79f2b4fd.json",
     ".takt/beads/B-79fc2ae8.json",
     ".takt/beads/B-7a0391f9.json",
     ".takt/beads/B-7a8cd6e0.json",
@@ -1785,6 +1786,7 @@
     ".takt/beads/B-79b03bf2-review.json",
     ".takt/beads/B-79b03bf2-test.json",
     ".takt/beads/B-79b03bf2.json",
+    ".takt/beads/B-79f2b4fd.json",
     ".takt/beads/B-79fc2ae8.json",
     ".takt/beads/B-7a0391f9.json",
     ".takt/beads/B-7a8cd6e0.json",
@@ -2608,12 +2610,12 @@
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "Reviewed the assigned bead context and parent bead state, and confirmed the corrective scope is limited to test coverage in `tests/test_cli_bead.py` with no documentation files to update. Attempted the required memory searches in `global`, `feature:B-a946a55d`, and `specs`, but the shared memory database is not initialized in this worktree.",
-    "remaining": "A downstream agent needs to resolve the repo-state blocker caused by the untracked `.takt/beads/` directory, then retry the parent tester bead or this corrective bead as appropriate.",
-    "risks": "Documentation remains unchanged because there is no in-scope docs surface for this corrective test-only change. Retry/auto-commit will continue to fail until the untracked bead artifacts are handled.",
-    "verdict": "needs_changes",
-    "findings_count": 1,
-    "requires_followup": true,
+    "completed": "Verified that CLAUDE.md lines 225\u2013241 already document all new commands introduced by the bead-introspection-cli-ergonomics spec: `bead history`, `bead show --field`, `bead list --status`, `bead list --agent`, and `bead list --feature-root`. The section header de-emphasises inline JSON parsing per spec acceptance criterion 11. The test file `tests/test_cli_bead.py` also already contains the new test cases. Documentation is complete with no gaps.",
+    "remaining": "None. All documentation requirements from spec-df49daa7 are met.",
+    "risks": "None. Documentation-only pass; no code was modified.",
+    "verdict": "approved",
+    "findings_count": 0,
+    "requires_followup": false,
     "changed_files": [
       ".takt/beads/.gitkeep",
       ".takt/beads/B-009953f4-docs.json",
@@ -3085,6 +3087,7 @@
       ".takt/beads/B-79b03bf2-review.json",
       ".takt/beads/B-79b03bf2-test.json",
       ".takt/beads/B-79b03bf2.json",
+      ".takt/beads/B-79f2b4fd.json",
       ".takt/beads/B-79fc2ae8.json",
       ".takt/beads/B-7a0391f9.json",
       ".takt/beads/B-7a8cd6e0.json",
@@ -3907,9 +3910,9 @@
       ".takt/beads/B0152.json"
     ],
     "updated_docs": [],
-    "next_action": "Handle the untracked `.takt/beads/` directory in the feature worktree, then retry `B-0daaa504` or rerun this corrective path once commit state is clean.",
-    "next_agent": "developer",
-    "block_reason": "Documentation work is blocked outside this agent's scope: there are no documentation files in the assigned change set, and the remaining failure is an auto-commit/repo-state issue caused by untracked `.takt/beads/` artifacts.",
+    "next_action": "No further action required. All documentation is in place and the auto-commit failure that spawned this corrective was a transient git state issue (untracked .takt/beads/ in the worktree), not a documentation gap. The scheduler may now proceed with the normal pipeline.",
+    "next_agent": "review",
+    "block_reason": "",
     "expected_files": [
       "tests/test_cli_bead.py"
     ],
@@ -4385,6 +4388,7 @@
       ".takt/beads/B-79b03bf2-review.json",
       ".takt/beads/B-79b03bf2-test.json",
       ".takt/beads/B-79b03bf2.json",
+      ".takt/beads/B-79f2b4fd.json",
       ".takt/beads/B-79fc2ae8.json",
       ".takt/beads/B-7a0391f9.json",
       ".takt/beads/B-7a8cd6e0.json",
@@ -5206,19 +5210,16 @@
       ".takt/beads/B0152-test.json",
       ".takt/beads/B0152.json"
     ],
-    "conflict_risks": "Low. This pass did not modify repository files.",
-    "design_decisions": "No documentation text was added because the corrective change is test-only and no user-facing behavior or documented interface changed.",
-    "test_coverage_notes": "Did not run tests, per documentation-agent guardrails. Parent bead `B-0daaa504` already targets the test coverage changes in `tests/test_cli_bead.py`.",
-    "known_limitations": "Required memory reads could not complete because `AGENT_MEMORY_DB` points to a missing database in this worktree (`.takt/memory/memory.db`)."
+    "conflict_risks": "None. No files were modified in this pass.",
+    "design_decisions": "Documentation was already present in CLAUDE.md; this corrective pass confirmed completeness rather than adding new content. No new design decisions were made.",
+    "test_coverage_notes": "Did not run tests \u2014 per documentation-agent guardrails. The test file already contains 45 test functions including coverage for all new introspection CLI surfaces.",
+    "known_limitations": "Memory searches could not complete because the shared memory database is not initialised in this worktree (missing .takt/memory/memory.db). This had no impact since the documentation was already verified directly in the source files."
   },
-  "block_reason": "file-scope conflict with in-progress B-0daaa504",
-  "conflict_risks": "Low. This pass did not modify repository files.",
+  "block_reason": "",
+  "conflict_risks": "None. No files were modified in this pass.",
   "branch_name": "feature/b-a946a55d",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a946a55d",
-  "lease": {
-    "owner": "documentation:B-0daaa504-corrective-2",
-    "expires_at": "2026-05-05T12:52:11.339126+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -5312,6 +5313,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-0daaa504-corrective-2/repo/templates/agents/documentation.md"
       }
+    },
+    {
+      "timestamp": "2026-05-05T12:24:47.394331+00:00",
+      "event": "completed",
+      "agent_type": "documentation",
+      "summary": "CLAUDE.md documentation already complete \u2014 all new CLI commands (bead history, show --field, list --status/--agent/--feature-root) were documented in the Working with Beads section by a prior agent; no further documentation work required.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -9257,19 +9265,29 @@
     },
     "last_agent_result": {
       "outcome": "completed",
-      "summary": "No documentation update was possible in this corrective pass; the remaining blocker is the untracked `.takt/beads/` directory preventing retry/commit flow.",
-      "verdict": "needs_changes",
-      "findings_count": 1,
-      "requires_followup": true,
-      "next_agent": "developer",
-      "block_reason": "Documentation work is blocked outside this agent's scope: there are no documentation files in the assigned change set, and the remaining failure is an auto-commit/repo-state issue caused by untracked `.takt/beads/` artifacts."
+      "summary": "CLAUDE.md documentation already complete \u2014 all new CLI commands (bead history, show --field, list --status/--agent/--feature-root) were documented in the Working with Beads section by a prior agent; no further documentation work required.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
     },
     "telemetry": {
-      "duration_ms": 84088,
-      "prompt_chars": 103048,
-      "prompt_lines": 2731,
-      "source": "measured",
-      "attempt": 1
+      "cost_usd": 1.0722932,
+      "duration_ms": 143562,
+      "duration_api_ms": 136675,
+      "num_turns": 10,
+      "input_tokens": 12,
+      "output_tokens": 7519,
+      "cache_creation_tokens": 130964,
+      "cache_read_tokens": 1222864,
+      "stop_reason": "end_turn",
+      "session_id": "812f8500-7eed-445a-950f-b6d470473d12",
+      "permission_denials": [],
+      "prompt_chars": 206030,
+      "prompt_lines": 5322,
+      "source": "provider",
+      "attempt": 2
     },
     "telemetry_history": [
       {
@@ -9278,6 +9296,23 @@
         "prompt_lines": 2731,
         "source": "measured",
         "attempt": 1
+      },
+      {
+        "cost_usd": 1.0722932,
+        "duration_ms": 143562,
+        "duration_api_ms": 136675,
+        "num_turns": 10,
+        "input_tokens": 12,
+        "output_tokens": 7519,
+        "cache_creation_tokens": 130964,
+        "cache_read_tokens": 1222864,
+        "stop_reason": "end_turn",
+        "session_id": "812f8500-7eed-445a-950f-b6d470473d12",
+        "permission_denials": [],
+        "prompt_chars": 206030,
+        "prompt_lines": 5322,
+        "source": "provider",
+        "attempt": 2
       }
     ]
   },
