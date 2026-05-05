@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-e54ece26",
-  "dependencies": [],
+  "dependencies": [
+    "B-9ad65624",
+    "B-8aabbbc0"
+  ],
   "acceptance_criteria": [
     "takt bead history <id> prints one line per execution_history entry ascending by timestamp",
     "takt bead history <id> --limit 2 prints only the last 2 entries",
