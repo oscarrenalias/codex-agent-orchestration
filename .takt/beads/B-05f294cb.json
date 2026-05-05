@@ -1,0 +1,71 @@
+{
+  "bead_id": "B-05f294cb",
+  "title": "Add parser definitions for bead history subcommand, show --field, and list filters",
+  "agent_type": "developer",
+  "description": "Extend `src/agent_takt/cli/parser.py` to register all new CLI surface. Add `history` as a subcommand under `bead` with flags `--limit N`, `--event EVT` (repeatable, append), `--json`, `--plain` (mutually exclusive with `--json`). Add `--field PATH` flag to the `show` subparser. Add `--status STATUS` (repeatable, validated against `open ready in_progress done blocked handed_off`), `--agent AGENT` (repeatable, validated against the configured agent type registry), and `--feature-root ID` (single-valued) to the `list` subparser. Validation of `--status` and `--agent` should happen at parse time and emit a friendly error listing the allowed set.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-a946a55d",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`takt bead history --help` shows --limit, --event, --json, --plain",
+    "`takt bead show --help` shows --field",
+    "`takt bead list --help` shows --status, --agent, --feature-root",
+    "Invalid --status value exits non-zero with stderr listing valid statuses",
+    "Invalid --agent value exits non-zero with stderr listing valid agent types",
+    "--status and --event are both repeatable (action='append' or equivalent)",
+    "--json and --plain on history are mutually exclusive at the parser level"
+  ],
+  "linked_docs": [
+    "specs/drafts/spec-df49daa7.md"
+  ],
+  "feature_root_id": "B-a946a55d",
+  "execution_branch_name": "feature/b-a946a55d",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a946a55d",
+  "expected_files": [
+    "src/agent_takt/cli/parser.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-05T10:37:38.028346+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
