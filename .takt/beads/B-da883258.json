@@ -1345,7 +1345,8 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
-    "src/agent_takt/cli/formatting.py"
+    "src/agent_takt/cli/formatting.py",
+    "src/agent_takt/cli/parser.py"
   ],
   "expected_globs": [],
   "touched_files": [
@@ -2665,7 +2666,8 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
-    "src/agent_takt/cli/formatting.py"
+    "src/agent_takt/cli/formatting.py",
+    "src/agent_takt/cli/parser.py"
   ],
   "changed_files": [
     ".takt/beads/.gitkeep",
@@ -3984,7 +3986,8 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
-    "src/agent_takt/cli/formatting.py"
+    "src/agent_takt/cli/formatting.py",
+    "src/agent_takt/cli/parser.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
@@ -4008,7 +4011,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 only additive additions to formatting.py; no overlap with other in-progress beads expected.",
+  "conflict_risks": "None \u2014 only additive additions to formatting.py; no overlap with other in-progress beads expected.\nNone \u2014 only `parser.py` was modified, which is not shared with any other in-progress bead in this feature tree.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
