@@ -3,7 +3,7 @@
   "title": "Test Resolve merge conflicts for Bead introspection CLI ergonomics",
   "agent_type": "tester",
   "description": "Validate implementation for B-24db26cb",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-24db26cb",
   "dependencies": [
@@ -5225,7 +5225,10 @@
   "conflict_risks": "None \u2014 changes confined to gitutils.py and its dedicated test file.",
   "branch_name": "feature/b-a946a55d",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a946a55d",
-  "lease": null,
+  "lease": {
+    "owner": "tester:B-24db26cb-test",
+    "expires_at": "2026-05-05T13:21:35.423129+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -5286,6 +5289,29 @@
       "event": "retried",
       "agent_type": "tester",
       "summary": "Requeued blocked bead after corrective bead B-24db26cb-test-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-05T12:51:35.665849+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-05T12:51:35.665875+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
       "details": {}
     }
   ],
