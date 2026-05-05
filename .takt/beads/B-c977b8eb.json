@@ -6,7 +6,11 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a946a55d",
-  "dependencies": [],
+  "dependencies": [
+    "B-a8b81425",
+    "B-eb531671",
+    "B-ca191f51"
+  ],
   "acceptance_criteria": [
     "CLAUDE.md Working with Beads lists all five new command forms with brief descriptions",
     "No references encourage inline python3 -c JSON parsing as the normal introspection path",
