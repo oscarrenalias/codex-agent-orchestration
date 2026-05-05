@@ -1801,6 +1801,7 @@
     ".takt/beads/B-79b03bf2-review.json",
     ".takt/beads/B-79b03bf2-test.json",
     ".takt/beads/B-79b03bf2.json",
+    ".takt/beads/B-79f2b4fd.json",
     ".takt/beads/B-79fc2ae8.json",
     ".takt/beads/B-7a0391f9.json",
     ".takt/beads/B-7a8cd6e0.json",
@@ -2622,9 +2623,11 @@
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
     "CLAUDE.md",
+    "docs/development.md",
     "src/agent_takt/cli/commands/bead.py",
     "src/agent_takt/cli/formatting.py",
-    "src/agent_takt/cli/parser.py"
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_bead.py"
   ],
   "changed_files": [
     ".takt/beads/.gitkeep",
@@ -3097,6 +3100,7 @@
     ".takt/beads/B-79b03bf2-review.json",
     ".takt/beads/B-79b03bf2-test.json",
     ".takt/beads/B-79b03bf2.json",
+    ".takt/beads/B-79f2b4fd.json",
     ".takt/beads/B-79fc2ae8.json",
     ".takt/beads/B-7a0391f9.json",
     ".takt/beads/B-7a8cd6e0.json",
@@ -3918,9 +3922,11 @@
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
     "CLAUDE.md",
+    "docs/development.md",
     "src/agent_takt/cli/commands/bead.py",
     "src/agent_takt/cli/formatting.py",
-    "src/agent_takt/cli/parser.py"
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_bead.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
