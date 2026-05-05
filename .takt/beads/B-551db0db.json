@@ -6,7 +6,13 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-e54ece26",
-  "dependencies": [],
+  "dependencies": [
+    "B-9ad65624",
+    "B-8aabbbc0",
+    "B-7c61a4a1",
+    "B-20e0b573",
+    "B-09ff8843"
+  ],
   "acceptance_criteria": [
     "CLAUDE.md Working with Beads section includes takt bead history <id> command with --limit, --event, --json, --plain examples",
     "CLAUDE.md documents --field flag on takt bead show with at least two example paths",
