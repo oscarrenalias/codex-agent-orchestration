@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-e54ece26",
-  "dependencies": [],
+  "dependencies": [
+    "B-7c61a4a1"
+  ],
   "acceptance_criteria": [
     "takt bead show <id> --field status returns the status string with no surrounding quotes",
     "takt bead show <id> --field handoff_summary.completed returns the nested string value",
