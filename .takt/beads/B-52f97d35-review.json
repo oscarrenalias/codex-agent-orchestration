@@ -3,7 +3,7 @@
   "title": "Review Resolve merge conflicts for Investigate bead-state-leak: developer beads not persisted as done after takt merge",
   "agent_type": "review",
   "description": "Review implementation for B-52f97d35",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-52f97d35",
   "dependencies": [
@@ -32,33 +32,40 @@
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Reviewed gitutils.py fix (line 114), test_gitutils_worktree_exclude.py unit/integration tests, and test_merge_safety.py merge-pipeline tests. All three files are consistent and correct.",
+    "remaining": "None.",
+    "risks": "None. Single-constant substitution with no downstream conflicts expected.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/gitutils.py",
+      "tests/test_gitutils_worktree_exclude.py",
+      "tests/test_merge_safety.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
+    "next_action": "Proceed to merge.",
     "next_agent": "",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/gitutils.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/gitutils.py",
+      "tests/test_gitutils_worktree_exclude.py",
+      "tests/test_merge_safety.py"
+    ],
+    "conflict_risks": "None. Single-line change to a constant reference; no downstream conflicts expected.",
+    "design_decisions": "_BEAD_STATE_PATHSPEC (no trailing slash) is intentionally kept for git ls-files where trailing slashes can cause unexpected behavior. _BEAD_STATE_PREFIX (with trailing slash) is correctly used for git rm --cached to match the directory tree recursively.",
+    "test_coverage_notes": "test_git_rm_and_commit_called_with_correct_args asserts .takt/beads/ (trailing slash) appears in rm args \u2014 this is the direct regression guard. WorktreeBeadLeakRegressionTests and BeadStateMergeFallbackIntegrationTests provide end-to-end coverage of the bead-state-leak scenario.",
+    "known_limitations": "ls-files assertion in test_gitutils_worktree_exclude.py line 132 uses substring match (.takt/beads) that accepts both slash forms \u2014 not a blocker, just an observation. The rm assertion at line 140 is precise."
   },
   "block_reason": "",
   "conflict_risks": "None. Single-line change to a constant reference; no downstream conflicts expected.",
   "branch_name": "feature/b-fa05af17",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-52f97d35-review",
-    "expires_at": "2026-05-05T09:19:15.896836+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +106,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-52f97d35-review/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-05-05T08:50:10.290976+00:00",
+      "event": "completed",
+      "agent_type": "review",
+      "summary": "Implementation approved: single-line fix correctly substitutes _BEAD_STATE_PREFIX (trailing slash) for _BEAD_STATE_PATHSPEC in the git rm --cached call; test coverage validates both the fix and the merge-safety pipeline end-to-end.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -167,7 +181,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Implementation approved: single-line fix correctly substitutes _BEAD_STATE_PREFIX (trailing slash) for _BEAD_STATE_PATHSPEC in the git rm --cached call; test coverage validates both the fix and the merge-safety pipeline end-to-end.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.23364815,
+      "duration_ms": 53911,
+      "duration_api_ms": 51523,
+      "num_turns": 5,
+      "input_tokens": 5,
+      "output_tokens": 3425,
+      "cache_creation_tokens": 40481,
+      "cache_read_tokens": 92278,
+      "stop_reason": "end_turn",
+      "session_id": "835193b4-7f8e-440f-b850-e9869d292073",
+      "permission_denials": [],
+      "prompt_chars": 8206,
+      "prompt_lines": 164,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.23364815,
+        "duration_ms": 53911,
+        "duration_api_ms": 51523,
+        "num_turns": 5,
+        "input_tokens": 5,
+        "output_tokens": 3425,
+        "cache_creation_tokens": 40481,
+        "cache_read_tokens": 92278,
+        "stop_reason": "end_turn",
+        "session_id": "835193b4-7f8e-440f-b850-e9869d292073",
+        "permission_denials": [],
+        "prompt_chars": 8206,
+        "prompt_lines": 164,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
