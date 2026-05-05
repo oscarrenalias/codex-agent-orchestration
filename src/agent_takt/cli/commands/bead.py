@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -10,7 +11,40 @@ from ...config import load_config
 from ...console import ConsoleReporter
 from ...graph import render_bead_graph
 from ...storage import RepositoryStorage
-from ..formatting import format_bead_history_plain, format_bead_list_plain, format_claims_plain
+from ..formatting import format_bead_field, format_bead_history_plain, format_bead_list_plain, format_claims_plain
+
+
+_BRACKET_RE = re.compile(r'^(.*)\[(-?\d+)\]$')
+
+
+def _parse_field_path(path: str) -> list[tuple[str, int | None]]:
+    segments: list[tuple[str, int | None]] = []
+    for seg in path.split("."):
+        m = _BRACKET_RE.match(seg)
+        if m:
+            segments.append((m.group(1), int(m.group(2))))
+        else:
+            segments.append((seg, None))
+    return segments
+
+
+def _resolve_field(data: dict, path: str) -> tuple[object, str | None]:
+    """Traverse *data* along *path*; return (value, None) or (None, error_message)."""
+    segments = _parse_field_path(path)
+    current: object = data
+    for key, idx in segments:
+        if key:
+            if not isinstance(current, dict) or key not in current:
+                return None, f"field not found: {path}"
+            current = current[key]
+        if idx is not None:
+            if not isinstance(current, list):
+                return None, f"field not found: {path}"
+            length = len(current)
+            if idx >= length or idx < -length:
+                return None, f"field not found: {path} (length {length})"
+            current = current[idx]
+    return current, None
 
 
 def _validated_feature_root_id(storage: RepositoryStorage, feature_root_id: str | None) -> str | None:
@@ -100,6 +134,14 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         d = bead.to_dict()
         if d.get("priority") is None:
             d.pop("priority", None)
+        field_path = getattr(args, "field", None)
+        if field_path:
+            value, error = _resolve_field(d, field_path)
+            if error is not None:
+                print(error, file=sys.stderr)
+                return 1
+            console.emit(format_bead_field(value))
+            return 0
         console.dump_json(d)
         return 0
 
