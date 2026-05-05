@@ -272,8 +272,52 @@ class WorktreeManager:
             raise GitError(head_proc.stderr.strip() or head_proc.stdout.strip())
         return head_proc.stdout.strip()
 
+    def _save_and_remove_bead_files(self, worktree_path: Path) -> dict[str, bytes]:
+        """Save and remove untracked bead files from the worktree directory.
+
+        Only files that are NOT in the git index are saved and removed.  Tracked
+        bead files are left untouched so the caller does not disturb an active
+        merge=ours resolution path.
+
+        Returns a mapping of filename → raw content for later restoration.
+        """
+        bead_dir = worktree_path / _BEAD_STATE_PATHSPEC
+        if not bead_dir.is_dir():
+            return {}
+        ls_proc = subprocess.run(
+            ["git", "ls-files", "--cached", "--", _BEAD_STATE_PATHSPEC],
+            cwd=worktree_path,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        tracked = set(ls_proc.stdout.splitlines()) if ls_proc.returncode == 0 else set()
+        saved: dict[str, bytes] = {}
+        for path in bead_dir.iterdir():
+            if path.is_file():
+                rel = str(path.relative_to(worktree_path))
+                if rel not in tracked:
+                    saved[path.name] = path.read_bytes()
+                    path.unlink()
+        return saved
+
+    def _restore_saved_bead_files(self, worktree_path: Path, saved: dict[str, bytes]) -> None:
+        """Write previously saved bead files back to the bead directory."""
+        if not saved:
+            return
+        bead_dir = worktree_path / _BEAD_STATE_PATHSPEC
+        bead_dir.mkdir(parents=True, exist_ok=True)
+        for name, content in saved.items():
+            (bead_dir / name).write_bytes(content)
+
     def merge_main_into_branch(self, worktree_path: Path, main_branch: str = "main") -> None:
         """Merge the main branch into the feature branch checked out in worktree_path.
+
+        Untracked bead files under .takt/beads/ are temporarily removed before the
+        merge to avoid 'untracked files would be overwritten' failures (git refuses to
+        proceed when main has a tracked bead file that exists on disk as untracked in
+        the feature worktree).  They are restored afterwards and any newly tracked bead
+        files brought in by the merge are un-tracked via _protect_worktree_bead_state.
 
         Args:
             worktree_path: Path to the feature worktree.
@@ -283,14 +327,22 @@ class WorktreeManager:
             GitError: If the merge fails (including conflict — caller should inspect
                       conflicted_files() and abort_merge() as needed).
         """
-        self._merge_with_bead_state_fallback(
-            worktree_path,
-            "merge",
-            "--no-ff",
-            main_branch,
-            "-m",
-            f"Merge {main_branch} into feature branch",
-        )
+        saved = self._save_and_remove_bead_files(worktree_path)
+        try:
+            self._merge_with_bead_state_fallback(
+                worktree_path,
+                "merge",
+                "--no-ff",
+                main_branch,
+                "-m",
+                f"Merge {main_branch} into feature branch",
+            )
+        except GitError:
+            self._restore_saved_bead_files(worktree_path, saved)
+            raise
+        if saved:
+            self._restore_saved_bead_files(worktree_path, saved)
+            self._protect_worktree_bead_state(worktree_path)
 
     def abort_merge(self, worktree_path: Path) -> None:
         """Abort an in-progress merge in the given worktree.
