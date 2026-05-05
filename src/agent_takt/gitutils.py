@@ -13,24 +13,32 @@ _BEAD_STATE_PREFIX = ".takt/beads/"
 _BEAD_STATE_PATHSPEC = _BEAD_STATE_PREFIX.rstrip("/")
 
 
-def _write_worktree_exclude(repo_root: Path, worktree_path: Path) -> None:
-    """Write .takt/beads/ to the per-worktree git exclude file.
+_BEAD_STATE_GLOB = _BEAD_STATE_PREFIX + "**"
 
-    This prevents git from tracking bead state files in the feature worktree.
+
+def _write_worktree_exclude(repo_root: Path, worktree_path: Path) -> None:
+    """Write bead state glob patterns to the per-worktree git exclude file.
+
     The exclude file lives at repo_root/.git/worktrees/<worktree_name>/info/exclude.
+    Note: .gitignore has higher precedence than info/exclude in git's rule ordering,
+    so this does not fully suppress bead files that are explicitly un-ignored by
+    !.takt/beads/** in .gitignore. The primary guard is _clean_untracked_bead_state
+    called before merges.
     """
     worktree_name = worktree_path.name
     exclude_dir = repo_root / ".git" / "worktrees" / worktree_name / "info"
     exclude_dir.mkdir(parents=True, exist_ok=True)
     exclude_file = exclude_dir / "exclude"
-    entry = _BEAD_STATE_PREFIX
+    entries = [_BEAD_STATE_PREFIX, _BEAD_STATE_GLOB]
     if exclude_file.exists():
         lines = exclude_file.read_text().splitlines()
-        if entry not in lines:
+        missing = [e for e in entries if e not in lines]
+        if missing:
             with exclude_file.open("a") as f:
-                f.write("\n" + entry + "\n")
+                for e in missing:
+                    f.write("\n" + e + "\n")
     else:
-        exclude_file.write_text(entry + "\n")
+        exclude_file.write_text("\n".join(entries) + "\n")
 
 
 class WorktreeManager:
@@ -272,6 +280,33 @@ class WorktreeManager:
             raise GitError(head_proc.stderr.strip() or head_proc.stdout.strip())
         return head_proc.stdout.strip()
 
+    def _clean_untracked_bead_state(self, worktree_path: Path) -> None:
+        """Remove untracked bead JSON files from the worktree.
+
+        The .gitignore has !.takt/beads/** which un-ignores bead files project-wide.
+        Since .gitignore takes precedence over info/exclude, the worktree's exclude
+        file cannot suppress this. Bead files left as untracked after git rm --cached
+        will cause 'would be overwritten by merge' errors when main has them tracked.
+        Deleting them before the merge lets git proceed cleanly.
+        """
+        if not worktree_path.is_dir():
+            return
+        proc = subprocess.run(
+            ["git", "ls-files", "--others", "--", _BEAD_STATE_PREFIX],
+            cwd=worktree_path,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            return
+        for rel_path in proc.stdout.splitlines():
+            rel_path = rel_path.strip()
+            if rel_path:
+                target = worktree_path / rel_path
+                if target.is_file() and target.suffix == ".json":
+                    target.unlink(missing_ok=True)
+
     def merge_main_into_branch(self, worktree_path: Path, main_branch: str = "main") -> None:
         """Merge the main branch into the feature branch checked out in worktree_path.
 
@@ -283,6 +318,7 @@ class WorktreeManager:
             GitError: If the merge fails (including conflict — caller should inspect
                       conflicted_files() and abort_merge() as needed).
         """
+        self._clean_untracked_bead_state(worktree_path)
         self._merge_with_bead_state_fallback(
             worktree_path,
             "merge",
