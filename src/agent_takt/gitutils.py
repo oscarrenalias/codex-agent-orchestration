@@ -111,7 +111,7 @@ class WorktreeManager:
         if not self._worktree_tracks_bead_state(worktree_path):
             return
         rm_proc = subprocess.run(
-            ["git", "-C", str(worktree_path), "rm", "-r", "--cached", "--ignore-unmatch", _BEAD_STATE_PATHSPEC],
+            ["git", "-C", str(worktree_path), "rm", "-r", "--cached", "--ignore-unmatch", _BEAD_STATE_PREFIX],
             text=True,
             capture_output=True,
             check=False,
