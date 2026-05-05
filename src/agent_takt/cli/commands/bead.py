@@ -150,6 +150,23 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         label_filter = getattr(args, "label_filter", [])
         if label_filter:
             beads = [b for b in beads if all(lbl in b.labels for lbl in label_filter)]
+        status_filter = getattr(args, "status_filter", [])
+        if status_filter:
+            beads = [b for b in beads if b.status in status_filter]
+        agent_filter = getattr(args, "agent_filter", [])
+        if agent_filter:
+            beads = [b for b in beads if b.agent_type in agent_filter]
+        feature_root_arg = getattr(args, "feature_root", None)
+        if feature_root_arg:
+            try:
+                resolved_feature_root_id = _resolve_feature_root_id(storage, feature_root_arg)
+            except ValueError as exc:
+                console.error(str(exc))
+                return 1
+            if resolved_feature_root_id is None:
+                console.error(f"{feature_root_arg} is not a valid feature root")
+                return 1
+            beads = [b for b in beads if storage.feature_root_id_for(b) == resolved_feature_root_id]
         if getattr(args, "plain", False):
             console.emit(format_bead_list_plain(beads))
         else:
