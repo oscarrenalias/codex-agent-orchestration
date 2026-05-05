@@ -5294,6 +5294,13 @@
       "agent_type": "tester",
       "summary": "Added targeted CLI tests for `bead history`, `show --field`, and list filters. Targeted pytest run ends with 42 passing tests and 3 failing history tests due a production bug in `command_bead_history`.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-05T10:59:19.467368+00:00",
+      "event": "corrective_planned",
+      "agent_type": "tester",
+      "summary": "Created corrective bead B-0daaa504-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -8001,7 +8008,8 @@
         "source": "measured",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-0daaa504-corrective"
   },
   "labels": [],
   "recovery_for": null,
