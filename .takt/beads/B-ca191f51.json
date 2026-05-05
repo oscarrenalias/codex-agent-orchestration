@@ -3,7 +3,7 @@
   "title": "Extend command_bead_list with --status, --agent, and --feature-root filters",
   "agent_type": "developer",
   "description": "Extend `command_bead_list` in `src/agent_takt/cli/commands/bead.py` to apply three new post-load filters. After fetching all beads from storage, filter by: `--status` (keep beads whose status is in the requested set, OR within --status, AND with other filters); `--agent` (keep beads whose agent_type is in the requested set); `--feature-root` (resolve ID via `storage.resolve_bead_id(prefix)`, keep beads whose feature_root_id matches). All three filters combine AND-wise with each other and with the existing `--label` filter. The existing `--label` filter, `--json` output, and no-filter behavior must be unmodified.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-a946a55d",
   "dependencies": [
@@ -56,9 +56,12 @@
   },
   "block_reason": "",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-a946a55d",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a946a55d",
+  "lease": {
+    "owner": "developer:B-ca191f51",
+    "expires_at": "2026-05-05T11:17:04.981332+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -67,9 +70,48 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-05T10:47:05.238830+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-05T10:47:05.238849+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-ca191f51",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "ecae5633083d1bbec41a6e5ec6ea05bbab117f60499c19b2ed76dbbe3e1aec7c",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-ca191f51/home",
+    "runner_backend": "codex"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
