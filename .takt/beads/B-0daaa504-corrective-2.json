@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-0daaa504: Test suite for bead history, show --field, and list filters",
   "agent_type": "documentation",
   "description": "Blocked reason: Auto-commit failed: On branch feature/b-a946a55d\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\t.takt/beads/\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n\nRemaining work: No tester-scope defects remain in the targeted module. I did not run the full suite because the tester guardrails require scoped validation only.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-0daaa504",
   "dependencies": [],
@@ -5211,7 +5211,7 @@
     "test_coverage_notes": "Did not run tests, per documentation-agent guardrails. Parent bead `B-0daaa504` already targets the test coverage changes in `tests/test_cli_bead.py`.",
     "known_limitations": "Required memory reads could not complete because `AGENT_MEMORY_DB` points to a missing database in this worktree (`.takt/memory/memory.db`)."
   },
-  "block_reason": "Auto-commit failed: On branch feature/b-a946a55d\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\t.takt/beads/\n\nnothing added to commit but untracked files present (use \"git add\" to track)",
+  "block_reason": "",
   "conflict_risks": "Low. This pass did not modify repository files.",
   "branch_name": "feature/b-a946a55d",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a946a55d",
@@ -5262,6 +5262,13 @@
       "event": "blocked",
       "agent_type": "documentation",
       "summary": "Auto-commit failed: On branch feature/b-a946a55d\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\t.takt/beads/\n\nnothing added to commit but untracked files present (use \"git add\" to track)",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-05T12:20:20.694251+00:00",
+      "event": "retried",
+      "agent_type": "documentation",
+      "summary": "Bead requeued",
       "details": {}
     }
   ],
