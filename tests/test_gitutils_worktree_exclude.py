@@ -466,6 +466,7 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
         self._git("commit", "-m", "main: add B-foo bead")
 
         bead_in_worktree = worktree / ".takt" / "beads" / "B-foo.json"
+        bead_in_worktree.parent.mkdir(parents=True, exist_ok=True)
         bead_in_worktree.write_bytes(bead_content)
 
         self.wm.merge_main_into_branch(worktree)
@@ -489,6 +490,7 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
 
         worktree_content = b'{"status":"in_progress"}\n'
         bead_in_worktree = worktree / ".takt" / "beads" / "B-foo.json"
+        bead_in_worktree.parent.mkdir(parents=True, exist_ok=True)
         bead_in_worktree.write_bytes(worktree_content)
 
         self.wm.merge_main_into_branch(worktree)
@@ -526,6 +528,7 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
         self._git("commit", "-m", "main: add multiple bead files")
 
         bead_dir_wt = worktree / ".takt" / "beads"
+        bead_dir_wt.mkdir(parents=True, exist_ok=True)
         for name, content in bead_contents.items():
             (bead_dir_wt / name).write_bytes(content)
 
@@ -557,6 +560,7 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
         # Place an untracked bead file in the feature worktree
         bead_content = b'{"status":"in_progress"}\n'
         bead_in_worktree = worktree / ".takt" / "beads" / "B-foo.json"
+        bead_in_worktree.parent.mkdir(parents=True, exist_ok=True)
         bead_in_worktree.write_bytes(bead_content)
 
         try:
