@@ -10,7 +10,7 @@ from ...config import load_config
 from ...console import ConsoleReporter
 from ...graph import render_bead_graph
 from ...storage import RepositoryStorage
-from ..formatting import format_bead_list_plain, format_claims_plain
+from ..formatting import format_bead_history_plain, format_bead_list_plain, format_claims_plain
 
 
 def _validated_feature_root_id(storage: RepositoryStorage, feature_root_id: str | None) -> str | None:
@@ -49,6 +49,30 @@ def _resolve_feature_root_id(storage: RepositoryStorage, prefix: str) -> str | N
     raise ValueError(
         f"Ambiguous feature root prefix '{prefix}' matches {len(matches)} beads: {match_list}"
     )
+
+
+def command_bead_history(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
+    try:
+        bead_id = storage.resolve_bead_id(args.bead_id)
+    except ValueError as exc:
+        console.error(str(exc))
+        return 1
+
+    bead = storage.load_bead(bead_id)
+    entries: list[dict[str, object]] = bead.to_dict()["execution_history"]
+
+    if args.event_filter:
+        entries = [e for e in entries if e.get("event") in args.event_filter]
+
+    if args.limit is not None:
+        entries = entries[-args.limit:]
+
+    if args.output_json:
+        console.dump_json(entries)
+    else:
+        console.emit(format_bead_history_plain(entries, plain=args.plain))
+
+    return 0
 
 
 def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
@@ -249,5 +273,8 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         else:
             console.success(f"Set priority to '{new_priority}' on {bead.bead_id}")
         return 0
+
+    if args.bead_command == "history":
+        return command_bead_history(args, storage, console)
 
     return 1
