@@ -3,7 +3,7 @@
   "title": "Document serialize_within_feature_tree in CLAUDE.md and multi-backend-agents.md",
   "agent_type": "documentation",
   "description": "Add a one-paragraph note to the `## Configuration` section of `CLAUDE.md` describing `scheduler.serialize_within_feature_tree`, when to enable it (Swift/Xcode/SPM and similar toolchain-locked stacks), and the trade-off (loses within-worktree packing). Add the field to the `SchedulerConfig` reference table in `docs/multi-backend-agents.md`.",
-  "status": "ready",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-9472cbcc",
   "dependencies": [
@@ -26,11 +26,28 @@
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-9472cbcc",
   "expected_files": [
     "CLAUDE.md",
-    "docs/multi-backend-agents.md"
+    "docs/multi-backend-agents.md",
+    "src/agent_takt/_assets.py",
+    "src/agent_takt/_data/default_config.yaml",
+    "src/agent_takt/config.py",
+    "src/agent_takt/onboarding/config.py",
+    "src/agent_takt/scheduler/core.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/_assets.py",
+    "src/agent_takt/_data/default_config.yaml",
+    "src/agent_takt/config.py",
+    "src/agent_takt/onboarding/config.py",
+    "src/agent_takt/scheduler/core.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/_assets.py",
+    "src/agent_takt/_data/default_config.yaml",
+    "src/agent_takt/config.py",
+    "src/agent_takt/onboarding/config.py",
+    "src/agent_takt/scheduler/core.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
     "completed": "",
@@ -53,7 +70,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None in this bead; no files were modified.\nLow. Change is isolated to scheduler conflict gating in `src/agent_takt/scheduler/core.py`.\nNone. No files were changed.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
@@ -64,6 +81,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-04T20:17:09.079925+00:00",
+      "event": "updated",
+      "agent_type": "documentation",
+      "summary": "Bead updated via CLI",
       "details": {}
     }
   ],
