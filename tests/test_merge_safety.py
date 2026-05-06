@@ -561,6 +561,7 @@ class MergeBranchResolveStrategyTests(unittest.TestCase):
 
         mock_merge.assert_called_once_with(
             worktree,
+            "feature",
             "merge",
             "--no-ff",
             "main",
