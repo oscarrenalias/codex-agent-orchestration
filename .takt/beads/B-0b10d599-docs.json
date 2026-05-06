@@ -4044,7 +4044,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-0b10d599-test",
   "conflict_risks": "None \u2014 changes are confined to a single module and its test file; no overlap with sibling beads.",
   "branch_name": "",
   "worktree_path": "",
@@ -4056,6 +4056,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T17:16:14.707281+00:00",
+      "event": "deferred",
+      "agent_type": "documentation",
+      "summary": "file-scope conflict with in-progress B-0b10d599-test",
       "details": {}
     }
   ],
