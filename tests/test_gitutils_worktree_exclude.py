@@ -5,9 +5,6 @@ Covers:
 - _write_worktree_exclude is idempotent (no duplicate lines on second call)
 - _write_worktree_exclude appends to an existing exclude file without clobbering it
 - ensure_worktree early-return path retrofits existing worktrees
-- ensure_worktree calls git rm --cached and git commit --allow-empty after worktree add
-- ensure_worktree raises GitError when git rm returns non-zero
-- ensure_worktree raises GitError when git commit returns non-zero
 - _write_worktree_exclude is called once for a freshly created worktree
 """
 from __future__ import annotations
@@ -17,7 +14,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -83,20 +80,6 @@ class EnsureWorktreeExcludeIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def _ok_proc(self, stdout: str = "") -> MagicMock:
-        proc = MagicMock()
-        proc.returncode = 0
-        proc.stdout = stdout
-        proc.stderr = ""
-        return proc
-
-    def _fail_proc(self, stderr: str = "git error") -> MagicMock:
-        proc = MagicMock()
-        proc.returncode = 1
-        proc.stdout = ""
-        proc.stderr = stderr
-        return proc
-
     def test_existing_worktree_runs_retrofit_path(self) -> None:
         """Existing worktrees still pass through the bead-state protection retrofit."""
         target = self.wm.worktrees_dir / "B-abc12345"  # use resolved path from wm
@@ -109,79 +92,6 @@ class EnsureWorktreeExcludeIntegrationTests(unittest.TestCase):
         mock_protect.assert_called_once_with(target)
         self.assertEqual(target, result)
 
-    def test_git_rm_and_commit_called_with_correct_args(self) -> None:
-        """After worktree add, git rm --cached and git commit --allow-empty are invoked."""
-        with (
-            patch.object(self.wm, "ensure_repository"),
-            patch.object(self.wm, "current_ref", return_value="deadbeef"),
-            patch.object(self.wm, "branch_exists", return_value=False),
-            patch.object(self.wm, "_run_git"),
-            patch("agent_takt.gitutils._write_worktree_exclude"),
-            patch(
-                "agent_takt.gitutils.subprocess.run",
-                side_effect=[self._ok_proc("tracked\n"), self._ok_proc(), self._ok_proc()],
-            ) as mock_run,
-        ):
-            target = self.wm.ensure_worktree("B-abc12345", "feature/b-abc12345")
-
-        self.assertEqual(self.wm.worktrees_dir / "B-abc12345", target)
-        self.assertEqual(3, len(mock_run.call_args_list), "expected ls-files, rm, and commit calls")
-
-        ls_files_cmd = mock_run.call_args_list[0].args[0]
-        self.assertIn("ls-files", ls_files_cmd)
-        self.assertIn(".takt/beads", ls_files_cmd)
-
-        rm_cmd = mock_run.call_args_list[1].args[0]
-        self.assertIn("git", rm_cmd)
-        self.assertIn("-C", rm_cmd)
-        self.assertIn(str(target), rm_cmd)
-        self.assertIn("rm", rm_cmd)
-        self.assertIn("--cached", rm_cmd)
-        self.assertIn(".takt/beads/", rm_cmd)
-
-        commit_cmd = mock_run.call_args_list[2].args[0]
-        self.assertIn("git", commit_cmd)
-        self.assertIn("-C", commit_cmd)
-        self.assertIn(str(target), commit_cmd)
-        self.assertIn("commit", commit_cmd)
-        self.assertIn("--allow-empty", commit_cmd)
-
-    def test_git_rm_failure_raises_git_error(self) -> None:
-        """GitError is raised when the git rm step fails."""
-        with (
-            patch.object(self.wm, "ensure_repository"),
-            patch.object(self.wm, "current_ref", return_value="deadbeef"),
-            patch.object(self.wm, "branch_exists", return_value=False),
-            patch.object(self.wm, "_run_git"),
-            patch("agent_takt.gitutils._write_worktree_exclude"),
-            patch(
-                "agent_takt.gitutils.subprocess.run",
-                side_effect=[self._ok_proc("tracked\n"), self._fail_proc("rm failed")],
-            ),
-        ):
-            with self.assertRaises(GitError):
-                self.wm.ensure_worktree("B-abc12345", "feature/b-abc12345")
-
-    def test_git_commit_failure_raises_git_error(self) -> None:
-        """GitError is raised when the git commit step fails."""
-        with (
-            patch.object(self.wm, "ensure_repository"),
-            patch.object(self.wm, "current_ref", return_value="deadbeef"),
-            patch.object(self.wm, "branch_exists", return_value=False),
-            patch.object(self.wm, "_run_git"),
-            patch("agent_takt.gitutils._write_worktree_exclude"),
-            patch(
-                "agent_takt.gitutils.subprocess.run",
-                side_effect=[
-                    self._ok_proc("tracked\n"),
-                    self._ok_proc(),
-                    self._fail_proc("commit failed"),
-                ],
-            ),
-        ):
-            with self.assertRaises(GitError):
-                self.wm.ensure_worktree("B-abc12345", "feature/b-abc12345")
-
     def test_write_exclude_called_once_for_new_worktree(self) -> None:
         """_write_worktree_exclude is invoked exactly once with the correct arguments."""
         with (
@@ -190,31 +100,10 @@ class EnsureWorktreeExcludeIntegrationTests(unittest.TestCase):
             patch.object(self.wm, "branch_exists", return_value=False),
             patch.object(self.wm, "_run_git"),
             patch("agent_takt.gitutils._write_worktree_exclude") as mock_exclude,
-            patch(
-                "agent_takt.gitutils.subprocess.run",
-                side_effect=[self._ok_proc("tracked\n"), self._ok_proc(), self._ok_proc()],
-            ),
         ):
             target = self.wm.ensure_worktree("B-abc12345", "feature/b-abc12345")
 
         mock_exclude.assert_called_once_with(self.wm.root, target)
-
-    def test_existing_worktree_skips_rm_and_commit_when_branch_already_untracks_beads(self) -> None:
-        """Retrofit is a no-op when the existing worktree already stopped tracking bead files."""
-        target = self.wm.worktrees_dir / "B-abc12345"
-        target.mkdir(parents=True, exist_ok=True)
-        with (
-            patch.object(self.wm, "ensure_repository"),
-            patch.object(self.wm, "_worktree_tracks_bead_state", return_value=False) as mock_tracked,
-            patch("agent_takt.gitutils._write_worktree_exclude") as mock_exclude,
-            patch("agent_takt.gitutils.subprocess.run") as mock_run,
-        ):
-            result = self.wm.ensure_worktree("B-abc12345", "feature/b-abc12345")
-
-        self.assertEqual(target, result)
-        mock_exclude.assert_called_once_with(self.wm.root, target)
-        mock_tracked.assert_called_once_with(target)
-        mock_run.assert_not_called()
 
 
 class WorktreeBeadLeakRegressionTests(unittest.TestCase):
@@ -282,7 +171,7 @@ class WorktreeBeadLeakRegressionTests(unittest.TestCase):
             ".takt/beads/B-root.json",
         ).splitlines()
         self.assertEqual(
-            ["chore: untrack bead state from feature branch [skip ci]", "init"],
+            ["init"],
             feature_path_log,
         )
 
@@ -314,7 +203,7 @@ class WorktreeBeadLeakRegressionTests(unittest.TestCase):
             ".takt/beads/B-root.json",
         ).splitlines()
         self.assertEqual(
-            ["chore: untrack bead state from feature branch [skip ci]", "init"],
+            ["init"],
             feature_path_log,
         )
 
@@ -365,7 +254,6 @@ class WorktreeBeadLeakRegressionTests(unittest.TestCase):
         ).splitlines()
         self.assertEqual(
             [
-                "chore: untrack bead state from feature branch [skip ci]",
                 "feature bead snapshot",
                 "init",
             ],
@@ -397,11 +285,10 @@ class WorktreeBeadLeakRegressionTests(unittest.TestCase):
 
         self.assertIsNone(result, "commit_all should return None when nothing real is staged")
 
-        # No new commit should have been created (HEAD is still the untrack commit).
-        # Feature branch has 2 commits: "init" (from main) + "chore: untrack bead state…"
-        # created by ensure_worktree. commit_all must not add a 3rd.
+        # No new commit should have been created. The feature branch has 1 commit:
+        # "init" (from main). ensure_worktree no longer creates a chore commit.
         log = self._git("log", "--oneline", cwd=worktree).splitlines()
-        self.assertEqual(2, len(log), "no extra commit should be produced for a no-op")
+        self.assertEqual(1, len(log), "no extra commit should be produced for a no-op")
 
 
 class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):

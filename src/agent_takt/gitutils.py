@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 from threading import Lock
 from pathlib import Path
+from typing import Literal
 
 
 class GitError(RuntimeError):
@@ -161,28 +162,6 @@ class WorktreeManager:
 
     def _protect_worktree_bead_state(self, worktree_path: Path) -> None:
         _write_worktree_exclude(self.root, worktree_path)
-        if not self._worktree_tracks_bead_state(worktree_path):
-            return
-        rm_proc = subprocess.run(
-            ["git", "-C", str(worktree_path), "rm", "-r", "--cached", "--ignore-unmatch", _BEAD_STATE_PREFIX],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if rm_proc.returncode != 0:
-            raise GitError(rm_proc.stderr.strip() or rm_proc.stdout.strip())
-        commit_proc = subprocess.run(
-            [
-                "git", "-C", str(worktree_path), "commit",
-                "-m", "chore: untrack bead state from feature branch [skip ci]",
-                "--allow-empty",
-            ],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if commit_proc.returncode != 0:
-            raise GitError(commit_proc.stderr.strip() or commit_proc.stdout.strip())
 
     def _conflicted_files_in(self, cwd: Path) -> list[str]:
         proc = subprocess.run(
@@ -196,32 +175,28 @@ class WorktreeManager:
             raise GitError(proc.stderr.strip() or proc.stdout.strip())
         return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
-    def _du_conflicted_files(self, cwd: Path, paths: list[str]) -> set[str]:
-        """Return the subset of *paths* that git reports as DU (deleted by us).
+    def _du_conflict_paths(self, cwd: Path, paths: list[str]) -> set[str]:
+        """Return the subset of paths that are DU (deleted-by-us) merge conflicts.
 
-        DU = HEAD has the file deleted, the incoming branch has it modified.
-        ``git checkout --ours`` does not work for these — there is no "our"
-        version on disk. The caller must use ``git rm`` instead.
+        DU files have no stage-2 entry so ``git checkout --ours`` fails with
+        'does not have our version'.  They must be resolved via ``git rm``.
         """
-        if not paths:
-            return set()
         proc = subprocess.run(
-            ["git", "status", "--porcelain", "--", *paths],
+            ["git", "status", "--porcelain"],
             cwd=cwd,
             text=True,
             capture_output=True,
             check=False,
         )
-        if proc.returncode != 0:
-            raise GitError(proc.stderr.strip() or proc.stdout.strip())
         du_paths: set[str] = set()
         for line in proc.stdout.splitlines():
-            # Porcelain format: "XY <path>" — DU means index=D, worktree=U.
-            if len(line) >= 3 and line[:2] == "DU":
-                du_paths.add(line[3:])
+            if line[:2] == "DU":
+                path = line[3:].strip()
+                if path in paths:
+                    du_paths.add(path)
         return du_paths
 
-    def _resolve_bead_state_conflicts(self, cwd: Path) -> bool:
+    def _resolve_bead_state_conflicts(self, cwd: Path, direction: Literal["main", "feature"]) -> bool:
         conflicted = self._conflicted_files_in(cwd)
         bead_conflicts = [path for path in conflicted if path.startswith(_BEAD_STATE_PREFIX)]
         if not bead_conflicts:
@@ -229,13 +204,13 @@ class WorktreeManager:
         non_bead_conflicts = [path for path in conflicted if not path.startswith(_BEAD_STATE_PREFIX)]
         if non_bead_conflicts:
             return False
-        du_files = self._du_conflicted_files(cwd, bead_conflicts)
-        non_du_files = [p for p in bead_conflicts if p not in du_files]
+        du_files = self._du_conflict_paths(cwd, bead_conflicts)
+        checkout_files = [f for f in bead_conflicts if f not in du_files]
         if du_files:
-            self._run_git_in(cwd, "rm", "--", *sorted(du_files))
-        if non_du_files:
-            self._run_git_in(cwd, "checkout", "--ours", "--", *non_du_files)
-            self._run_git_in(cwd, "add", "--", *non_du_files)
+            self._run_git_in(cwd, "rm", "--", *du_files)
+        if checkout_files:
+            self._run_git_in(cwd, "checkout", "--ours", "--", *checkout_files)
+            self._run_git_in(cwd, "add", "--", *checkout_files)
         remaining = self._conflicted_files_in(cwd)
         if remaining:
             raise GitError(
@@ -245,7 +220,7 @@ class WorktreeManager:
         self._run_git_in(cwd, "commit", "--no-edit")
         return True
 
-    def _merge_with_bead_state_fallback(self, cwd: Path, *args: str) -> None:
+    def _merge_with_bead_state_fallback(self, cwd: Path, direction: Literal["main", "feature"], *args: str) -> None:
         proc = subprocess.run(
             ["git", *args],
             cwd=cwd,
@@ -255,7 +230,7 @@ class WorktreeManager:
         )
         if proc.returncode == 0:
             return
-        if self._resolve_bead_state_conflicts(cwd):
+        if self._resolve_bead_state_conflicts(cwd, direction):
             return
         raise GitError(proc.stderr.strip() or proc.stdout.strip())
 
@@ -296,6 +271,7 @@ class WorktreeManager:
         self.ensure_repository()
         self._merge_with_bead_state_fallback(
             self.root,
+            "main",
             "merge",
             "--no-ff",
             "-s",
@@ -318,7 +294,7 @@ class WorktreeManager:
         if not proc.stdout.strip():
             return None
         add_proc = subprocess.run(
-            ["git", "add", "-A", "--", ".", ":(exclude).takt/beads/**"],
+            ["git", "add", "--", ":/", ":(exclude).takt/beads/**", ":(exclude).takt/beads/"],
             cwd=worktree_path,
             text=True,
             capture_output=True,
@@ -408,6 +384,7 @@ class WorktreeManager:
         try:
             self._merge_with_bead_state_fallback(
                 worktree_path,
+                "feature",
                 "merge",
                 "--no-ff",
                 main_branch,
