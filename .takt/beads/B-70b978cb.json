@@ -114,6 +114,15 @@
       "agent_type": "review",
       "summary": "Worker started",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T19:37:11.945952+00:00",
+      "event": "guardrails_applied",
+      "agent_type": "review",
+      "summary": "Applied guardrails from .takt/agent-runs/B-70b978cb/repo/templates/agents/review.md",
+      "details": {
+        "template_path": ".takt/agent-runs/B-70b978cb/repo/templates/agents/review.md"
+      }
     }
   ],
   "metadata": {
@@ -129,7 +138,82 @@
     ],
     "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
     "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-70b978cb/home",
-    "runner_backend": "claude"
+    "runner_backend": "claude",
+    "guardrails": {
+      "agent_type": "review",
+      "template_path": ".takt/agent-runs/B-70b978cb/repo/templates/agents/review.md",
+      "template_text": "# Review Guardrails\n\nPrimary responsibility: Inspect code, tests, docs, and acceptance criteria for correctness, completeness, and risk.\n\nAllowed actions:\n- Review only the changed files listed in the bead's touched_files and changed_files fields. Do not read unrelated files.\n- Validate acceptance criteria against the implementation and handoff state.\n- Block with a clear recommendation when the bead actually requires implementation work.\n\n## Memory\n\n**Read memory at bead start.** Before reviewing any files, run three searches using `$TAKT_CMD` (injected by the orchestrator):\n\n```bash\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace global\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace feature:<feature_root_id>\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace specs\n```\n\nTreat results as ambient context \u2014 apply relevant entries to inform the review; skip entries that don't apply.\n\nDo **not** write to memory \u2014 review agents are read-only.\n\nEfficiency constraints:\n- Do not run the test suite. Testing is the tester agent's responsibility.\n- Focus on correctness, completeness, and risk \u2014 not style or formatting.\n- Keep the review concise. If there are no findings, say so and approve promptly.\n\nDisallowed actions:\n- Implement feature work, tests, or docs instead of reporting findings.\n- Rewrite architecture or silently fix issues discovered during review.\n- Mark incomplete work as accepted without evidence.\n\nExpected outputs:\n- Return JSON with `outcome` set to `completed` (reviews always complete; use `verdict` for pass/fail) and `summary` as a one-line description of the review result.\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Treat `verdict` as the review signoff decision: `approved` means the bead can complete, while `needs_changes` means the bead must block for follow-up work.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when no unresolved findings remain.\n- Use `verdict=needs_changes`, set `findings_count` to the unresolved finding count, set `requires_followup=true` unless there is a stronger explicit reason not to, and always include `block_reason` when any required fix remains.\n- Keep `completed`, `remaining`, and `risks` as free-form narrative context only. They inform operators, but they do not override the structured verdict or control scheduler state.\n- Review findings ordered by severity, or an explicit statement that no findings were discovered.\n- Clear blocked handoff details when the task belongs to another agent type.",
+      "captured_at": "2026-05-06T19:37:11.945941+00:00"
+    },
+    "worker_prompt_context": {
+      "bead_id": "B-70b978cb",
+      "feature_root_id": "B-a469cc74",
+      "title": "Review eliminate chore commit changes",
+      "agent_type": "review",
+      "description": "Review all changes in this feature tree against spec-d1a1398c acceptance criteria. Verify: _protect_worktree_bead_state contains no git rm --cached or commit logic; commit_all uses pathspec exclusion with both :(exclude).takt/beads/** and :(exclude).takt/beads/ forms; _du_conflicted_files is absent; _resolve_bead_state_conflicts has the correct direction parameter and both call sites pass the right value; the end-to-end test in test_merge_safety.py is meaningful and exercises the full merge cycle; CLAUDE.md accurately reflects the new mechanism.",
+      "status": "in_progress",
+      "acceptance_criteria": [
+        "All 9 acceptance criteria from spec-d1a1398c are verifiably met",
+        "No chore commit code path exists anywhere in gitutils.py",
+        "commit_all staging uses both :(exclude).takt/beads/** and :(exclude).takt/beads/ pathspecs",
+        "_du_conflicted_files is absent from gitutils.py",
+        "_resolve_bead_state_conflicts has correct direction parameter with matching call sites",
+        "End-to-end test in test_merge_safety.py exercises the full branching-and-merge cycle and would catch regressions",
+        "CLAUDE.md bead state exclusion section is accurate and contains no references to the chore commit"
+      ],
+      "dependencies": [
+        "B-00d3c0be",
+        "B-38d8b64b",
+        "B-6e740d75",
+        "B-997b348e",
+        "B-9f8d7f3e",
+        "B-ab77b221",
+        "B-bf93e7b9",
+        "B-d0467e91"
+      ],
+      "linked_docs": [
+        "specs/drafts/eliminate-chore-commit-destruction-of-main-bead-state.md",
+        "src/agent_takt/gitutils.py",
+        "CLAUDE.md"
+      ],
+      "execution_branch_name": "feature/b-a469cc74",
+      "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
+      "expected_files": [
+        "src/agent_takt/gitutils.py",
+        "tests/test_gitutils_worktree_exclude.py",
+        "tests/test_merge_safety.py",
+        "tests/test_scheduler_beads.py"
+      ],
+      "expected_globs": [],
+      "touched_files": [
+        "CLAUDE.md",
+        "src/agent_takt/gitutils.py",
+        "tests/test_gitutils_worktree_exclude.py",
+        "tests/test_merge_safety.py",
+        "tests/test_scheduler_beads.py"
+      ],
+      "conflict_risks": "None \u2014 single file change, no overlapping file claims with other beads expected.\nNone \u2014 change is isolated to a single subprocess call in commit_all.\nNone \u2014 only gitutils.py was modified and no sibling beads are expected to touch this file.\nNone \u2014 only `tests/test_scheduler_beads.py` was modified; no production code touched.\nNone \u2014 only test file modified; no overlap with other in-progress beads.\nNone \u2014 only `tests/test_merge_safety.py` was modified. No source files touched.",
+      "handoff_summary": {
+        "completed": "",
+        "remaining": "",
+        "risks": "",
+        "verdict": "",
+        "findings_count": 0,
+        "requires_followup": false,
+        "changed_files": [],
+        "updated_docs": [],
+        "next_action": "",
+        "next_agent": "",
+        "block_reason": "",
+        "expected_files": [],
+        "expected_globs": [],
+        "touched_files": [],
+        "conflict_risks": "",
+        "design_decisions": "",
+        "test_coverage_notes": "",
+        "known_limitations": ""
+      }
+    }
   },
   "labels": [],
   "recovery_for": null,
