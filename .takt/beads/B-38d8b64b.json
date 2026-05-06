@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
-  "dependencies": [],
+  "dependencies": [
+    "B-6e740d75"
+  ],
   "acceptance_criteria": [
     "tests/test_merge_safety.py exists with the described end-to-end test class and method",
     "Test asserts all 5 original bead files (B-1 through B-5) are present on main after merge",
