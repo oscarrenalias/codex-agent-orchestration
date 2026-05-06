@@ -6,7 +6,16 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
-  "dependencies": [],
+  "dependencies": [
+    "B-bf93e7b9",
+    "B-ab77b221",
+    "B-6e740d75",
+    "B-00d3c0be",
+    "B-9f8d7f3e",
+    "B-38d8b64b",
+    "B-997b348e",
+    "B-d0467e91"
+  ],
   "acceptance_criteria": [
     "All 9 acceptance criteria from spec-d1a1398c are verifiably met",
     "No chore commit code path exists anywhere in gitutils.py",
