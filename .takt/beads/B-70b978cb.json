@@ -3,7 +3,7 @@
   "title": "Review eliminate chore commit changes",
   "agent_type": "review",
   "description": "Review all changes in this feature tree against spec-d1a1398c acceptance criteria. Verify: _protect_worktree_bead_state contains no git rm --cached or commit logic; commit_all uses pathspec exclusion with both :(exclude).takt/beads/** and :(exclude).takt/beads/ forms; _du_conflicted_files is absent; _resolve_bead_state_conflicts has the correct direction parameter and both call sites pass the right value; the end-to-end test in test_merge_safety.py is meaningful and exercises the full merge cycle; CLAUDE.md accurately reflects the new mechanism.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
   "dependencies": [
@@ -37,52 +37,72 @@
     "src/agent_takt/gitutils.py",
     "tests/test_gitutils_worktree_exclude.py",
     "tests/test_merge_safety.py",
-    "tests/test_scheduler_beads.py"
+    "tests/test_scheduler_beads.py",
+    "CLAUDE.md"
   ],
   "expected_globs": [],
   "touched_files": [
-    "CLAUDE.md",
     "src/agent_takt/gitutils.py",
     "tests/test_gitutils_worktree_exclude.py",
     "tests/test_merge_safety.py",
-    "tests/test_scheduler_beads.py"
+    "tests/test_scheduler_beads.py",
+    "CLAUDE.md"
   ],
   "changed_files": [
-    "CLAUDE.md",
     "src/agent_takt/gitutils.py",
     "tests/test_gitutils_worktree_exclude.py",
     "tests/test_merge_safety.py",
-    "tests/test_scheduler_beads.py"
+    "tests/test_scheduler_beads.py",
+    "CLAUDE.md"
   ],
-  "updated_docs": [],
+  "updated_docs": [
+    "CLAUDE.md"
+  ],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
-    "findings_count": 0,
+    "completed": "Reviewed gitutils.py, test_gitutils_worktree_exclude.py, test_merge_safety.py, test_scheduler_beads.py, and CLAUDE.md against spec-d1a1398c's 9 acceptance criteria and the bead's own 7 acceptance criteria. Core implementation is correct: no chore commit code path remains, commit_all uses both pathspec exclusion forms, _du_conflicted_files is gone, end-to-end test is meaningful, CLAUDE.md is accurate.",
+    "remaining": "No blocking items. Three minor findings documented below; none prevent merge.",
+    "risks": "Three minor findings (all informational/cleanup):\n\nFINDING 1 \u2014 Dead `direction` parameter in `_resolve_bead_state_conflicts` (gitutils.py:199).\nThe function signature is `_resolve_bead_state_conflicts(self, cwd, direction: Literal[\"main\", \"feature\"])` but the body never consults `direction` \u2014 it always calls `git checkout --ours`. Spec AC5 specified that `direction=\"main\"` should use `--theirs`, but corrective bead B-997b348e deliberately changed the mechanism to always-`--ours` + `_du_conflict_paths` for DU files. The behavioral result is correct and verified by `test_final_merge_keeps_main_branch_bead_state_when_both_branches_track_it` and the end-to-end test. The dead parameter is misleading but harmless. The call sites do pass the correct values (\"main\" from merge_branch, \"feature\" from merge_main_into_branch), satisfying the bead's own AC.\n\nFINDING 2 \u2014 `_worktree_tracks_bead_state` is dead code (gitutils.py:151-161).\nThis function was used by the old `_protect_worktree_bead_state` to gate the `git rm --cached` + commit logic. After the redesign, `_protect_worktree_bead_state` is reduced to a single `_write_worktree_exclude` call and `_worktree_tracks_bead_state` has no callers within gitutils.py. Should be removed in a follow-up.\n\nFINDING 3 \u2014 Stale docstring in `_write_worktree_exclude` (gitutils.py:26-27).\nThe docstring says \"The primary guard is `_clean_untracked_bead_state` called before merges.\" This is outdated \u2014 `_clean_untracked_bead_state` was superseded by `_save_and_remove_bead_files` in `merge_main_into_branch`. Minor doc drift, not a correctness issue.",
+    "verdict": "approved",
+    "findings_count": 3,
     "requires_followup": false,
-    "changed_files": [],
-    "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "changed_files": [
+      "src/agent_takt/gitutils.py",
+      "tests/test_gitutils_worktree_exclude.py",
+      "tests/test_merge_safety.py",
+      "tests/test_scheduler_beads.py",
+      "CLAUDE.md"
+    ],
+    "updated_docs": [
+      "CLAUDE.md"
+    ],
+    "next_action": "Merge feature branch via takt merge B-a469cc74",
+    "next_agent": "operator",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/gitutils.py",
+      "tests/test_gitutils_worktree_exclude.py",
+      "tests/test_merge_safety.py",
+      "tests/test_scheduler_beads.py",
+      "CLAUDE.md"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/gitutils.py",
+      "tests/test_gitutils_worktree_exclude.py",
+      "tests/test_merge_safety.py",
+      "tests/test_scheduler_beads.py",
+      "CLAUDE.md"
+    ],
+    "conflict_risks": "None \u2014 review agent made no file changes.",
+    "design_decisions": "The corrective bead B-997b348e deliberately changed `_resolve_bead_state_conflicts` from direction-based (--ours vs --theirs) to always-ours + DU-detect-via-git-rm. This overrides spec AC5's literal description but achieves the same behavioral goal. The `direction` parameter remains in the signature and call sites for documentation purposes but is functionally unused. This was an explicit corrective decision and is accepted here.",
+    "test_coverage_notes": "End-to-end test `test_takt_merge_preserves_main_bead_state_through_full_cycle` (test_merge_safety.py:816) exercises the full cycle with real git operations and would catch both the chore-commit regression and the \"would be overwritten\" regression. Unit coverage for commit_all exclusion exists in both test_gitutils_worktree_exclude.py and test_scheduler_beads.py. DU conflict path is covered by test_du_conflict_in_bead_state_resolves_via_rm even though the scenario it simulates (old chore commit) is now a legacy path.",
+    "known_limitations": "_worktree_tracks_bead_state (gitutils.py:151) and the stale _clean_untracked_bead_state docstring reference are technical debt left behind by the corrective bead redesign. Neither affects correctness. Cleanup deferred."
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 single file change, no overlapping file claims with other beads expected.\nNone \u2014 change is isolated to a single subprocess call in commit_all.\nNone \u2014 only gitutils.py was modified and no sibling beads are expected to touch this file.\nNone \u2014 only `tests/test_scheduler_beads.py` was modified; no production code touched.\nNone \u2014 only test file modified; no overlap with other in-progress beads.\nNone \u2014 only `tests/test_merge_safety.py` was modified. No source files touched.",
+  "conflict_risks": "None \u2014 review agent made no file changes.",
   "branch_name": "feature/b-a469cc74",
   "worktree_path": "",
-  "lease": {
-    "owner": "review:B-70b978cb",
-    "expires_at": "2026-05-06T20:07:01.497215+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -123,6 +143,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-70b978cb/repo/templates/agents/review.md"
       }
+    },
+    {
+      "timestamp": "2026-05-06T19:42:00.515759+00:00",
+      "event": "completed",
+      "agent_type": "review",
+      "summary": "Review approved with 3 minor findings; all 9 spec acceptance criteria are functionally met after accounting for corrective bead design changes.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -213,7 +240,52 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Review approved with 3 minor findings; all 9 spec acceptance criteria are functionally met after accounting for corrective bead design changes.",
+      "verdict": "approved",
+      "findings_count": 3,
+      "requires_followup": false,
+      "next_agent": "operator",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.8746411000000002,
+      "duration_ms": 288360,
+      "duration_api_ms": 251563,
+      "num_turns": 24,
+      "input_tokens": 19,
+      "output_tokens": 16118,
+      "cache_creation_tokens": 77568,
+      "cache_read_tokens": 1125647,
+      "stop_reason": "end_turn",
+      "session_id": "8eeab126-0803-48a8-8a4c-b7a3ee937cc0",
+      "permission_denials": [],
+      "prompt_chars": 13866,
+      "prompt_lines": 197,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.8746411000000002,
+        "duration_ms": 288360,
+        "duration_api_ms": 251563,
+        "num_turns": 24,
+        "input_tokens": 19,
+        "output_tokens": 16118,
+        "cache_creation_tokens": 77568,
+        "cache_read_tokens": 1125647,
+        "stop_reason": "end_turn",
+        "session_id": "8eeab126-0803-48a8-8a4c-b7a3ee937cc0",
+        "permission_denials": [],
+        "prompt_chars": 13866,
+        "prompt_lines": 197,
+        "source": "provider",
+        "attempt": 1
+      }
+    ]
   },
   "labels": [],
   "recovery_for": null,
