@@ -3,7 +3,7 @@
   "title": "Verify bead state isolation and merge safety",
   "agent_type": "tester",
   "description": "Run the full test suite and verify all code-level acceptance criteria from spec-d1a1398c. Specifically check: uv run pytest tests/ -n auto -q passes; grep -n '_du_conflicted_files' src/agent_takt/gitutils.py returns no results; grep -n 'untrack bead state' src/agent_takt/gitutils.py returns no results; tests in test_merge_safety.py pass; the commit_all pathspec exclusion test passes; tests in test_gitutils_worktree_exclude.py pass.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
   "dependencies": [
@@ -33,33 +33,21 @@
     "tests/test_scheduler_beads.py"
   ],
   "expected_globs": [],
-  "touched_files": [
-    "src/agent_takt/gitutils.py",
-    "tests/test_gitutils_worktree_exclude.py",
-    "tests/test_merge_safety.py",
-    "tests/test_scheduler_beads.py"
-  ],
-  "changed_files": [
-    "src/agent_takt/gitutils.py",
-    "tests/test_gitutils_worktree_exclude.py",
-    "tests/test_merge_safety.py",
-    "tests/test_scheduler_beads.py"
-  ],
+  "touched_files": [],
+  "changed_files": [],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "Ran targeted tests (test_gitutils_worktree_exclude.py, test_merge_safety.py, test_scheduler_beads.py). Confirmed both grep checks pass (_du_conflicted_files absent, no 'untrack bead state' string in gitutils.py). Fixed test_preflight_merge_uses_same_merge_driver_wrapper by adding missing 'feature' direction argument to the mock assertion \u2014 this test was written before B-6e740d75 added the direction parameter to _merge_with_bead_state_fallback.",
-    "remaining": "Three test failures require production code fixes in src/agent_takt/gitutils.py._resolve_bead_state_conflicts: (1) Bug A \u2014 line 186 uses '--theirs' for direction='main' but should use '--ours'; both merge paths want the current branch's bead state and 'ours' is always correct. Affects test_final_merge_keeps_main_branch_bead_state_when_both_branches_track_it and test_existing_worktree_is_retrofitted_before_merge. (2) Bug B \u2014 DU-status bead conflicts (file deleted on feature, modified on main) crash with 'does not have our version' on git checkout --ours. Need git rm for DU-status files. Affects test_du_conflict_in_bead_state_resolves_via_rm.",
-    "risks": "Bug A means every final takt merge (feature\u2192main) picks the feature branch's bead state instead of main's, silently corrupting the canonical bead record on main. Bug B causes GitError on a merge path that was previously protected by _du_conflicted_files (now removed by B-6e740d75) \u2014 any real merge with DU bead conflicts will crash.",
-    "verdict": "needs_changes",
-    "findings_count": 3,
-    "requires_followup": true,
-    "changed_files": [
-      "tests/test_merge_safety.py"
-    ],
+    "completed": "Verified all acceptance criteria: (1) uv run pytest tests/ -n auto -q passes with 1736 tests, 0 failures; (2) _du_conflicted_files absent from gitutils.py; (3) no 'untrack bead state' string in gitutils.py; (4) test_merge_safety.py all 24 tests pass including the 3 previously failing tests; (5) CommitAllPathspecExclusionTests passes; (6) test_gitutils_worktree_exclude.py all 14 tests pass.",
+    "remaining": "None.",
+    "risks": "None. All production bugs fixed, all tests pass.",
+    "verdict": "approved",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
     "updated_docs": [],
-    "next_action": "Developer corrective bead must fix src/agent_takt/gitutils.py._resolve_bead_state_conflicts: (1) change line 186 from '--theirs' for direction='main' to '--ours' always; (2) detect DU-status files via git status --porcelain and resolve them with git rm before attempting git checkout --ours on remaining UU files.",
-    "next_agent": "developer",
-    "block_reason": "Two production code bugs in _resolve_bead_state_conflicts cause 3 test failures. Bug A: checkout_side='--theirs' for direction='main' picks feature-branch bead state instead of main's \u2014 should always be '--ours'. Bug B: DU-status bead conflicts (git rm --cached on feature, modified on main) crash with 'does not have our version' \u2014 must use git rm for DU files. Both bugs are in src/agent_takt/gitutils.py lines 178-196.",
+    "next_action": "Ready for review or merge.",
+    "next_agent": "review",
+    "block_reason": "",
     "expected_files": [
       "src/agent_takt/gitutils.py",
       "tests/test_gitutils_worktree_exclude.py",
@@ -67,22 +55,17 @@
       "tests/test_scheduler_beads.py"
     ],
     "expected_globs": [],
-    "touched_files": [
-      "tests/test_merge_safety.py"
-    ],
-    "conflict_risks": "None \u2014 only test_merge_safety.py was modified; production code untouched.",
-    "design_decisions": "Always use '--ours' in _resolve_bead_state_conflicts regardless of direction, since both merge_branch (on main) and merge_main_into_branch (on feature) want to preserve the current branch's bead state \u2014 'ours' always refers to the current branch.",
-    "test_coverage_notes": "101 of 105 targeted tests pass. 4 pass completely: WriteWorktreeExcludeTests (3), EnsureWorktreeExcludeIntegrationTests (2), WorktreeBeadLeakRegressionTests (2 of 3), MergeMainIntoBranchSaveRestoreTests (5), EndToEndMergeSafetyCycleTests pass. 3 failures all trace to the same _resolve_bead_state_conflicts function. test_scheduler_beads.py pathspec-exclusion test passes.",
-    "known_limitations": "DU-conflict handling (Bug B) was explicitly called out in spec known-limitations as a potential issue but was not implemented. The spec's 'workaround' (DU files are rare) is insufficient since test_du_conflict_in_bead_state_resolves_via_rm is an explicit acceptance criterion that must pass."
+    "touched_files": [],
+    "conflict_risks": "None \u2014 no files modified in this tester pass.",
+    "design_decisions": "The corrective bead correctly implemented always using --ours in _resolve_bead_state_conflicts, and added _du_conflict_paths helper to detect DU-status files and route them to git rm instead of git checkout --ours.",
+    "test_coverage_notes": "105/105 targeted tests pass (test_gitutils_worktree_exclude.py: 14, test_merge_safety.py: 24, test_scheduler_beads.py: 67). Full suite: 1736 passed, 0 failures.",
+    "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 only test_merge_safety.py was modified; production code untouched.",
+  "conflict_risks": "None \u2014 no files modified in this tester pass.",
   "branch_name": "feature/b-a469cc74",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
-  "lease": {
-    "owner": "tester:B-997b348e",
-    "expires_at": "2026-05-06T20:01:19.559260+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -176,6 +159,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-997b348e/repo/templates/agents/tester.md"
       }
+    },
+    {
+      "timestamp": "2026-05-06T19:36:59.021293+00:00",
+      "event": "completed",
+      "agent_type": "tester",
+      "summary": "All acceptance criteria verified. Corrective bead B-997b348e-corrective fixed both bugs in _resolve_bead_state_conflicts: always uses --ours, and DU-status bead conflicts resolved via git rm. Full test suite: 1736 passed, 0 failures.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -269,30 +259,30 @@
       }
     },
     "last_agent_result": {
-      "outcome": "blocked",
-      "summary": "One test synchronization defect fixed (missing direction arg in mock assertion). Two production code bugs in _resolve_bead_state_conflicts cause 3 remaining test failures: wrong checkout side for direction=main, and missing DU-conflict handling via git rm.",
-      "verdict": "needs_changes",
-      "findings_count": 3,
-      "requires_followup": true,
-      "next_agent": "developer",
-      "block_reason": "Two production code bugs in _resolve_bead_state_conflicts cause 3 test failures. Bug A: checkout_side='--theirs' for direction='main' picks feature-branch bead state instead of main's \u2014 should always be '--ours'. Bug B: DU-status bead conflicts (git rm --cached on feature, modified on main) crash with 'does not have our version' \u2014 must use git rm for DU files. Both bugs are in src/agent_takt/gitutils.py lines 178-196."
+      "outcome": "completed",
+      "summary": "All acceptance criteria verified. Corrective bead B-997b348e-corrective fixed both bugs in _resolve_bead_state_conflicts: always uses --ours, and DU-status bead conflicts resolved via git rm. Full test suite: 1736 passed, 0 failures.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "review",
+      "block_reason": ""
     },
     "telemetry": {
-      "cost_usd": 0.6486252499999999,
-      "duration_ms": 421180,
-      "duration_api_ms": 315327,
-      "num_turns": 19,
-      "input_tokens": 14,
-      "output_tokens": 18994,
-      "cache_creation_tokens": 54945,
-      "cache_read_tokens": 510585,
+      "cost_usd": 0.29139450000000006,
+      "duration_ms": 333128,
+      "duration_api_ms": 74942,
+      "num_turns": 12,
+      "input_tokens": 13,
+      "output_tokens": 3833,
+      "cache_creation_tokens": 30042,
+      "cache_read_tokens": 385790,
       "stop_reason": "end_turn",
-      "session_id": "e49460d0-2e3f-413b-9def-9d4b4abe9d04",
+      "session_id": "5e61e896-57fc-4889-888a-63cdd757e8ac",
       "permission_denials": [],
-      "prompt_chars": 14292,
-      "prompt_lines": 200,
+      "prompt_chars": 17609,
+      "prompt_lines": 216,
       "source": "provider",
-      "attempt": 1
+      "attempt": 2
     },
     "telemetry_history": [
       {
@@ -311,6 +301,23 @@
         "prompt_lines": 200,
         "source": "provider",
         "attempt": 1
+      },
+      {
+        "cost_usd": 0.29139450000000006,
+        "duration_ms": 333128,
+        "duration_api_ms": 74942,
+        "num_turns": 12,
+        "input_tokens": 13,
+        "output_tokens": 3833,
+        "cache_creation_tokens": 30042,
+        "cache_read_tokens": 385790,
+        "stop_reason": "end_turn",
+        "session_id": "5e61e896-57fc-4889-888a-63cdd757e8ac",
+        "permission_denials": [],
+        "prompt_chars": 17609,
+        "prompt_lines": 216,
+        "source": "provider",
+        "attempt": 2
       }
     ],
     "auto_corrective_bead_id": "B-997b348e-corrective",
