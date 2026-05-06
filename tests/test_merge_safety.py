@@ -766,5 +766,112 @@ class BeadStateMergeFallbackIntegrationTests(unittest.TestCase):
         self.assertIn("UU README.md", status_proc.stdout)
 
 
+class EndToEndMergeSafetyCycleTests(unittest.TestCase):
+    """End-to-end: bead state survives the full create-worktree → feature-commit → main-diverge → preflight-sync → merge cycle.
+
+    This test would have failed on pre-fix code where:
+    - _protect_worktree_bead_state left a destructive chore commit whose git rm --cached
+      deletes propagated to main during the final feature→main merge, wiping bead state, OR
+    - merge_main_into_branch failed with "would be overwritten by merge" when main added new
+      bead files that the feature worktree had locally as untracked.
+    """
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.worktrees_dir = self.root / ".takt" / "worktrees"
+        self.wm = WorktreeManager(self.root, self.worktrees_dir)
+        self._git("init", "-b", "main")
+        self._git("config", "user.email", "test@example.com")
+        self._git("config", "user.name", "Test User")
+        self._git("config", "commit.gpgsign", "false")
+        (self.root / ".gitattributes").write_text(".takt/beads/** merge=ours\n", encoding="utf-8")
+        bead_dir = self.root / ".takt" / "beads"
+        bead_dir.mkdir(parents=True, exist_ok=True)
+        for i in range(1, 6):
+            (bead_dir / f"B-{i}.json").write_text(
+                f'{{"id":"B-{i}","status":"ready"}}\n', encoding="utf-8"
+            )
+        (self.root / "src").mkdir()
+        (self.root / "src" / "feature.py").write_text("# base\n", encoding="utf-8")
+        self._git("add", ".")
+        self._git("commit", "-m", "init")
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _git(self, *args: str, cwd: Path | None = None) -> str:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=cwd or self.root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise AssertionError(proc.stderr.strip() or proc.stdout.strip())
+        return proc.stdout.strip()
+
+    def test_takt_merge_preserves_main_bead_state_through_full_cycle(self) -> None:
+        """Full cycle: worktree created, feature committed, main diverges, preflight sync, final merge.
+
+        Asserts that after merge_branch all 6 bead files exist on main, B-2 carries
+        main's modification, and B-6 (added on main after branching) survived.
+        """
+        # Step 1: create feature worktree (triggers _protect_worktree_bead_state)
+        worktree = self.wm.ensure_worktree("B-feature", "feature/b-feature")
+        self.assertTrue(worktree.exists(), "worktree directory should be created")
+
+        # Step 2: write a non-bead file change in the feature worktree and commit
+        (worktree / "src" / "feature.py").write_text("# feature implementation\n", encoding="utf-8")
+        commit_hash = self.wm.commit_all(worktree, "[takt] B-feature: implement feature")
+        self.assertIsNotNone(commit_hash, "commit_all should produce a commit for the feature change")
+
+        # Step 3: on main, modify B-2.json and add B-6.json in a new commit
+        bead_dir = self.root / ".takt" / "beads"
+        b2_modified = '{"id":"B-2","status":"done","modified_on_main":true}\n'
+        (bead_dir / "B-2.json").write_text(b2_modified, encoding="utf-8")
+        b6_content = '{"id":"B-6","status":"ready"}\n'
+        (bead_dir / "B-6.json").write_text(b6_content, encoding="utf-8")
+        self._git("add", ".takt/beads/B-2.json", ".takt/beads/B-6.json")
+        self._git("commit", "-m", "main: update B-2 and add B-6")
+
+        # Step 4: preflight sync — merge main into feature branch
+        self.wm.merge_main_into_branch(worktree)
+
+        # Step 5: final merge — merge feature branch into main
+        self.wm.merge_branch("feature/b-feature")
+
+        # All 6 bead files must be present on main
+        for i in range(1, 7):
+            bead_file = bead_dir / f"B-{i}.json"
+            self.assertTrue(
+                bead_file.exists(),
+                f"B-{i}.json missing on main after full merge cycle",
+            )
+
+        # B-2 must carry main's modification, not the original or deleted content
+        self.assertEqual(
+            b2_modified,
+            (bead_dir / "B-2.json").read_text(encoding="utf-8"),
+            "B-2.json should have main's modified content after merge",
+        )
+
+        # B-6 (added on main after branching) must have survived
+        self.assertEqual(
+            b6_content,
+            (bead_dir / "B-6.json").read_text(encoding="utf-8"),
+            "B-6.json added on main after branching should survive the merge",
+        )
+
+        # Exactly 6 bead files — no files deleted and none extra
+        actual = sorted(f.name for f in bead_dir.glob("*.json"))
+        self.assertEqual(
+            [f"B-{i}.json" for i in range(1, 7)],
+            actual,
+            f"Expected exactly B-1 through B-6 on main, got: {actual}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
