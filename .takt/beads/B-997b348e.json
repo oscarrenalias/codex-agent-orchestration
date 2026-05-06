@@ -3,7 +3,7 @@
   "title": "Verify bead state isolation and merge safety",
   "agent_type": "tester",
   "description": "Run the full test suite and verify all code-level acceptance criteria from spec-d1a1398c. Specifically check: uv run pytest tests/ -n auto -q passes; grep -n '_du_conflicted_files' src/agent_takt/gitutils.py returns no results; grep -n 'untrack bead state' src/agent_takt/gitutils.py returns no results; tests in test_merge_safety.py pass; the commit_all pathspec exclusion test passes; tests in test_gitutils_worktree_exclude.py pass.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
   "dependencies": [
@@ -69,7 +69,7 @@
     "test_coverage_notes": "101 of 105 targeted tests pass. 4 pass completely: WriteWorktreeExcludeTests (3), EnsureWorktreeExcludeIntegrationTests (2), WorktreeBeadLeakRegressionTests (2 of 3), MergeMainIntoBranchSaveRestoreTests (5), EndToEndMergeSafetyCycleTests pass. 3 failures all trace to the same _resolve_bead_state_conflicts function. test_scheduler_beads.py pathspec-exclusion test passes.",
     "known_limitations": "DU-conflict handling (Bug B) was explicitly called out in spec known-limitations as a potential issue but was not implemented. The spec's 'workaround' (DU files are rare) is insufficient since test_du_conflict_in_bead_state_resolves_via_rm is an explicit acceptance criterion that must pass."
   },
-  "block_reason": "Two production code bugs in _resolve_bead_state_conflicts cause 3 test failures. Bug A: checkout_side='--theirs' for direction='main' picks feature-branch bead state instead of main's \u2014 should always be '--ours'. Bug B: DU-status bead conflicts (git rm --cached on feature, modified on main) crash with 'does not have our version' \u2014 must use git rm for DU files. Both bugs are in src/agent_takt/gitutils.py lines 178-196.",
+  "block_reason": "",
   "conflict_risks": "None \u2014 only test_merge_safety.py was modified; production code untouched.",
   "branch_name": "feature/b-a469cc74",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
@@ -127,6 +127,13 @@
       "event": "corrective_planned",
       "agent_type": "tester",
       "summary": "Created corrective bead B-997b348e-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T19:30:53.566776+00:00",
+      "event": "retried",
+      "agent_type": "tester",
+      "summary": "Requeued blocked bead after corrective bead B-997b348e-corrective completed",
       "details": {}
     }
   ],
@@ -256,7 +263,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-997b348e-corrective"
+    "auto_corrective_bead_id": "B-997b348e-corrective",
+    "last_corrective_retry_source": "B-997b348e-corrective",
+    "last_corrective_retry_commit": "5aa9445faca7cf5a1aba93d061ddc1ac14b8b3fa"
   },
   "labels": [],
   "recovery_for": null,
