@@ -161,28 +161,6 @@ class WorktreeManager:
 
     def _protect_worktree_bead_state(self, worktree_path: Path) -> None:
         _write_worktree_exclude(self.root, worktree_path)
-        if not self._worktree_tracks_bead_state(worktree_path):
-            return
-        rm_proc = subprocess.run(
-            ["git", "-C", str(worktree_path), "rm", "-r", "--cached", "--ignore-unmatch", _BEAD_STATE_PREFIX],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if rm_proc.returncode != 0:
-            raise GitError(rm_proc.stderr.strip() or rm_proc.stdout.strip())
-        commit_proc = subprocess.run(
-            [
-                "git", "-C", str(worktree_path), "commit",
-                "-m", "chore: untrack bead state from feature branch [skip ci]",
-                "--allow-empty",
-            ],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if commit_proc.returncode != 0:
-            raise GitError(commit_proc.stderr.strip() or commit_proc.stdout.strip())
 
     def _conflicted_files_in(self, cwd: Path) -> list[str]:
         proc = subprocess.run(
