@@ -3,7 +3,7 @@
   "title": "Update bundled takt SKILL.md with bead introspection CLI surface (history / --field / list filters)",
   "agent_type": "documentation",
   "description": "The takt SKILL.md (the bundled instructions agents read when working in any takt project) does not mention the bead introspection commands shipped today as part of feature B-e54ece26 / commit 81e29913. Agents in cookbook-app and other takt projects will keep falling back to inline `cat .takt/beads/X.json | python3 -c '...'` patterns until the SKILL.md teaches them the new commands.\n\nThe new CLI surface (already on main, currently undocumented in SKILL.md):\n\n- `uv run takt bead history <id>` \u2014 formatted execution_history view (one line per entry); supports `--limit`, `--event`, `--json`, `--plain`\n- `uv run takt bead show <id> --field PATH` \u2014 jq-like dotted-path projection (e.g. `--field status`, `--field handoff_summary.completed`, `--field execution_history[-1].event`)\n- `uv run takt bead list --status STATUS` \u2014 filter beads by lifecycle status (repeatable, OR within `--status`, AND with other filters)\n- `uv run takt bead list --agent AGENT` \u2014 filter by assigned agent type (repeatable)\n- `uv run takt bead list --feature-root <id>` \u2014 scope listing to a single feature tree\n\nConfirmation that this works on this main: `uv run takt bead show B-0b10d599 --field labels` returns the labels array as JSON. The feature is live; the docs gap is the only thing missing.\n\n## Required edits\n\nONE file: `src/agent_takt/_data/claude_skills/takt/SKILL.md` (the bundled source of truth that ships in the wheel and gets installed into other projects via `takt init` / `takt upgrade`).\n\nTwo sections to update:\n\n### Section 1 \u2014 \"Status and inspection\" (currently lines 41-53)\n\nReplace the existing code block with an extended version that includes the new commands. Suggested content:\n\n```bash\nuv run takt summary                          # counts + next actionable beads\nuv run takt summary --feature-root <id>     # scoped to one feature\nuv run takt bead list --plain               # all beads as table\nuv run takt bead list --label <label>       # filter by label (repeatable, AND)\nuv run takt bead list --status <status>     # filter by lifecycle status (repeatable, OR)\nuv run takt bead list --agent <agent>       # filter by agent type (repeatable, OR)\nuv run takt bead list --feature-root <id>   # scope to one feature tree\nuv run takt bead show <id>                  # full bead JSON\nuv run takt bead show <id> --field <path>   # project a single field (e.g. status, handoff_summary.completed)\nuv run takt bead history <id>               # formatted execution history (one line per entry)\nuv run takt bead history <id> --limit 5     # last N entries\nuv run takt bead history <id> --event failed --event retried   # filter by event type (repeatable)\nuv run takt bead graph                      # Mermaid diagram of all beads\nuv run takt bead graph --feature-root <id> # scoped to one feature\nuv run takt bead graph --output graph.md   # write diagram to file\nuv run takt tui                             # interactive terminal UI\n```\n\nAdd a short paragraph immediately after the code block explaining when to use `--field` vs full `bead show`:\n\n> Use `bead show <id> --field <path>` whenever you only need a specific value (status, handoff verdict, last event, block reason). It avoids the full JSON dump and is the canonical replacement for `cat .takt/beads/<id>.json | python3 -c \"import json, sys; d=json.load(sys.stdin); print(d['handoff_summary']['completed'])\"` and similar inline-parsing patterns. The `--field` syntax supports nested paths (`handoff_summary.verdict`) and array indexing including negatives (`execution_history[-1].event`).\n\n### Section 2 \u2014 Add a new \"Reading bead state\" subsection (place it immediately after \"Status and inspection\")\n\n```markdown\n### Reading bead state\n\nWhen you need to inspect a bead's state, prefer the dedicated CLI commands over reading `.takt/beads/<id>.json` directly or shelling out to `python3 -c '...'` for JSON parsing:\n\n| Goal | Use |\n|------|-----|\n| Lifecycle log (chronological) | `uv run takt bead history <id>` |\n| One specific field | `uv run takt bead show <id> --field <path>` |\n| Full JSON for piping | `uv run takt bead show <id>` |\n| Beads matching status / agent | `uv run takt bead list --status ... --agent ... --plain` |\n| Beads in one feature tree | `uv run takt bead list --feature-root <id> --plain` |\n\n`--field` paths use Python-style dotted access with bracket-style array indexing including negative indices: `--field handoff_summary.verdict`, `--field execution_history[-1].event`, `--field expected_files[0]`. Missing paths exit non-zero with a clear stderr message; null values exit zero with an empty line (legitimate \"field unset\"). Lists and dicts render as pretty JSON; scalars render bare without quotes \u2014 clean for shell capture.\n```\n\n## What this fix does NOT change\n\n1. Does NOT modify `.claude/skills/takt/SKILL.md` or `.agents/skills/takt/SKILL.md`. Those are installed copies \u2014 they get refreshed via `takt upgrade` once the new `_data/` content ships in a release. Editing them directly would create drift.\n2. Does NOT modify CLAUDE.md. The previous CLI ergonomics docs bead already updated CLAUDE.md correctly (verifiable via `grep \"bead history\" CLAUDE.md`).\n3. Does NOT modify any other skill file (`role/`, `capability/`, `task/` skills). The new CLI is a takt-CLI feature, not a role-specific one.\n4. Does NOT change the behavior of any command. Pure documentation.\n5. Does NOT add tests. SKILL.md is markdown documentation; the CLI commands themselves already have full test coverage.\n\n## Acceptance criteria\n\n1. `src/agent_takt/_data/claude_skills/takt/SKILL.md` \"Status and inspection\" code block lists all new commands (`bead history`, `bead show --field`, `bead list --status`, `bead list --agent`, `bead list --feature-root`).\n2. A new \"Reading bead state\" subsection exists immediately after \"Status and inspection\" with the goal-to-command mapping table and `--field` syntax explanation above.\n3. `grep -E \"bead history|--field|--status |--agent |--feature-root\" src/agent_takt/_data/claude_skills/takt/SKILL.md` returns multiple hits (currently returns only the existing `summary --feature-root` and `graph --feature-root` mentions).\n4. No other files modified.\n5. `uv run pytest tests/ -n auto -q` passes (sanity check; no test impact expected for a docs-only change).\n\n## References\n\n- `src/agent_takt/_data/claude_skills/takt/SKILL.md` \u2014 the file to modify\n- CLAUDE.md \"Working with Beads\" section \u2014 already updated with the same commands; use it as a content reference\n- spec at `specs/done/bead-introspection-cli-ergonomics.md` (or wherever it landed) \u2014 full spec for the underlying feature\n- Feature merge: commit 81e29913 (`Merge feature/b-e54ece26`)",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": null,
   "dependencies": [],
@@ -39,9 +39,12 @@
   },
   "block_reason": "",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-90cb106f",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-90cb106f",
+  "lease": {
+    "owner": "documentation:B-90cb106f",
+    "expires_at": "2026-05-06T17:43:55.031987+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -50,9 +53,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T17:13:58.570392+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-06T17:13:58.570412+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-90cb106f",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "191f95261a4d31e4f4a691e9c39926c722504f21a3c370b6975facad92e3c1f0",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-90cb106f/home",
+    "runner_backend": "claude"
+  },
   "labels": [
     "dx",
     "docs",
