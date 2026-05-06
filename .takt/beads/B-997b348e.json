@@ -28,15 +28,18 @@
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
   "expected_files": [
     "src/agent_takt/gitutils.py",
+    "tests/test_gitutils_worktree_exclude.py",
     "tests/test_scheduler_beads.py"
   ],
   "expected_globs": [],
   "touched_files": [
     "src/agent_takt/gitutils.py",
+    "tests/test_gitutils_worktree_exclude.py",
     "tests/test_scheduler_beads.py"
   ],
   "changed_files": [
     "src/agent_takt/gitutils.py",
+    "tests/test_gitutils_worktree_exclude.py",
     "tests/test_scheduler_beads.py"
   ],
   "updated_docs": [],
@@ -61,7 +64,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 single file change, no overlapping file claims with other beads expected.\nNone \u2014 change is isolated to a single subprocess call in commit_all.\nNone \u2014 only gitutils.py was modified and no sibling beads are expected to touch this file.\nNone \u2014 only `tests/test_scheduler_beads.py` was modified; no production code touched.",
+  "conflict_risks": "None \u2014 single file change, no overlapping file claims with other beads expected.\nNone \u2014 change is isolated to a single subprocess call in commit_all.\nNone \u2014 only gitutils.py was modified and no sibling beads are expected to touch this file.\nNone \u2014 only `tests/test_scheduler_beads.py` was modified; no production code touched.\nNone \u2014 only test file modified; no overlap with other in-progress beads.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
