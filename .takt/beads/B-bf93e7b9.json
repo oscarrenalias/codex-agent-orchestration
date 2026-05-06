@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-bf93e7b9",
+  "title": "Remove chore commit logic from _protect_worktree_bead_state",
+  "agent_type": "developer",
+  "description": "In src/agent_takt/gitutils.py around lines 162-197, strip the git rm --cached -r --ignore-unmatch .takt/beads/ call and the subsequent git commit chore call from _protect_worktree_bead_state. The function body should reduce to calling _write_worktree_exclude(self.root, worktree_path) and returning. Bead state files inherited from main remain tracked in the feature branch index; they are no longer untracked via a destructive commit. Remove any conditional logic around checking whether bead state files are tracked.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-a469cc74",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "_protect_worktree_bead_state contains no call to git rm --cached or git commit",
+    "The function retains its _write_worktree_exclude call",
+    "grep -n 'untrack bead state' src/agent_takt/gitutils.py returns no results",
+    "grep -n 'git rm --cached' src/agent_takt/gitutils.py returns no results for lines inside _protect_worktree_bead_state"
+  ],
+  "linked_docs": [
+    "src/agent_takt/gitutils.py"
+  ],
+  "feature_root_id": "B-a469cc74",
+  "execution_branch_name": "feature/b-a469cc74",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
+  "expected_files": [
+    "src/agent_takt/gitutils.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-06T19:08:10.727317+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
