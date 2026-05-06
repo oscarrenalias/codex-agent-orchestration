@@ -1,0 +1,71 @@
+{
+  "bead_id": "B-70b978cb",
+  "title": "Review eliminate chore commit changes",
+  "agent_type": "review",
+  "description": "Review all changes in this feature tree against spec-d1a1398c acceptance criteria. Verify: _protect_worktree_bead_state contains no git rm --cached or commit logic; commit_all uses pathspec exclusion with both :(exclude).takt/beads/** and :(exclude).takt/beads/ forms; _du_conflicted_files is absent; _resolve_bead_state_conflicts has the correct direction parameter and both call sites pass the right value; the end-to-end test in test_merge_safety.py is meaningful and exercises the full merge cycle; CLAUDE.md accurately reflects the new mechanism.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-a469cc74",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "All 9 acceptance criteria from spec-d1a1398c are verifiably met",
+    "No chore commit code path exists anywhere in gitutils.py",
+    "commit_all staging uses both :(exclude).takt/beads/** and :(exclude).takt/beads/ pathspecs",
+    "_du_conflicted_files is absent from gitutils.py",
+    "_resolve_bead_state_conflicts has correct direction parameter with matching call sites",
+    "End-to-end test in test_merge_safety.py exercises the full branching-and-merge cycle and would catch regressions",
+    "CLAUDE.md bead state exclusion section is accurate and contains no references to the chore commit"
+  ],
+  "linked_docs": [
+    "specs/drafts/eliminate-chore-commit-destruction-of-main-bead-state.md",
+    "src/agent_takt/gitutils.py",
+    "CLAUDE.md"
+  ],
+  "feature_root_id": "B-a469cc74",
+  "execution_branch_name": "feature/b-a469cc74",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
+  "expected_files": [],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-06T19:08:13.465831+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
