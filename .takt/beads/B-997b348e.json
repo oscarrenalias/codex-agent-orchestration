@@ -3,7 +3,7 @@
   "title": "Verify bead state isolation and merge safety",
   "agent_type": "tester",
   "description": "Run the full test suite and verify all code-level acceptance criteria from spec-d1a1398c. Specifically check: uv run pytest tests/ -n auto -q passes; grep -n '_du_conflicted_files' src/agent_takt/gitutils.py returns no results; grep -n 'untrack bead state' src/agent_takt/gitutils.py returns no results; tests in test_merge_safety.py pass; the commit_all pathspec exclusion test passes; tests in test_gitutils_worktree_exclude.py pass.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
   "dependencies": [
@@ -68,9 +68,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 single file change, no overlapping file claims with other beads expected.\nNone \u2014 change is isolated to a single subprocess call in commit_all.\nNone \u2014 only gitutils.py was modified and no sibling beads are expected to touch this file.\nNone \u2014 only `tests/test_scheduler_beads.py` was modified; no production code touched.\nNone \u2014 only test file modified; no overlap with other in-progress beads.\nNone \u2014 only `tests/test_merge_safety.py` was modified. No source files touched.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-a469cc74",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
+  "lease": {
+    "owner": "tester:B-997b348e",
+    "expires_at": "2026-05-06T19:47:34.638020+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -79,9 +82,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T19:17:34.840260+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-06T19:17:34.840280+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-997b348e",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/tester-validation",
+      "capability/test-execution",
+      "task/defect-bead-creation",
+      "task/regression-triage",
+      "memory"
+    ],
+    "skill_bundle_hash": "c2bb19865add8770ba493957f3775e07d50168d42fe585583dcff9d82dc76d86",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-997b348e/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
