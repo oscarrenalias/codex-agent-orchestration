@@ -6,7 +6,14 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
-  "dependencies": [],
+  "dependencies": [
+    "B-bf93e7b9",
+    "B-ab77b221",
+    "B-6e740d75",
+    "B-00d3c0be",
+    "B-9f8d7f3e",
+    "B-38d8b64b"
+  ],
   "acceptance_criteria": [
     "uv run pytest tests/ -n auto -q passes with no failures",
     "_du_conflicted_files is absent from gitutils.py",
