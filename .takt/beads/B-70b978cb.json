@@ -65,7 +65,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 single file change, no overlapping file claims with other beads expected.",
+  "conflict_risks": "None \u2014 single file change, no overlapping file claims with other beads expected.\nNone \u2014 change is isolated to a single subprocess call in commit_all.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
