@@ -121,6 +121,13 @@
       "agent_type": "tester",
       "summary": "One test synchronization defect fixed (missing direction arg in mock assertion). Two production code bugs in _resolve_bead_state_conflicts cause 3 remaining test failures: wrong checkout side for direction=main, and missing DU-conflict handling via git rm.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T19:24:49.412928+00:00",
+      "event": "corrective_planned",
+      "agent_type": "tester",
+      "summary": "Created corrective bead B-997b348e-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -248,7 +255,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-997b348e-corrective"
   },
   "labels": [],
   "recovery_for": null,
