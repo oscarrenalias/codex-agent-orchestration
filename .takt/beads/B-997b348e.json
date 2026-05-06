@@ -3,7 +3,7 @@
   "title": "Verify bead state isolation and merge safety",
   "agent_type": "tester",
   "description": "Run the full test suite and verify all code-level acceptance criteria from spec-d1a1398c. Specifically check: uv run pytest tests/ -n auto -q passes; grep -n '_du_conflicted_files' src/agent_takt/gitutils.py returns no results; grep -n 'untrack bead state' src/agent_takt/gitutils.py returns no results; tests in test_merge_safety.py pass; the commit_all pathspec exclusion test passes; tests in test_gitutils_worktree_exclude.py pass.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
   "dependencies": [
@@ -79,7 +79,10 @@
   "conflict_risks": "None \u2014 only test_merge_safety.py was modified; production code untouched.",
   "branch_name": "feature/b-a469cc74",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
-  "lease": null,
+  "lease": {
+    "owner": "tester:B-997b348e",
+    "expires_at": "2026-05-06T20:01:19.559260+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -140,6 +143,29 @@
       "event": "retried",
       "agent_type": "tester",
       "summary": "Requeued blocked bead after corrective bead B-997b348e-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T19:31:19.790736+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-06T19:31:19.790762+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
       "details": {}
     }
   ],
