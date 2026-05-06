@@ -1,0 +1,70 @@
+{
+  "bead_id": "B-38d8b64b",
+  "title": "Add end-to-end merge safety integration test",
+  "agent_type": "developer",
+  "description": "Create tests/test_merge_safety.py with test_takt_merge_preserves_main_bead_state_through_full_cycle. Steps: (1) Create a git repo with 5 tracked bead files (.takt/beads/B-1.json through B-5.json) committed on main. (2) Call WorktreeManager to create a feature worktree (triggers _protect_worktree_bead_state). (3) In the feature worktree, write a non-bead file change and call commit_all. (4) Back on main, modify B-2.json and add B-6.json in a new commit. (5) Call merge_main_into_branch (preflight sync). (6) Call merge_branch (final merge into main). (7) Assert main's .takt/beads/ contains B-1 through B-6, that B-2's content matches main's modification, and that no files under .takt/beads/ were deleted. This test would have failed on pre-fix code.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-a469cc74",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "tests/test_merge_safety.py exists with the described end-to-end test class and method",
+    "Test asserts all 5 original bead files (B-1 through B-5) are present on main after merge",
+    "Test asserts B-2's content reflects main's modification, not a deletion or old content",
+    "Test asserts B-6.json added on main after branching survives the merge",
+    "uv run pytest tests/test_merge_safety.py -q passes"
+  ],
+  "linked_docs": [
+    "src/agent_takt/gitutils.py",
+    "tests/test_merge_safety.py"
+  ],
+  "feature_root_id": "B-a469cc74",
+  "execution_branch_name": "feature/b-a469cc74",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
+  "expected_files": [
+    "tests/test_merge_safety.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-06T19:08:12.240619+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
