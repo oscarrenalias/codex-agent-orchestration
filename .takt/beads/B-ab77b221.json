@@ -1,0 +1,68 @@
+{
+  "bead_id": "B-ab77b221",
+  "title": "Convert commit_all staging from git add -A to pathspec exclusion",
+  "agent_type": "developer",
+  "description": "In src/agent_takt/gitutils.py commit_all (line 308), replace the git add -A invocation with: git add -- :/ :(exclude).takt/beads/** :(exclude).takt/beads/ \u2014 passing both exclude forms to be defensive against git-version differences in pathspec handling. The :/ pathspec means 'everything from repo root'. Keep the existing git status --porcelain pre-check (returns None if nothing to commit) and the existing git commit -m invocation unchanged.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-a469cc74",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "commit_all uses git add with pathspec exclusion arguments, not git add -A",
+    "Both :(exclude).takt/beads/** and :(exclude).takt/beads/ are passed to git add",
+    "grep -n 'git add -A' src/agent_takt/gitutils.py returns no results",
+    "A bead state file modified on disk in a worktree does NOT appear in the resulting commit stat"
+  ],
+  "linked_docs": [
+    "src/agent_takt/gitutils.py"
+  ],
+  "feature_root_id": "B-a469cc74",
+  "execution_branch_name": "feature/b-a469cc74",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
+  "expected_files": [
+    "src/agent_takt/gitutils.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-06T19:08:10.927076+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
