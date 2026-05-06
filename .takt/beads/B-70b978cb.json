@@ -41,12 +41,14 @@
   ],
   "expected_globs": [],
   "touched_files": [
+    "CLAUDE.md",
     "src/agent_takt/gitutils.py",
     "tests/test_gitutils_worktree_exclude.py",
     "tests/test_merge_safety.py",
     "tests/test_scheduler_beads.py"
   ],
   "changed_files": [
+    "CLAUDE.md",
     "src/agent_takt/gitutils.py",
     "tests/test_gitutils_worktree_exclude.py",
     "tests/test_merge_safety.py",
