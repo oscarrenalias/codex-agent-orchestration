@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
-  "dependencies": [],
+  "dependencies": [
+    "B-ab77b221"
+  ],
   "acceptance_criteria": [
     "grep -n '_du_conflicted_files' src/agent_takt/gitutils.py returns no results",
     "_resolve_bead_state_conflicts signature includes direction: Literal['main', 'feature'] parameter",
