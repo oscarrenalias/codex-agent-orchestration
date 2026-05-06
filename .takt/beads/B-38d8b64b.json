@@ -3,7 +3,7 @@
   "title": "Add end-to-end merge safety integration test",
   "agent_type": "developer",
   "description": "Create tests/test_merge_safety.py with test_takt_merge_preserves_main_bead_state_through_full_cycle. Steps: (1) Create a git repo with 5 tracked bead files (.takt/beads/B-1.json through B-5.json) committed on main. (2) Call WorktreeManager to create a feature worktree (triggers _protect_worktree_bead_state). (3) In the feature worktree, write a non-bead file change and call commit_all. (4) Back on main, modify B-2.json and add B-6.json in a new commit. (5) Call merge_main_into_branch (preflight sync). (6) Call merge_branch (final merge into main). (7) Assert main's .takt/beads/ contains B-1 through B-6, that B-2's content matches main's modification, and that no files under .takt/beads/ were deleted. This test would have failed on pre-fix code.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
   "dependencies": [
@@ -27,37 +27,44 @@
     "tests/test_merge_safety.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_merge_safety.py"
+  ],
+  "changed_files": [
+    "tests/test_merge_safety.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Created `EndToEndMergeSafetyCycleTests` class (107 lines) in `tests/test_merge_safety.py` with the `test_takt_merge_preserves_main_bead_state_through_full_cycle` method. Covers: worktree creation, non-bead commit, main divergence (B-2 modified + B-6 added), preflight merge, final merge, and four assertions (B-1..B-6 present, B-2 content = main's modification, B-6 content = main's addition, exactly 6 files total).",
+    "remaining": "N/A \u2014 bead scope is fully implemented.",
+    "risks": "The test relies on the real git merge driver behavior for `.takt/beads/** merge=ours`. If the test environment's git version does not support the custom merge driver correctly with the worktree setup, the test could fail. Git \u22652.5 required for linked worktrees (standard on all supported platforms). The `merge=ours` driver requires the custom merge driver registration in `.gitattributes`, which the test sets up explicitly.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_merge_safety.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent runs `uv run pytest tests/test_merge_safety.py -q` to verify the new end-to-end test passes.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "tests/test_merge_safety.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "tests/test_merge_safety.py"
+    ],
+    "conflict_risks": "None \u2014 only `tests/test_merge_safety.py` was modified. No source files touched.",
+    "design_decisions": "Placed the new class as a separate `EndToEndMergeSafetyCycleTests` at the end of the existing file rather than embedding the test into an existing class. The cycle uses `ensure_worktree` (real git worktree add) rather than manually branching, matching the production code path. The `merge=ours` `.gitattributes` attribute is wired up in setUp to match the real repo's expected configuration; without it, bead-file conflicts would propagate incorrectly. Used `merge_main_into_branch` + `merge_branch` directly rather than going through `command_merge`, keeping the test focused on the `WorktreeManager` behaviour described in the bead spec.",
+    "test_coverage_notes": "The tester should run `uv run pytest tests/test_merge_safety.py::EndToEndMergeSafetyCycleTests -v` to see the new test pass. Key regression to verify: on pre-fix code (before `B-bf93e7b9` removed the chore-commit logic and before `B-ab77b221` fixed commit_all staging), the test should have failed because the destructive `git rm --cached` chore commit would propagate bead-file deletions to main during the final merge.",
+    "known_limitations": "The test does not exercise the `_save_and_remove_bead_files` path (no untracked bead files in the feature worktree in this scenario, since bead files are tracked from the initial commit). That path is covered by `MergeMainIntoBranchSaveRestoreTests`. This test focuses on the end-to-end narrative of the bead spec."
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only `tests/test_merge_safety.py` was modified. No source files touched.",
   "branch_name": "feature/b-a469cc74",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
-  "lease": {
-    "owner": "developer:B-38d8b64b",
-    "expires_at": "2026-05-06T19:42:46.219883+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -99,6 +106,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-38d8b64b/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-05-06T19:17:30.604217+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added `EndToEndMergeSafetyCycleTests` class with `test_takt_merge_preserves_main_bead_state_through_full_cycle` to `tests/test_merge_safety.py`. The test exercises the full cycle: init repo with 5 tracked bead files, create feature worktree via `ensure_worktree`, commit a non-bead change, diverge main (modify B-2, add B-6), preflight sync via `merge_main_into_branch`, final merge via `merge_branch`, then assert all 6 bead files are present on main with correct content.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -171,7 +185,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added `EndToEndMergeSafetyCycleTests` class with `test_takt_merge_preserves_main_bead_state_through_full_cycle` to `tests/test_merge_safety.py`. The test exercises the full cycle: init repo with 5 tracked bead files, create feature worktree via `ensure_worktree`, commit a non-bead change, diverge main (modify B-2, add B-6), preflight sync via `merge_main_into_branch`, final merge via `merge_branch`, then assert all 6 bead files are present on main with correct content.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.70481125,
+      "duration_ms": 282623,
+      "duration_api_ms": 279009,
+      "num_turns": 12,
+      "input_tokens": 11,
+      "output_tokens": 19897,
+      "cache_creation_tokens": 68039,
+      "cache_read_tokens": 493390,
+      "stop_reason": "end_turn",
+      "session_id": "f8090117-d914-40c7-bb24-7be2100f9435",
+      "permission_denials": [],
+      "prompt_chars": 9702,
+      "prompt_lines": 179,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.70481125,
+        "duration_ms": 282623,
+        "duration_api_ms": 279009,
+        "num_turns": 12,
+        "input_tokens": 11,
+        "output_tokens": 19897,
+        "cache_creation_tokens": 68039,
+        "cache_read_tokens": 493390,
+        "stop_reason": "end_turn",
+        "session_id": "f8090117-d914-40c7-bb24-7be2100f9435",
+        "permission_denials": [],
+        "prompt_chars": 9702,
+        "prompt_lines": 179,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "ec279e260596357ca3e3331a9f4f90e2cab70be0"
   },
   "labels": [],
   "recovery_for": null,
