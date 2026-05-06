@@ -19,6 +19,7 @@ from agent_takt.models import (
     BEAD_IN_PROGRESS,
     AgentRunResult,
 )
+from agent_takt.runner import NO_STRUCTURED_OUTPUT_SENTINEL
 from agent_takt.scheduler import Scheduler
 from agent_takt.scheduler.finalize import BeadFinalizer
 from agent_takt.storage import RepositoryStorage
@@ -536,6 +537,127 @@ class SchedulerFinalizeTests(OrchestratorTests):
         history = bead.metadata["telemetry_history"]
         attempts = [entry["attempt"] for entry in history]
         self.assertEqual(attempts, [1, 2, 3])
+
+
+    # ------------------------------------------------------------------
+    # Bead-state path stripping
+    # ------------------------------------------------------------------
+
+    def test_finalize_strips_bead_state_paths_from_worker_lists(self) -> None:
+        """Worker-reported .takt/beads/ paths must be filtered from
+        touched_files and changed_files before being persisted on the bead.
+
+        Workers compute these fields from `git diff main..HEAD --name-only`,
+        which includes the safety-net chore commit's rm-cached deletions of
+        every bead state file. Persisting that noise inflates every bead by
+        tens of KB and propagates through followups.
+        """
+        bead = self.storage.create_bead(
+            title="Test bead", agent_type="developer", description="..."
+        )
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="done",
+                    completed="implemented",
+                    touched_files=[
+                        "src/foo.py",
+                        "src/bar.py",
+                        ".takt/beads/B-aaa.json",
+                        ".takt/beads/B-bbb.json",
+                        ".takt/beads/.gitkeep",
+                    ],
+                    changed_files=[
+                        "src/foo.py",
+                        ".takt/beads/B-aaa.json",
+                    ],
+                )
+            },
+            writes={bead.bead_id: {"src/foo.py": "x = 1\n", "src/bar.py": "y = 2\n"}},
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertIn(bead.bead_id, result.completed)
+        bead = self.storage.load_bead(bead.bead_id)
+        # execution.py merges worker-reported lists with git-detected changes and sorts them;
+        # finalize.py then strips .takt/beads/ entries. Both src files survive in sorted order.
+        self.assertEqual(["src/bar.py", "src/foo.py"], bead.touched_files)
+        self.assertEqual(["src/bar.py", "src/foo.py"], bead.changed_files)
+        self.assertEqual(["src/bar.py", "src/foo.py"], bead.handoff_summary.changed_files)
+        self.assertEqual(["src/bar.py", "src/foo.py"], bead.handoff_summary.touched_files)
+        # Confirm no .takt/beads/ entries leaked through
+        for path in bead.touched_files + bead.changed_files:
+            self.assertFalse(path.startswith(".takt/beads/"), f"bead-state path leaked: {path}")
+
+    def test_recovery_completion_strips_bead_state_paths(self) -> None:
+        """_handle_recovery_completion must strip .takt/beads/ noise from the
+        synthesised handoff before writing it to the original bead (lines 341-342
+        of finalize.py).
+        """
+        original = self.storage.create_bead(
+            title="Implement feature X",
+            agent_type="developer",
+            description="implement X",
+        )
+        original.status = BEAD_BLOCKED
+        original.block_reason = NO_STRUCTURED_OUTPUT_SENTINEL
+        original.retries = 1
+        self.storage.save_bead(original)
+
+        recovery_id = self.storage.allocate_child_bead_id(original.bead_id, "recovery")
+        recovery = self.storage.create_bead(
+            bead_id=recovery_id,
+            title=f"Recover structured output for {original.bead_id}",
+            agent_type="recovery",
+            bead_type="recovery",
+            description="Synthesise JSON handoff",
+            parent_id=original.bead_id,
+            dependencies=[],
+            acceptance_criteria=[],
+            linked_docs=[],
+            feature_root_id=original.feature_root_id,
+            recovery_for=original.bead_id,
+        )
+        original.metadata["auto_recovery_bead_id"] = recovery.bead_id
+        self.storage.save_bead(original)
+
+        runner = FakeRunner(
+            results={
+                recovery.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="Synthesised handoff",
+                    completed="extracted structured output",
+                    remaining="",
+                    risks="",
+                    verdict="approved",
+                    findings_count=0,
+                    requires_followup=False,
+                    touched_files=[
+                        "src/feature_x.py",
+                        ".takt/beads/B-nnn.json",
+                        ".takt/beads/.gitkeep",
+                    ],
+                    changed_files=[
+                        "src/feature_x.py",
+                        ".takt/beads/B-nnn.json",
+                    ],
+                )
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+
+        self.assertIn(recovery.bead_id, result.completed)
+        self.assertIn(original.bead_id, result.completed)
+
+        original_reloaded = self.storage.load_bead(original.bead_id)
+        self.assertEqual(BEAD_DONE, original_reloaded.status)
+        # Bead-state paths must be stripped from both the bead fields and the handoff
+        self.assertEqual(["src/feature_x.py"], original_reloaded.touched_files)
+        self.assertEqual(["src/feature_x.py"], original_reloaded.changed_files)
+        for path in original_reloaded.touched_files + original_reloaded.changed_files:
+            self.assertFalse(path.startswith(".takt/beads/"), f"bead-state path leaked: {path}")
 
 
 if __name__ == "__main__":
