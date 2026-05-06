@@ -50,7 +50,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-d0467e91",
   "conflict_risks": "None \u2014 only test_merge_safety.py was modified; production code untouched.",
   "branch_name": "",
   "worktree_path": "",
@@ -62,6 +62,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-06T19:24:51.688843+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-d0467e91",
       "details": {}
     }
   ],
