@@ -538,5 +538,52 @@ class SchedulerFinalizeTests(OrchestratorTests):
         self.assertEqual(attempts, [1, 2, 3])
 
 
+    # ------------------------------------------------------------------
+    # Bead-state path stripping
+    # ------------------------------------------------------------------
+
+    def test_finalize_strips_bead_state_paths_from_worker_lists(self) -> None:
+        """Worker-reported .takt/beads/ paths must be filtered from
+        touched_files and changed_files before being persisted on the bead.
+
+        Workers compute these fields from `git diff main..HEAD --name-only`,
+        which includes the safety-net chore commit's rm-cached deletions of
+        every bead state file. Persisting that noise inflates every bead by
+        tens of KB and propagates through followups.
+        """
+        bead = self.storage.create_bead(
+            title="Test bead", agent_type="developer", description="..."
+        )
+        runner = FakeRunner(
+            results={
+                bead.bead_id: AgentRunResult(
+                    outcome="completed",
+                    summary="done",
+                    completed="implemented",
+                    touched_files=[
+                        "src/foo.py",
+                        "src/bar.py",
+                        ".takt/beads/B-aaa.json",
+                        ".takt/beads/B-bbb.json",
+                        ".takt/beads/.gitkeep",
+                    ],
+                    changed_files=[
+                        "src/foo.py",
+                        ".takt/beads/B-aaa.json",
+                    ],
+                )
+            },
+            writes={bead.bead_id: {"src/foo.py": "x = 1\n", "src/bar.py": "y = 2\n"}},
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once()
+        self.assertIn(bead.bead_id, result.completed)
+        bead = self.storage.load_bead(bead.bead_id)
+        self.assertEqual(["src/foo.py", "src/bar.py"], bead.touched_files)
+        self.assertEqual(["src/foo.py"], bead.changed_files)
+        self.assertEqual(["src/foo.py"], bead.handoff_summary.changed_files)
+        self.assertEqual(["src/foo.py", "src/bar.py"], bead.handoff_summary.touched_files)
+
+
 if __name__ == "__main__":
     unittest.main()

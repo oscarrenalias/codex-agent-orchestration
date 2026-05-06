@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 from ..gitutils import GitError, WorktreeManager
 from ..models import (
@@ -28,6 +28,20 @@ if TYPE_CHECKING:
 
 
 REVIEW_TEST_VERDICT_COMPAT_MODE = True
+
+_BEAD_STATE_NOISE_PREFIX = ".takt/beads/"
+
+
+def _strip_bead_state_paths(paths: Iterable[str]) -> list[str]:
+    """Remove .takt/beads/ paths from worker-reported file lists.
+
+    Workers commonly compute touched_files via `git diff main..HEAD
+    --name-only`, which surfaces the safety-net chore commit's rm-cached
+    deletions of bead state files. Those entries are pure noise — bead
+    state is takt's operational metadata, not work product — and inflate
+    every bead JSON and downstream followup.
+    """
+    return [p for p in paths if not p.startswith(_BEAD_STATE_NOISE_PREFIX)]
 
 
 class BeadFinalizer:
@@ -63,7 +77,7 @@ class BeadFinalizer:
         existing_conflict_risks = bead.conflict_risks
         bead.expected_files = list(agent_result.expected_files or bead.expected_files)
         bead.expected_globs = list(agent_result.expected_globs or bead.expected_globs)
-        bead.touched_files = list(agent_result.touched_files)
+        bead.touched_files = _strip_bead_state_paths(agent_result.touched_files)
         bead.conflict_risks = agent_result.conflict_risks
 
         self._apply_review_test_verdict(bead, agent_result)
@@ -77,6 +91,7 @@ class BeadFinalizer:
             if not bead.conflict_risks:
                 bead.conflict_risks = existing_conflict_risks
 
+        stripped_changed = _strip_bead_state_paths(agent_result.changed_files)
         handoff = HandoffSummary(
             completed=agent_result.completed,
             remaining=agent_result.remaining,
@@ -84,7 +99,7 @@ class BeadFinalizer:
             verdict=agent_result.verdict,
             findings_count=agent_result.findings_count,
             requires_followup=self._resolved_requires_followup(agent_result),
-            changed_files=agent_result.changed_files,
+            changed_files=stripped_changed,
             updated_docs=agent_result.updated_docs,
             next_action=agent_result.next_action,
             next_agent=agent_result.next_agent,
@@ -98,7 +113,7 @@ class BeadFinalizer:
             known_limitations=agent_result.known_limitations,
         )
         bead.handoff_summary = handoff
-        bead.changed_files = list(agent_result.changed_files)
+        bead.changed_files = stripped_changed
         bead.updated_docs = list(agent_result.updated_docs)
         bead.metadata["last_agent_result"] = {
             "outcome": agent_result.outcome,
@@ -323,8 +338,8 @@ class BeadFinalizer:
         # Step 4: Apply the synthesised handoff to the original bead.
         original.lease = None
         original.block_reason = ""
-        original.touched_files = list(agent_result.touched_files or original.touched_files)
-        original.changed_files = list(agent_result.changed_files or original.changed_files)
+        original.touched_files = _strip_bead_state_paths(agent_result.touched_files or original.touched_files)
+        original.changed_files = _strip_bead_state_paths(agent_result.changed_files or original.changed_files)
         if agent_result.expected_files:
             original.expected_files = list(agent_result.expected_files)
         if agent_result.expected_globs:
@@ -340,7 +355,7 @@ class BeadFinalizer:
             verdict=agent_result.verdict,
             findings_count=agent_result.findings_count,
             requires_followup=self._resolved_requires_followup(agent_result),
-            changed_files=agent_result.changed_files,
+            changed_files=original.changed_files,
             updated_docs=agent_result.updated_docs,
             next_action=agent_result.next_action,
             next_agent=agent_result.next_agent,
