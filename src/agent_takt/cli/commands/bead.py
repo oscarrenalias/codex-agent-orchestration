@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -10,7 +11,40 @@ from ...config import load_config
 from ...console import ConsoleReporter
 from ...graph import render_bead_graph
 from ...storage import RepositoryStorage
-from ..formatting import format_bead_list_plain, format_claims_plain
+from ..formatting import format_bead_field, format_bead_history_plain, format_bead_list_plain, format_claims_plain
+
+
+_BRACKET_RE = re.compile(r'^(.*)\[(-?\d+)\]$')
+
+
+def _parse_field_path(path: str) -> list[tuple[str, int | None]]:
+    segments: list[tuple[str, int | None]] = []
+    for seg in path.split("."):
+        m = _BRACKET_RE.match(seg)
+        if m:
+            segments.append((m.group(1), int(m.group(2))))
+        else:
+            segments.append((seg, None))
+    return segments
+
+
+def _resolve_field(data: dict, path: str) -> tuple[object, str | None]:
+    """Traverse *data* along *path*; return (value, None) or (None, error_message)."""
+    segments = _parse_field_path(path)
+    current: object = data
+    for key, idx in segments:
+        if key:
+            if not isinstance(current, dict) or key not in current:
+                return None, f"field not found: {path}"
+            current = current[key]
+        if idx is not None:
+            if not isinstance(current, list):
+                return None, f"field not found: {path}"
+            length = len(current)
+            if idx >= length or idx < -length:
+                return None, f"field not found: {path} (length {length})"
+            current = current[idx]
+    return current, None
 
 
 def _validated_feature_root_id(storage: RepositoryStorage, feature_root_id: str | None) -> str | None:
@@ -51,6 +85,30 @@ def _resolve_feature_root_id(storage: RepositoryStorage, prefix: str) -> str | N
     )
 
 
+def command_bead_history(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
+    try:
+        bead_id = storage.resolve_bead_id(args.bead_id)
+    except ValueError as exc:
+        console.error(str(exc))
+        return 1
+
+    bead = storage.load_bead(bead_id)
+    entries: list[dict[str, object]] = bead.to_dict()["execution_history"]
+
+    if args.event_filter:
+        entries = [e for e in entries if e.get("event") in args.event_filter]
+
+    if args.limit is not None:
+        entries = entries[-args.limit:]
+
+    if args.output_json:
+        console.dump_json(entries)
+    else:
+        console.emit(format_bead_history_plain(entries, plain=args.plain))
+
+    return 0
+
+
 def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: ConsoleReporter) -> int:
     if args.bead_command == "create":
         bead = storage.create_bead(
@@ -76,6 +134,14 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         d = bead.to_dict()
         if d.get("priority") is None:
             d.pop("priority", None)
+        field_path = getattr(args, "field", None)
+        if field_path:
+            value, error = _resolve_field(d, field_path)
+            if error is not None:
+                print(error, file=sys.stderr)
+                return 1
+            console.emit(format_bead_field(value))
+            return 0
         console.dump_json(d)
         return 0
 
@@ -84,6 +150,23 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         label_filter = getattr(args, "label_filter", [])
         if label_filter:
             beads = [b for b in beads if all(lbl in b.labels for lbl in label_filter)]
+        status_filter = getattr(args, "status_filter", [])
+        if status_filter:
+            beads = [b for b in beads if b.status in status_filter]
+        agent_filter = getattr(args, "agent_filter", [])
+        if agent_filter:
+            beads = [b for b in beads if b.agent_type in agent_filter]
+        feature_root_arg = getattr(args, "feature_root", None)
+        if feature_root_arg:
+            try:
+                resolved_feature_root_id = _resolve_feature_root_id(storage, feature_root_arg)
+            except ValueError as exc:
+                console.error(str(exc))
+                return 1
+            if resolved_feature_root_id is None:
+                console.error(f"{feature_root_arg} is not a valid feature root")
+                return 1
+            beads = [b for b in beads if storage.feature_root_id_for(b) == resolved_feature_root_id]
         if getattr(args, "plain", False):
             console.emit(format_bead_list_plain(beads))
         else:
@@ -249,5 +332,8 @@ def command_bead(args: argparse.Namespace, storage: RepositoryStorage, console: 
         else:
             console.success(f"Set priority to '{new_priority}' on {bead.bead_id}")
         return 0
+
+    if args.bead_command == "history":
+        return command_bead_history(args, storage, console)
 
     return 1
