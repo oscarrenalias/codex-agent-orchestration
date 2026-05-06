@@ -296,7 +296,7 @@ class WorktreeManager:
         if not proc.stdout.strip():
             return None
         add_proc = subprocess.run(
-            ["git", "add", "-A", "--", ".", ":(exclude).takt/beads/**"],
+            ["git", "add", "--", ":/", ":(exclude).takt/beads/**", ":(exclude).takt/beads/"],
             cwd=worktree_path,
             text=True,
             capture_output=True,
