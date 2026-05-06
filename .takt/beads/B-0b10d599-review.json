@@ -2686,6 +2686,7 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "CLAUDE.md",
     "src/agent_takt/scheduler/finalize.py",
     "tests/test_scheduler_finalize.py"
   ],
@@ -4022,6 +4023,7 @@
     ".takt/beads/B0152-review.json",
     ".takt/beads/B0152-test.json",
     ".takt/beads/B0152.json",
+    "CLAUDE.md",
     "src/agent_takt/scheduler/finalize.py",
     "tests/test_scheduler_finalize.py"
   ],
