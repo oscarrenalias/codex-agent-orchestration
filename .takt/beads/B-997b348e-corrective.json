@@ -1,0 +1,74 @@
+{
+  "bead_id": "B-997b348e-corrective",
+  "title": "Corrective fix for B-997b348e: Verify bead state isolation and merge safety",
+  "agent_type": "developer",
+  "description": "Blocked reason: Two production code bugs in _resolve_bead_state_conflicts cause 3 test failures. Bug A: checkout_side='--theirs' for direction='main' picks feature-branch bead state instead of main's \u2014 should always be '--ours'. Bug B: DU-status bead conflicts (git rm --cached on feature, modified on main) crash with 'does not have our version' \u2014 must use git rm for DU files. Both bugs are in src/agent_takt/gitutils.py lines 178-196.\n\nRemaining work: Three test failures require production code fixes in src/agent_takt/gitutils.py._resolve_bead_state_conflicts: (1) Bug A \u2014 line 186 uses '--theirs' for direction='main' but should use '--ours'; both merge paths want the current branch's bead state and 'ours' is always correct. Affects test_final_merge_keeps_main_branch_bead_state_when_both_branches_track_it and test_existing_worktree_is_retrofitted_before_merge. (2) Bug B \u2014 DU-status bead conflicts (file deleted on feature, modified on main) crash with 'does not have our version' on git checkout --ours. Need git rm for DU-status files. Affects test_du_conflict_in_bead_state_resolves_via_rm.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-997b348e",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-997b348e.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [],
+  "feature_root_id": "B-a469cc74",
+  "execution_branch_name": "feature/b-a469cc74",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-a469cc74",
+  "expected_files": [
+    "src/agent_takt/gitutils.py",
+    "tests/test_gitutils_worktree_exclude.py",
+    "tests/test_merge_safety.py",
+    "tests/test_scheduler_beads.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "tests/test_merge_safety.py"
+  ],
+  "changed_files": [
+    "tests/test_merge_safety.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "None \u2014 only test_merge_safety.py was modified; production code untouched.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-06T19:24:49.107230+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-997b348e"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
