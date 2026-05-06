@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
-  "dependencies": [],
+  "dependencies": [
+    "B-ab77b221"
+  ],
   "acceptance_criteria": [
     "No test in tests/test_gitutils_worktree_exclude.py asserts a chore commit was generated after worktree creation",
     "No test asserts git rm --cached was called inside _protect_worktree_bead_state",
