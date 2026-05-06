@@ -647,6 +647,50 @@ class BeadStateMergeFallbackIntegrationTests(unittest.TestCase):
             (self.root / ".takt" / "beads" / "B-root.json").read_text(encoding="utf-8"),
         )
 
+    def test_preflight_merge_does_not_create_chore_commit_on_feature_branch(self) -> None:
+        """merge_main_into_branch must NOT produce a fresh
+        `chore: untrack bead state` commit on the feature branch after the
+        merge. Such a commit lives on the feature branch's tip; when the
+        final feature→main merge runs it propagates `git rm --cached`
+        deletes to main, wiping main's bead state.
+
+        Regression reproducer for the bug introduced by commit 93933349
+        (post-merge call to _protect_worktree_bead_state) and reverted in
+        the same revision that adds this test.
+        """
+        # Set up a feature branch that already tracks the bead file.
+        self._tracked_feature_worktree()
+        # Update main so the preflight has actual work to do.
+        (self.root / ".takt" / "beads" / "B-root.json").write_text(
+            '{"status":"main-update"}\n',
+            encoding="utf-8",
+        )
+        self._git("add", ".takt/beads/B-root.json")
+        self._git("commit", "-m", "main bead update")
+        self._git("checkout", "feature/b-feature")
+
+        self.wm.merge_main_into_branch(self.root)
+
+        # Critical assertion: the latest commit on the feature branch must
+        # be the merge commit, NOT a fresh `chore: untrack bead state`
+        # commit. With the destructive post-merge protect at line 414,
+        # the latest subject would be "chore: untrack bead state ...".
+        log_proc = subprocess.run(
+            ["git", "log", "-1", "--pretty=%s"],
+            cwd=self.root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(0, log_proc.returncode)
+        self.assertNotIn(
+            "untrack bead state",
+            log_proc.stdout,
+            "merge_main_into_branch left a destructive chore commit on "
+            "the feature branch tip; the post-merge "
+            "_protect_worktree_bead_state regression has reappeared.",
+        )
+
     def test_du_conflict_in_bead_state_resolves_via_rm(self) -> None:
         """DU conflicts (deleted in HEAD, modified by other) on .takt/beads/
         files must be resolved via ``git rm`` — there is no "our" version to

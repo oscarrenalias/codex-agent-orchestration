@@ -387,9 +387,14 @@ class WorktreeManager:
 
         Untracked .takt/beads/ files (those not in the index) are saved and removed
         before the merge so git does not refuse with "would be overwritten by merge",
-        then restored unconditionally via try/finally.  After a successful merge,
-        _protect_worktree_bead_state untracks any newly indexed bead files brought in
-        by the merge.
+        then restored unconditionally via try/finally. Bead files that the merge
+        brings into the index are LEFT TRACKED on the feature branch — they were
+        already tracked on main, and re-untracking them here would create a chore
+        commit whose `git rm --cached` deletes propagate to main during the final
+        feature→main merge, wiping main's bead state. (Regression introduced by
+        commit 93933349 and reverted in this revision; verified against the
+        cookbook-app project which never had the destructive post-merge protect
+        and never loses bead state on takt merge.)
 
         Args:
             worktree_path: Path to the feature worktree.
@@ -411,7 +416,6 @@ class WorktreeManager:
             )
         finally:
             self._restore_saved_bead_files(worktree_path, saved)
-        self._protect_worktree_bead_state(worktree_path)
 
     def abort_merge(self, worktree_path: Path) -> None:
         """Abort an in-progress merge in the given worktree.

@@ -455,7 +455,11 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
         """Feature worktree has untracked bead file with identical content to main's tracked version.
 
         merge_main_into_branch must succeed without 'would be overwritten' error.
-        After the merge, the file is present as untracked with its original content.
+        After the merge, the file is on disk with its original content AND is
+        tracked in the feature branch's index (the merge brought in main's
+        tracked version). Tracked-after-merge is the correct behavior — re-
+        untracking would create a destructive chore commit that propagates
+        deletes to main during the final feature→main merge.
         """
         worktree = self.wm.ensure_worktree("B-feature", "feature/b-feature")
 
@@ -473,12 +477,16 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
 
         self.assertTrue(bead_in_worktree.exists(), "bead file was not restored after merge")
         self.assertEqual(bead_content, bead_in_worktree.read_bytes())
-        self.assertFalse(self._is_tracked(worktree, ".takt/beads/B-foo.json"))
+        self.assertTrue(self._is_tracked(worktree, ".takt/beads/B-foo.json"))
 
     def test_untracked_different_content_worktree_content_restored(self) -> None:
         """Feature worktree has untracked bead file with different content than main.
 
-        After merge, the worktree's original content is restored (not main's version).
+        After merge, the worktree's disk content is restored (not main's version)
+        AND the file is tracked in the feature branch's index — the merge
+        brought in main's tracked version. The tracked-version-vs-disk-version
+        difference shows up as a normal "modified" status in `git status`,
+        which is the expected and benign post-merge state.
         """
         worktree = self.wm.ensure_worktree("B-feature", "feature/b-feature")
 
@@ -497,7 +505,7 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
 
         self.assertTrue(bead_in_worktree.exists())
         self.assertEqual(worktree_content, bead_in_worktree.read_bytes())
-        self.assertFalse(self._is_tracked(worktree, ".takt/beads/B-foo.json"))
+        self.assertTrue(self._is_tracked(worktree, ".takt/beads/B-foo.json"))
 
     def test_no_untracked_bead_files_merge_proceeds_normally(self) -> None:
         """When there are no untracked bead files, merge proceeds without save/restore overhead."""
@@ -538,7 +546,10 @@ class MergeMainIntoBranchSaveRestoreTests(unittest.TestCase):
             bead_file = bead_dir_wt / name
             self.assertTrue(bead_file.exists(), f"{name} was not restored")
             self.assertEqual(content, bead_file.read_bytes(), f"{name} content mismatch")
-            self.assertFalse(self._is_tracked(worktree, f".takt/beads/{name}"))
+            self.assertTrue(
+                self._is_tracked(worktree, f".takt/beads/{name}"),
+                f"{name} should be tracked after merge brought it in from main",
+            )
 
     def test_merge_failure_bead_files_still_restored(self) -> None:
         """If the merge fails on a non-bead file, untracked bead files are still restored.
