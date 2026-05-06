@@ -175,6 +175,27 @@ class WorktreeManager:
             raise GitError(proc.stderr.strip() or proc.stdout.strip())
         return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
+    def _du_conflict_paths(self, cwd: Path, paths: list[str]) -> set[str]:
+        """Return the subset of paths that are DU (deleted-by-us) merge conflicts.
+
+        DU files have no stage-2 entry so ``git checkout --ours`` fails with
+        'does not have our version'.  They must be resolved via ``git rm``.
+        """
+        proc = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        du_paths: set[str] = set()
+        for line in proc.stdout.splitlines():
+            if line[:2] == "DU":
+                path = line[3:].strip()
+                if path in paths:
+                    du_paths.add(path)
+        return du_paths
+
     def _resolve_bead_state_conflicts(self, cwd: Path, direction: Literal["main", "feature"]) -> bool:
         conflicted = self._conflicted_files_in(cwd)
         bead_conflicts = [path for path in conflicted if path.startswith(_BEAD_STATE_PREFIX)]
@@ -183,9 +204,13 @@ class WorktreeManager:
         non_bead_conflicts = [path for path in conflicted if not path.startswith(_BEAD_STATE_PREFIX)]
         if non_bead_conflicts:
             return False
-        checkout_side = "--theirs" if direction == "main" else "--ours"
-        self._run_git_in(cwd, "checkout", checkout_side, "--", *bead_conflicts)
-        self._run_git_in(cwd, "add", "--", *bead_conflicts)
+        du_files = self._du_conflict_paths(cwd, bead_conflicts)
+        checkout_files = [f for f in bead_conflicts if f not in du_files]
+        if du_files:
+            self._run_git_in(cwd, "rm", "--", *du_files)
+        if checkout_files:
+            self._run_git_in(cwd, "checkout", "--ours", "--", *checkout_files)
+            self._run_git_in(cwd, "add", "--", *checkout_files)
         remaining = self._conflicted_files_in(cwd)
         if remaining:
             raise GitError(
