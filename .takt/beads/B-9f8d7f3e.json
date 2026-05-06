@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-a469cc74",
-  "dependencies": [],
+  "dependencies": [
+    "B-ab77b221"
+  ],
   "acceptance_criteria": [
     "New test exists in tests/test_scheduler_beads.py covering commit_all pathspec exclusion",
     "Test modifies a .takt/beads/ file and asserts it is absent from the resulting commit diff",
