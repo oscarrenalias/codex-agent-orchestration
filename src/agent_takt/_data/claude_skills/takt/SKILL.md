@@ -44,13 +44,36 @@ Agent types: `planner`, `developer`, `tester`, `documentation`, `review`. Only `
 uv run takt summary                          # counts + next actionable beads
 uv run takt summary --feature-root <id>     # scoped to one feature
 uv run takt bead list --plain               # all beads as table
-uv run takt bead list --label <label>       # filter by label
-uv run takt bead show <id>                  # single bead details (JSON)
+uv run takt bead list --label <label>       # filter by label (repeatable, AND)
+uv run takt bead list --status <status>     # filter by lifecycle status (repeatable, OR)
+uv run takt bead list --agent <agent>       # filter by agent type (repeatable, OR)
+uv run takt bead list --feature-root <id>   # scope to one feature tree
+uv run takt bead show <id>                  # full bead JSON
+uv run takt bead show <id> --field <path>   # project a single field (e.g. status, handoff_summary.completed)
+uv run takt bead history <id>               # formatted execution history (one line per entry)
+uv run takt bead history <id> --limit 5     # last N entries
+uv run takt bead history <id> --event failed --event retried   # filter by event type (repeatable)
 uv run takt bead graph                      # Mermaid diagram of all beads
 uv run takt bead graph --feature-root <id> # scoped to one feature
 uv run takt bead graph --output graph.md   # write diagram to file
 uv run takt tui                             # interactive terminal UI
 ```
+
+Use `bead show <id> --field <path>` whenever you only need a specific value (status, handoff verdict, last event, block reason). It avoids the full JSON dump and is the canonical replacement for `cat .takt/beads/<id>.json | python3 -c "import json, sys; d=json.load(sys.stdin); print(d['handoff_summary']['completed'])"` and similar inline-parsing patterns. The `--field` syntax supports nested paths (`handoff_summary.verdict`) and array indexing including negatives (`execution_history[-1].event`).
+
+### Reading bead state
+
+When you need to inspect a bead's state, prefer the dedicated CLI commands over reading `.takt/beads/<id>.json` directly or shelling out to `python3 -c '...'` for JSON parsing:
+
+| Goal | Use |
+|------|-----|
+| Lifecycle log (chronological) | `uv run takt bead history <id>` |
+| One specific field | `uv run takt bead show <id> --field <path>` |
+| Full JSON for piping | `uv run takt bead show <id>` |
+| Beads matching status / agent | `uv run takt bead list --status ... --agent ... --plain` |
+| Beads in one feature tree | `uv run takt bead list --feature-root <id> --plain` |
+
+`--field` paths use Python-style dotted access with bracket-style array indexing including negative indices: `--field handoff_summary.verdict`, `--field execution_history[-1].event`, `--field expected_files[0]`. Missing paths exit non-zero with a clear stderr message; null values exit zero with an empty line (legitimate "field unset"). Lists and dicts render as pretty JSON; scalars render bare without quotes — clean for shell capture.
 
 ### Creating and managing beads
 
