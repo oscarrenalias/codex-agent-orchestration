@@ -34,10 +34,16 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "tests/test_merge_safety.py"
+    "src/agent_takt/gitutils.py",
+    "tests/test_gitutils_worktree_exclude.py",
+    "tests/test_merge_safety.py",
+    "tests/test_scheduler_beads.py"
   ],
   "changed_files": [
-    "tests/test_merge_safety.py"
+    "src/agent_takt/gitutils.py",
+    "tests/test_gitutils_worktree_exclude.py",
+    "tests/test_merge_safety.py",
+    "tests/test_scheduler_beads.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
