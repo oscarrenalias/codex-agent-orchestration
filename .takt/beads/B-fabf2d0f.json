@@ -1,0 +1,71 @@
+{
+  "bead_id": "B-fabf2d0f",
+  "title": "Wrap run_once in quiescence loop with progress markers",
+  "agent_type": "developer",
+  "description": "Modify `command_run` in `src/agent_takt/cli/commands/run.py` to wrap the single `scheduler.run_once()` call (currently lines 119\u2013135) in a `while True:` loop that exits when `not result.started`. Use `args.max_cycles` as a safety cap: break with a `console.warn(...)` when the cycle index reaches the cap (skip the cap when `args.max_cycles <= 0`). Emit a `console.info(f'Cycle {cycle_index}')` marker before each iteration when `cycle_index > 1` (preserves backward-compatible single-cycle output). The accumulator dicts (`started`, `completed`, `blocked`, `correctives_created`) and `deferred_count` continue to aggregate across all cycles unchanged. The `reporter.stop()` call stays in the `finally` block outside the loop.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-53425f62",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`command_run` contains a `while True:` loop that calls `scheduler.run_once()` on every iteration.",
+    "Loop exits via `break` when `not result.started`.",
+    "Loop also breaks when `cycle_index >= args.max_cycles` (for `max_cycles > 0`) and emits a console warning.",
+    "A `console.info(f'Cycle {cycle_index}')` line is emitted for cycle 2 and beyond (cycle 1 is silent).",
+    "`reporter.stop()` is called in a `finally` block wrapping the entire loop.",
+    "Accumulator dicts merge results from all cycles correctly.",
+    "No changes to scheduler/core.py."
+  ],
+  "linked_docs": [
+    "specs/drafts/run-scheduler-to-full-quiescence-in-takt-run.md"
+  ],
+  "feature_root_id": "B-53425f62",
+  "execution_branch_name": "feature/b-53425f62",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "expected_files": [
+    "src/agent_takt/cli/commands/run.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T07:33:53.346232+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
