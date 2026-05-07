@@ -3,7 +3,7 @@
   "title": "Update documentation for same-feature-tree conflict scope",
   "agent_type": "documentation",
   "description": "Check CLAUDE.md for any description of the file-scope conflict behaviour (search for 'expected_files', 'expected_globs', 'conflict', '_beads_conflict'). The current CLAUDE.md entry under Conventions reads: 'File-scope conflicts are checked statically at schedule time. Overlapping expected_files/expected_globs between in-progress beads cause blocking.' Update this sentence to clarify the scope is within the same feature tree, e.g. 'Overlapping expected_files/expected_globs between in-progress beads in the same feature tree cause blocking.' Make no other changes.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-622deef1",
   "dependencies": [
@@ -58,9 +58,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 only `src/agent_takt/scheduler/core.py` was modified; no sibling beads claim this file.\nNone \u2014 only tests/test_scheduler_core.py was modified; no production code touched.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-622deef1",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-622deef1",
+  "lease": {
+    "owner": "documentation:B-8210d951",
+    "expires_at": "2026-05-07T07:22:19.478654+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -69,9 +72,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T06:52:19.703941+00:00",
+      "event": "skills_loaded",
+      "agent_type": "documentation",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/docs-agent",
+          "capability/docs-edit",
+          "task/release-notes",
+          "task/spec-sync",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-07T06:52:19.703987+00:00",
+      "event": "started",
+      "agent_type": "documentation",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-8210d951",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/docs-agent",
+      "capability/docs-edit",
+      "task/release-notes",
+      "task/spec-sync",
+      "memory"
+    ],
+    "skill_bundle_hash": "191f95261a4d31e4f4a691e9c39926c722504f21a3c370b6975facad92e3c1f0",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-8210d951/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
