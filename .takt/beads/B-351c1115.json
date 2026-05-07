@@ -1,0 +1,66 @@
+{
+  "bead_id": "B-351c1115",
+  "title": "Verify quiescence loop correctness",
+  "agent_type": "tester",
+  "description": "Run the full test suite and verify all four new quiescence-loop tests pass. Confirm that no existing CLI run tests regressed. Check that `takt run --help` shows the `--max-cycles` flag with its default. Review telemetry event structure (cycle_index field present) via unit test assertions.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-53425f62",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`uv run pytest tests/ -n auto -q` exits 0 with no failures.",
+    "All four new tests (test_run_loops_until_quiescence, test_run_stops_when_no_beads_started, test_run_respects_max_cycles_cap, test_run_quiescence_with_deferred_only_exits) are present and green.",
+    "No pre-existing test_cli_run.py tests regressed.",
+    "`takt run --help` output includes `--max-cycles` with default 50."
+  ],
+  "linked_docs": [
+    "specs/drafts/run-scheduler-to-full-quiescence-in-takt-run.md"
+  ],
+  "feature_root_id": "B-53425f62",
+  "execution_branch_name": "feature/b-53425f62",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "expected_files": [],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T07:33:53.928614+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
