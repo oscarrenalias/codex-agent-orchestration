@@ -3,7 +3,7 @@
   "title": "Verify quiescence loop correctness",
   "agent_type": "tester",
   "description": "Run the full test suite and verify all four new quiescence-loop tests pass. Confirm that no existing CLI run tests regressed. Check that `takt run --help` shows the `--max-cycles` flag with its default. Review telemetry event structure (cycle_index field present) via unit test assertions.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-53425f62",
   "dependencies": [
@@ -77,7 +77,10 @@
   "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
   "branch_name": "feature/b-53425f62",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
-  "lease": null,
+  "lease": {
+    "owner": "tester:B-351c1115",
+    "expires_at": "2026-05-07T08:17:38.024680+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -138,6 +141,29 @@
       "event": "retried",
       "agent_type": "tester",
       "summary": "Requeued blocked bead after corrective bead B-351c1115-corrective completed",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T07:47:38.481687+00:00",
+      "event": "skills_loaded",
+      "agent_type": "tester",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/tester-validation",
+          "capability/test-execution",
+          "task/defect-bead-creation",
+          "task/regression-triage",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-07T07:47:38.481710+00:00",
+      "event": "started",
+      "agent_type": "tester",
+      "summary": "Worker started",
       "details": {}
     }
   ],
