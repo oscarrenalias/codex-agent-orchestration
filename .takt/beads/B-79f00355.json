@@ -3,7 +3,7 @@
   "title": "Move telemetry events inside quiescence loop with cycle_index",
   "agent_type": "developer",
   "description": "In `src/agent_takt/cli/commands/run.py`, move the `scheduler_cycle_started` event (currently emitted once before the loop, lines 114\u2013118) and the `scheduler_cycle_completed` event (currently emitted once after, lines 137\u2013143) so that each fires once per loop iteration, inside the loop. Add a `cycle_index` integer field to both event payloads. The `scheduler_cycle_started` event fires at the top of each iteration (before `run_once`); `scheduler_cycle_completed` fires after result accumulation (before the break check). The final CLI summary lines (cycle summary + final state + JSON dump) remain a single end-of-run report outside the loop.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-53425f62",
   "dependencies": [
@@ -26,37 +26,44 @@
     "src/agent_takt/cli/commands/run.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/cli/commands/run.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/cli/commands/run.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Moved `scheduler_cycle_started` inside the loop at the top of each iteration (before `run_once`), added `cycle_index` field. Moved `scheduler_cycle_completed` inside the loop after result accumulation (before break check), added matching `cycle_index` field. Removed both events from their previous single-fire positions outside the loop.",
+    "remaining": "N/A",
+    "risks": "The `scheduler_cycle_completed` event now reports per-cycle counts from `result.started/completed/blocked/deferred` rather than cumulative counts. This is semantically correct for a per-cycle event, and cumulative totals are still available in the final JSON dump. Any consumers of these events that expected cumulative counts will need updating.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/cli/commands/run.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify: 3-cycle run produces exactly 3 `scheduler_cycle_started` and 3 `scheduler_cycle_completed` events with cycle_index 1/2/3; single-cycle run produces 1 of each; final JSON summary still emitted once with unchanged structure.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/cli/commands/run.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/cli/commands/run.py"
+    ],
+    "conflict_risks": "None \u2014 only `src/agent_takt/cli/commands/run.py` was modified, no shared files.",
+    "design_decisions": "Per-cycle `scheduler_cycle_completed` now reports per-cycle counts (`len(result.started)` etc.) rather than cumulative counts from the aggregation dicts. Cumulative totals remain available in the final JSON summary block \u2014 having both cumulative and per-cycle on the same event would be redundant and confusing. The `cycle_index` is 1-based to align with the existing `Cycle {cycle_index}` console output and human-readable expectations.",
+    "test_coverage_notes": "Tester should verify: (1) a run that completes in 3 cycles emits exactly 3 `scheduler_cycle_started` and 3 `scheduler_cycle_completed` events; (2) each pair has matching `cycle_index` values (1, 2, 3); (3) a single-cycle run (no progress on first cycle) still emits 1 of each; (4) the final JSON summary block is unchanged in structure and still emitted once; (5) `scheduler_cycle_started` carries `max_workers`, `feature_root_id`, `pid` plus `cycle_index`; (6) `scheduler_cycle_completed` carries per-cycle counts plus `cycle_index`.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only `src/agent_takt/cli/commands/run.py` was modified, no shared files.",
   "branch_name": "feature/b-53425f62",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
-  "lease": {
-    "owner": "developer:B-79f00355",
-    "expires_at": "2026-05-07T08:07:35.115205+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -98,6 +105,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-79f00355/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-05-07T07:39:01.221802+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Moved `scheduler_cycle_started` and `scheduler_cycle_completed` telemetry events from outside the quiescence loop to inside it, adding a 1-based `cycle_index` field to both payloads. The final CLI summary block (cycle summary, final state, JSON dump) remains a single end-of-run report outside the loop.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -169,7 +183,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Moved `scheduler_cycle_started` and `scheduler_cycle_completed` telemetry events from outside the quiescence loop to inside it, adding a 1-based `cycle_index` field to both payloads. The final CLI summary block (cycle summary, final state, JSON dump) remains a single end-of-run report outside the loop.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.2415217,
+      "duration_ms": 68691,
+      "duration_api_ms": 64689,
+      "num_turns": 8,
+      "input_tokens": 9,
+      "output_tokens": 4451,
+      "cache_creation_tokens": 27634,
+      "cache_read_tokens": 226534,
+      "stop_reason": "end_turn",
+      "session_id": "cdbb47e9-0756-48e5-a1b4-8fff28c51b6c",
+      "permission_denials": [],
+      "prompt_chars": 9766,
+      "prompt_lines": 177,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.2415217,
+        "duration_ms": 68691,
+        "duration_api_ms": 64689,
+        "num_turns": 8,
+        "input_tokens": 9,
+        "output_tokens": 4451,
+        "cache_creation_tokens": 27634,
+        "cache_read_tokens": 226534,
+        "stop_reason": "end_turn",
+        "session_id": "cdbb47e9-0756-48e5-a1b4-8fff28c51b6c",
+        "permission_denials": [],
+        "prompt_chars": 9766,
+        "prompt_lines": 177,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "341761e1c0e6d6ceca5bb2006d3be56a480ed79b"
   },
   "labels": [],
   "recovery_for": null,
