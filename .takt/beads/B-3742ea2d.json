@@ -7,12 +7,12 @@
   "bead_type": "task",
   "parent_id": "B-53425f62",
   "dependencies": [
-    "B-f1ec0e51",
-    "B-fabf2d0f",
+    "B-351c1115",
+    "B-6f7ced77",
     "B-79f00355",
     "B-a166dd90",
-    "B-351c1115",
-    "B-6f7ced77"
+    "B-f1ec0e51",
+    "B-fabf2d0f"
   ],
   "acceptance_criteria": [
     "All developer changes in parser.py and run.py are reviewed and approved.",
