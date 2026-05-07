@@ -185,6 +185,22 @@ After `takt run` completes, the CLI prints a cycle summary and emits a JSON bloc
 }
 ```
 
+### Quiescence Loop and `--max-cycles`
+
+`takt run` does not stop after one pass — it loops until the scheduler has nothing left to dispatch. Each iteration is one *cycle*; the loop exits when a cycle dispatches zero beads.
+
+**Exit conditions:**
+
+- **Quiescence**: A cycle finds no ready beads to dispatch. This is the normal completion path.
+- **Deferred beads only**: If all remaining ready beads have unsatisfied dependencies, the scheduler also dispatches nothing and the loop exits. These beads require operator intervention — takt does not spin waiting for them to unblock.
+- **`--max-cycles` reached**: The `--max-cycles N` flag caps the number of cycles (default: 50). When the cap is hit the loop stops with a warning even if work remains. Pass `--max-cycles 0` (or any negative value) for an unbounded run.
+
+```bash
+uv run takt --runner claude run                      # run to quiescence, up to 50 cycles
+uv run takt --runner claude run --max-cycles 10      # stop after at most 10 cycles
+uv run takt --runner claude run --max-cycles 0       # truly unbounded — run until quiescence
+```
+
 ## Conventions
 
 - Guardrail templates are **mandatory**. Missing `templates/agents/{agent_type}.md` fails the bead with `FileNotFoundError`.
