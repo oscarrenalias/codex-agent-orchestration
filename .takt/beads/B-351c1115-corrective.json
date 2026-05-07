@@ -55,7 +55,7 @@
     "test_coverage_notes": "",
     "known_limitations": ""
   },
-  "block_reason": "",
+  "block_reason": "file-scope conflict with in-progress B-6f7ced77",
   "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
   "branch_name": "",
   "worktree_path": "",
@@ -67,6 +67,13 @@
       "event": "created",
       "agent_type": "scheduler",
       "summary": "Bead created",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T07:44:45.900661+00:00",
+      "event": "deferred",
+      "agent_type": "developer",
+      "summary": "file-scope conflict with in-progress B-6f7ced77",
       "details": {}
     }
   ],
