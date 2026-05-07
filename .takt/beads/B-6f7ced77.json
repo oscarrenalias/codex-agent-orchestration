@@ -28,16 +28,19 @@
   "expected_files": [
     "CLAUDE.md",
     "src/agent_takt/cli/commands/run.py",
-    "src/agent_takt/cli/parser.py"
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_run.py"
   ],
   "expected_globs": [],
   "touched_files": [
     "src/agent_takt/cli/commands/run.py",
-    "src/agent_takt/cli/parser.py"
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_run.py"
   ],
   "changed_files": [
     "src/agent_takt/cli/commands/run.py",
-    "src/agent_takt/cli/parser.py"
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_run.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
@@ -61,7 +64,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 only parser.py modified; no overlap with other in-progress beads.\nNone \u2014 only `run.py` was modified; no overlap with other beads.\nNone \u2014 only `src/agent_takt/cli/commands/run.py` was modified, no shared files.",
+  "conflict_risks": "None \u2014 only parser.py modified; no overlap with other in-progress beads.\nNone \u2014 only `run.py` was modified; no overlap with other beads.\nNone \u2014 only `src/agent_takt/cli/commands/run.py` was modified, no shared files.\nNone \u2014 only file touched is `tests/test_cli_run.py`, which is not claimed by any other in-progress bead.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
