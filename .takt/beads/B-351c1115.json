@@ -6,7 +6,12 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-53425f62",
-  "dependencies": [],
+  "dependencies": [
+    "B-f1ec0e51",
+    "B-fabf2d0f",
+    "B-79f00355",
+    "B-a166dd90"
+  ],
   "acceptance_criteria": [
     "`uv run pytest tests/ -n auto -q` exits 0 with no failures.",
     "All four new tests (test_run_loops_until_quiescence, test_run_stops_when_no_beads_started, test_run_respects_max_cycles_cap, test_run_quiescence_with_deferred_only_exits) are present and green.",
