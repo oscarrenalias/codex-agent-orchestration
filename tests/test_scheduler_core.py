@@ -103,17 +103,26 @@ class SchedulerCoreTests(OrchestratorTests):
     # ------------------------------------------------------------------
 
     def test_scheduler_defers_overlapping_claims(self) -> None:
+        # Both beads must share a feature tree for conflict detection to apply.
+        feature_root = self.storage.create_bead(
+            title="Shared feature root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
         bead1 = self.storage.create_bead(
             title="Scheduler conflict A",
             agent_type="developer",
             description="one",
             expected_files=["src/agent_takt/scheduler.py"],
+            parent_id=feature_root.bead_id,
         )
         bead2 = self.storage.create_bead(
             title="Scheduler conflict B",
             agent_type="developer",
             description="two",
             expected_files=["src/agent_takt/scheduler.py"],
+            parent_id=feature_root.bead_id,
         )
         runner = _FakeRunnerWithDefault(
             results={
@@ -351,12 +360,20 @@ class SchedulerCoreTests(OrchestratorTests):
 
     def test_high_priority_bead_deferred_due_to_conflict_normal_bead_runs(self) -> None:
         """A conflicting high-priority bead is deferred; the non-conflicting normal bead runs."""
+        # in_progress and high_conflicting must share a feature tree for conflict detection.
+        feature_root = self.storage.create_bead(
+            title="Conflict feature root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
         # An already-in-progress bead holds the conflicting scope
         in_progress = self.storage.create_bead(
             title="In-progress bead",
             agent_type="developer",
             description="running",
             expected_files=["src/conflict.py"],
+            parent_id=feature_root.bead_id,
         )
         in_progress.status = BEAD_IN_PROGRESS
         in_progress.lease = Lease(owner="developer:running", expires_at="2099-01-01T00:00:00+00:00")
@@ -373,6 +390,7 @@ class SchedulerCoreTests(OrchestratorTests):
             agent_type="developer",
             description="conflicts with in-progress",
             expected_files=["src/conflict.py"],
+            parent_id=feature_root.bead_id,
             priority="high",
         )
         runner = FakeRunner(
@@ -495,6 +513,31 @@ class SchedulerCoreTests(OrchestratorTests):
             }
         )
         scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir), config=config)
+        result = scheduler.run_once(max_workers=2)
+        self.assertIn(bead1.bead_id, result.started)
+        self.assertIn(bead2.bead_id, result.started)
+        self.assertNotIn(bead1.bead_id, result.deferred)
+        self.assertNotIn(bead2.bead_id, result.deferred)
+
+    def test_cross_feature_tree_overlapping_files_both_dispatched(self) -> None:
+        # Two independent top-level beads (no parent_id) have the same expected_files.
+        # They belong to different feature roots so file-scope conflict checking must
+        # not block them from running concurrently.
+        bead1 = self.storage.create_bead(
+            title="Feature X shared file", agent_type="developer", description="a",
+            expected_files=["src/shared.py"],
+        )
+        bead2 = self.storage.create_bead(
+            title="Feature Y shared file", agent_type="developer", description="b",
+            expected_files=["src/shared.py"],
+        )
+        runner = _FakeRunnerWithDefault(
+            results={
+                bead1.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=bead1.expected_files),
+                bead2.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=bead2.expected_files),
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
         result = scheduler.run_once(max_workers=2)
         self.assertIn(bead1.bead_id, result.started)
         self.assertIn(bead2.bead_id, result.started)
@@ -663,13 +706,22 @@ class DeferralReporterTests(OrchestratorTests):
     def test_file_scope_conflict_calls_reporter_with_file_scope_reason(self) -> None:
         """_find_conflict_reason must produce 'file-scope conflict' when both beads declare
         overlapping expected_files, and bead_deferred is called with that reason."""
+        # Both beads must share a feature tree for file-scope conflict detection to apply.
+        feature_root = self.storage.create_bead(
+            title="Shared feature root",
+            agent_type="developer",
+            description="root",
+            status=BEAD_DONE,
+        )
         bead1 = self.storage.create_bead(
             title="Task A", agent_type="developer", description="a",
             expected_files=["src/shared.py"],
+            parent_id=feature_root.bead_id,
         )
         bead2 = self.storage.create_bead(
             title="Task B", agent_type="developer", description="b",
             expected_files=["src/shared.py"],
+            parent_id=feature_root.bead_id,
         )
         reporter = _RecordingReporter()
         runner = _FakeRunnerWithDefault(

@@ -441,7 +441,7 @@ class Scheduler:
                 and active.agent_type == "developer"
                 and same_feature_tree
             )
-        return self._scopes_overlap(bead, active)
+        return same_feature_tree and self._scopes_overlap(bead, active)
 
     def _scopes_overlap(self, first: Bead, second: Bead) -> bool:
         first_source = first.scope_source()
