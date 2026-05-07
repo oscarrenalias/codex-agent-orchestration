@@ -1,0 +1,69 @@
+{
+  "bead_id": "B-79f00355",
+  "title": "Move telemetry events inside quiescence loop with cycle_index",
+  "agent_type": "developer",
+  "description": "In `src/agent_takt/cli/commands/run.py`, move the `scheduler_cycle_started` event (currently emitted once before the loop, lines 114\u2013118) and the `scheduler_cycle_completed` event (currently emitted once after, lines 137\u2013143) so that each fires once per loop iteration, inside the loop. Add a `cycle_index` integer field to both event payloads. The `scheduler_cycle_started` event fires at the top of each iteration (before `run_once`); `scheduler_cycle_completed` fires after result accumulation (before the break check). The final CLI summary lines (cycle summary + final state + JSON dump) remain a single end-of-run report outside the loop.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-53425f62",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "`scheduler_cycle_started` is recorded inside the loop with a `cycle_index` field (1-based).",
+    "`scheduler_cycle_completed` is recorded inside the loop with a matching `cycle_index` field.",
+    "Both events are no longer recorded outside the loop.",
+    "A run with 3 cycles produces 3 `scheduler_cycle_started` and 3 `scheduler_cycle_completed` events.",
+    "The final JSON summary block (keys: started, completed, blocked, correctives_created, deferred_count, final_state) is still emitted once at the end, unchanged in structure."
+  ],
+  "linked_docs": [
+    "specs/drafts/run-scheduler-to-full-quiescence-in-takt-run.md"
+  ],
+  "feature_root_id": "B-53425f62",
+  "execution_branch_name": "feature/b-53425f62",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "expected_files": [
+    "src/agent_takt/cli/commands/run.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T07:33:53.532820+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
