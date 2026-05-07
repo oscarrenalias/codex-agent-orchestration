@@ -501,6 +501,31 @@ class SchedulerCoreTests(OrchestratorTests):
         self.assertNotIn(bead1.bead_id, result.deferred)
         self.assertNotIn(bead2.bead_id, result.deferred)
 
+    def test_cross_feature_tree_overlapping_files_both_dispatched(self) -> None:
+        # Two independent top-level beads (no parent_id) have the same expected_files.
+        # They belong to different feature roots so file-scope conflict checking must
+        # not block them from running concurrently.
+        bead1 = self.storage.create_bead(
+            title="Feature X shared file", agent_type="developer", description="a",
+            expected_files=["src/shared.py"],
+        )
+        bead2 = self.storage.create_bead(
+            title="Feature Y shared file", agent_type="developer", description="b",
+            expected_files=["src/shared.py"],
+        )
+        runner = _FakeRunnerWithDefault(
+            results={
+                bead1.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=bead1.expected_files),
+                bead2.bead_id: AgentRunResult(outcome="completed", summary="done", expected_files=bead2.expected_files),
+            }
+        )
+        scheduler = Scheduler(self.storage, runner, WorktreeManager(self.root, self.storage.worktrees_dir))
+        result = scheduler.run_once(max_workers=2)
+        self.assertIn(bead1.bead_id, result.started)
+        self.assertIn(bead2.bead_id, result.started)
+        self.assertNotIn(bead1.bead_id, result.deferred)
+        self.assertNotIn(bead2.bead_id, result.deferred)
+
     def test_serialize_on_non_mutating_pair_same_tree_no_conflict(self) -> None:
         epic = self.storage.create_bead(title="Epic", agent_type="planner", description="root", status=BEAD_DONE, bead_type="epic")
         root = self.storage.create_bead(title="Feature root", agent_type="developer", description="feature", parent_id=epic.bead_id, status=BEAD_DONE)
