@@ -3,7 +3,7 @@
   "title": "Add regression test for cross-feature-root overlapping expected_files",
   "agent_type": "developer",
   "description": "Add test_cross_feature_tree_overlapping_files_both_dispatched to tests/test_scheduler_core.py, placed near the existing test_serialize_on_cross_feature_tree_both_dispatched (around line 503). The test creates two independent top-level beads (no parent_id, so different feature roots) with expected_files=['src/shared.py'], runs the scheduler with max_workers=2, and asserts both bead IDs appear in result.started and neither appears in result.deferred. Use _FakeRunnerWithDefault matching the pattern already used in that test class.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-622deef1",
   "dependencies": [
@@ -52,9 +52,12 @@
   },
   "block_reason": "",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-622deef1",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-622deef1",
+  "lease": {
+    "owner": "developer:B-55d2863f",
+    "expires_at": "2026-05-07T07:13:49.224762+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -63,9 +66,48 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T06:43:49.507120+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-07T06:43:49.507144+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-55d2863f",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "ecae5633083d1bbec41a6e5ec6ea05bbab117f60499c19b2ed76dbbe3e1aec7c",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-55d2863f/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
