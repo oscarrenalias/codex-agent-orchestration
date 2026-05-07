@@ -3,7 +3,7 @@
   "title": "Verify full test suite passes after conflict fix",
   "agent_type": "tester",
   "description": "Run uv run pytest tests/ -n auto -q and confirm all tests pass, including the new regression test and all existing scheduler conflict-detection tests (test_same_feature_tree_non_overlapping_mutations_can_run_in_parallel, test_serialize_on_cross_feature_tree_both_dispatched, serialize_within_feature_tree suite). Report any failures with full tracebacks.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-622deef1",
   "dependencies": [
@@ -69,7 +69,7 @@
     "test_coverage_notes": "test_cross_feature_tree_overlapping_files_both_dispatched passes correctly. 3 existing tests break because root-level test fixtures now fall into the cross-feature-tree (non-conflicting) path. Tests need shared parent bead setup rather than a production code revert.",
     "known_limitations": "Memory database was not available (not initialized for this worktree), so memory search was skipped. This does not affect test results."
   },
-  "block_reason": "Three pre-existing tests fail due to regression from B-aa2d1f79. Root cause: `_beads_conflict()` line 444 now returns `False` for any two root-level beads with overlapping files, because `same_feature_tree=False` when each bead has a unique feature_root_id. Fix: update the 3 failing tests to place conflicting beads under a shared parent so same_feature_tree=True, restoring conflict detection for the same-feature-tree case.",
+  "block_reason": "",
   "conflict_risks": "None \u2014 no files were modified by this tester bead.",
   "branch_name": "feature/b-622deef1",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-622deef1",
@@ -127,6 +127,13 @@
       "event": "corrective_planned",
       "agent_type": "tester",
       "summary": "Created corrective bead B-dbe32010-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T06:57:29.988803+00:00",
+      "event": "retried",
+      "agent_type": "tester",
+      "summary": "Requeued blocked bead after corrective bead B-dbe32010-corrective completed",
       "details": {}
     }
   ],
@@ -250,7 +257,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-dbe32010-corrective"
+    "auto_corrective_bead_id": "B-dbe32010-corrective",
+    "last_corrective_retry_source": "B-dbe32010-corrective",
+    "last_corrective_retry_commit": "086b81dad5444d63fdfd5f4241543a048f70176c"
   },
   "labels": [],
   "recovery_for": null,
