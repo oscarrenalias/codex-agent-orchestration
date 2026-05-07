@@ -121,6 +121,13 @@
       "agent_type": "tester",
       "summary": "Full test suite runs (1734 passed) but 3 pre-existing tests in test_scheduler_core.py fail due to a regression introduced by B-aa2d1f79. The `same_feature_tree` guard in `_beads_conflict()` at core.py:444 disables file-scope conflict detection for root-level beads (each is its own feature root), breaking three tests that used root-level bead pairs to model file conflicts.",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T06:52:15.999381+00:00",
+      "event": "corrective_planned",
+      "agent_type": "tester",
+      "summary": "Created corrective bead B-dbe32010-corrective for blocked issue",
+      "details": {}
     }
   ],
   "metadata": {
@@ -242,7 +249,8 @@
         "source": "provider",
         "attempt": 1
       }
-    ]
+    ],
+    "auto_corrective_bead_id": "B-dbe32010-corrective"
   },
   "labels": [],
   "recovery_for": null,
