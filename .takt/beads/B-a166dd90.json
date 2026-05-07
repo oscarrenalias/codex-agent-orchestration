@@ -1,0 +1,70 @@
+{
+  "bead_id": "B-a166dd90",
+  "title": "Add quiescence loop tests to test_cli_run.py",
+  "agent_type": "developer",
+  "description": "Append four tests to `tests/test_cli_run.py` that cover the quiescence loop behaviour. Each test mocks `Scheduler.run_once` directly (no FakeRunner needed) and invokes `command_run` via the existing test harness in that file.\n\n1. `test_run_loops_until_quiescence`: `run_once` returns three SchedulerResult objects in sequence \u2014 `started=['B-1']`, `started=['B-2']`, `started=[]`. Assert `run_once` called exactly 3 times; final summary contains both bead IDs.\n2. `test_run_stops_when_no_beads_started`: `run_once` returns `started=[]` immediately. Assert called exactly once.\n3. `test_run_respects_max_cycles_cap`: `run_once` always returns `started=['B-N']`. With `--max-cycles 5`, assert called exactly 5 times and a warning was emitted.\n4. `test_run_quiescence_with_deferred_only_exits`: `run_once` returns `started=[], deferred=['B-X']`. Assert loop exits after one call \u2014 deferred beads do not prevent quiescence.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-53425f62",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "All four tests exist in `tests/test_cli_run.py` and pass individually with `uv run pytest tests/test_cli_run.py -k 'quiescence or max_cycles or deferred_only' -v`.",
+    "test_run_loops_until_quiescence: run_once call count is exactly 3.",
+    "test_run_stops_when_no_beads_started: run_once call count is exactly 1.",
+    "test_run_respects_max_cycles_cap: run_once call count is exactly 5 and a warning line is present in captured output.",
+    "test_run_quiescence_with_deferred_only_exits: run_once call count is exactly 1.",
+    "Full suite still passes: `uv run pytest tests/ -n auto -q`."
+  ],
+  "linked_docs": [
+    "specs/drafts/run-scheduler-to-full-quiescence-in-takt-run.md"
+  ],
+  "feature_root_id": "B-53425f62",
+  "execution_branch_name": "feature/b-53425f62",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "expected_files": [
+    "tests/test_cli_run.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T07:33:53.719233+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
