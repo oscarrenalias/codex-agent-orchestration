@@ -3,7 +3,7 @@
   "title": "Wrap run_once in quiescence loop with progress markers",
   "agent_type": "developer",
   "description": "Modify `command_run` in `src/agent_takt/cli/commands/run.py` to wrap the single `scheduler.run_once()` call (currently lines 119\u2013135) in a `while True:` loop that exits when `not result.started`. Use `args.max_cycles` as a safety cap: break with a `console.warn(...)` when the cycle index reaches the cap (skip the cap when `args.max_cycles <= 0`). Emit a `console.info(f'Cycle {cycle_index}')` marker before each iteration when `cycle_index > 1` (preserves backward-compatible single-cycle output). The accumulator dicts (`started`, `completed`, `blocked`, `correctives_created`) and `deferred_count` continue to aggregate across all cycles unchanged. The `reporter.stop()` call stays in the `finally` block outside the loop.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-53425f62",
   "dependencies": [
@@ -53,9 +53,12 @@
   },
   "block_reason": "",
   "conflict_risks": "",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-53425f62",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "lease": {
+    "owner": "developer:B-fabf2d0f",
+    "expires_at": "2026-05-07T08:05:57.183702+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -64,9 +67,48 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T07:35:57.540766+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-07T07:35:57.540790+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fabf2d0f",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "ecae5633083d1bbec41a6e5ec6ea05bbab117f60499c19b2ed76dbbe3e1aec7c",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-fabf2d0f/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
