@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-351c1115: Verify quiescence loop correctness",
   "agent_type": "developer",
   "description": "Blocked reason: run.py:149 accesses args.max_cycles unconditionally. Pre-existing tests that construct Namespace(feature_root=..., max_workers=1) without max_cycles now fail with AttributeError. Fix: replace args.max_cycles with getattr(args, 'max_cycles', 50) on that line to match the defensive getattr pattern used for verbose on line 97.\n\nRemaining work: Fix regression: src/agent_takt/cli/commands/run.py line 149 uses args.max_cycles directly. Pre-existing tests that pass Namespace without max_cycles now crash with AttributeError. Change to getattr(args, 'max_cycles', 50) \u2014 the same defensive pattern used for verbose on line 97.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-351c1115",
   "dependencies": [],
@@ -25,44 +25,45 @@
   ],
   "expected_globs": [],
   "touched_files": [
-    "src/agent_takt/cli/commands/run.py",
-    "src/agent_takt/cli/parser.py",
-    "tests/test_cli_run.py"
+    "src/agent_takt/cli/commands/run.py"
   ],
   "changed_files": [
-    "src/agent_takt/cli/commands/run.py",
-    "src/agent_takt/cli/parser.py",
-    "tests/test_cli_run.py"
+    "src/agent_takt/cli/commands/run.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Introduced `max_cycles = getattr(args, \"max_cycles\", 50)` on line 114 of run.py (just before the try/loop block), and updated both references at lines 150-151 from `args.max_cycles` to `max_cycles`. This matches the same defensive getattr pattern already used for `verbose` on line 97. Pre-existing tests that pass Namespace objects without max_cycles will no longer crash with AttributeError; QuiescenceLoopTests that pass max_cycles explicitly continue to work unchanged.",
+    "remaining": "None. The corrective change is minimal and complete. Parent bead B-351c1115 can be retried normally \u2014 the only blocker was this AttributeError.",
+    "risks": "None. The default of 50 matches the documented CLI default for --max-cycles, so behavior is identical when max_cycles is provided. When not provided (older tests), the loop now uses 50 as the cap instead of crashing.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/cli/commands/run.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Retry parent bead B-351c1115 via `uv run takt retry B-351c1115`.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/cli/commands/run.py",
+      "src/agent_takt/cli/parser.py",
+      "tests/test_cli_run.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/cli/commands/run.py"
+    ],
+    "conflict_risks": "None \u2014 only run.py line 114 and 150-151 changed; no overlap with other in-progress beads.",
+    "design_decisions": "Extracted `max_cycles = getattr(args, \"max_cycles\", 50)` into a local variable rather than using inline getattr at each call site. This avoids repeating the default value and keeps both the comparison and warning message consistent. The default 50 matches the parser default for --max-cycles.",
+    "test_coverage_notes": "The QuiescenceLoopTests in test_cli_run.py already cover max_cycles=0 (unbounded), max_cycles=5 (cap), and omit max_cycles. The RunCommandTests cover the Namespace-without-max_cycles path that was previously crashing \u2014 they now exercise the getattr fallback path. No new tests needed.",
+    "known_limitations": "N/A \u2014 the fix is complete and addresses the full scope of the regression."
   },
-  "block_reason": "file-scope conflict with in-progress B-6f7ced77",
-  "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
+  "block_reason": "",
+  "conflict_risks": "None \u2014 only run.py line 114 and 150-151 changed; no overlap with other in-progress beads.",
   "branch_name": "feature/b-53425f62",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
-  "lease": {
-    "owner": "developer:B-351c1115-corrective",
-    "expires_at": "2026-05-07T08:16:03.404304+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -111,6 +112,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-351c1115-corrective/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-05-07T07:47:16.417254+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Fixed AttributeError in command_run by replacing bare args.max_cycles access with a defensive getattr(args, 'max_cycles', 50) extracted into a local variable max_cycles before the quiescence loop. Both uses of args.max_cycles (comparison and warning message) now reference the local variable.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -185,7 +193,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Fixed AttributeError in command_run by replacing bare args.max_cycles access with a defensive getattr(args, 'max_cycles', 50) extracted into a local variable max_cycles before the quiescence loop. Both uses of args.max_cycles (comparison and warning message) now reference the local variable.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.24759450000000002,
+      "duration_ms": 55004,
+      "duration_api_ms": 49473,
+      "num_turns": 8,
+      "input_tokens": 9,
+      "output_tokens": 3139,
+      "cache_creation_tokens": 31952,
+      "cache_read_tokens": 257835,
+      "stop_reason": "end_turn",
+      "session_id": "e0c809cf-0f59-40e6-8338-6a1004e743f6",
+      "permission_denials": [],
+      "prompt_chars": 10034,
+      "prompt_lines": 190,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.24759450000000002,
+        "duration_ms": 55004,
+        "duration_api_ms": 49473,
+        "num_turns": 8,
+        "input_tokens": 9,
+        "output_tokens": 3139,
+        "cache_creation_tokens": 31952,
+        "cache_read_tokens": 257835,
+        "stop_reason": "end_turn",
+        "session_id": "e0c809cf-0f59-40e6-8338-6a1004e743f6",
+        "permission_denials": [],
+        "prompt_chars": 10034,
+        "prompt_lines": 190,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "3f8cdf36731680b7062d874c5940a25f46df71fd"
   },
   "labels": [],
   "recovery_for": null,
