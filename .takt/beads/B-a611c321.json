@@ -3,7 +3,7 @@
   "title": "Review cross-feature-root conflict fix and regression test",
   "agent_type": "review",
   "description": "Review the one-line change in src/agent_takt/scheduler/core.py and the new test in tests/test_scheduler_core.py. Verify: (1) the fix is correct and minimal \u2014 only _beads_conflict()'s final return is changed; (2) _find_conflict_reason(), _scopes_overlap(), _files_match_globs(), and _globs_overlap() are untouched; (3) the test correctly creates two independent feature roots and asserts both beads dispatch; (4) CLAUDE.md's conflict description is accurately updated; (5) no regressions in same-tree conflict detection. Issue verdict: approved or needs_changes with specific actionable feedback.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-622deef1",
   "dependencies": [
@@ -64,9 +64,12 @@
   },
   "block_reason": "",
   "conflict_risks": "None \u2014 only `src/agent_takt/scheduler/core.py` was modified; no sibling beads claim this file.\nNone \u2014 only tests/test_scheduler_core.py was modified; no production code touched.",
-  "branch_name": "",
+  "branch_name": "feature/b-622deef1",
   "worktree_path": "",
-  "lease": null,
+  "lease": {
+    "owner": "review:B-a611c321",
+    "expires_at": "2026-05-07T07:32:29.977308+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -75,9 +78,46 @@
       "agent_type": "scheduler",
       "summary": "Bead created",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T07:02:30.139690+00:00",
+      "event": "skills_loaded",
+      "agent_type": "review",
+      "summary": "Loaded 6 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/reviewer-signoff",
+          "capability/code-review",
+          "task/corrective-bead-creation",
+          "task/risk-assessment",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-07T07:02:30.139711+00:00",
+      "event": "started",
+      "agent_type": "review",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
-  "metadata": {},
+  "metadata": {
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-a611c321",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/reviewer-signoff",
+      "capability/code-review",
+      "task/corrective-bead-creation",
+      "task/risk-assessment",
+      "memory"
+    ],
+    "skill_bundle_hash": "68ad0ecb7bfe263ceb1ada56efead5a81dac8f9f2173181d0bf030dc0a3f880d",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-a611c321/home",
+    "runner_backend": "claude"
+  },
   "labels": [],
   "recovery_for": null,
   "priority": null
