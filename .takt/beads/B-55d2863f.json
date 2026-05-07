@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-622deef1",
-  "dependencies": [],
+  "dependencies": [
+    "B-aa2d1f79"
+  ],
   "acceptance_criteria": [
     "test_cross_feature_tree_overlapping_files_both_dispatched is added to tests/test_scheduler_core.py",
     "Both beads are created without parent_id so they belong to different feature roots",
