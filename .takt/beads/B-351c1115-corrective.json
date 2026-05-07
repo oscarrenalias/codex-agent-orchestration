@@ -3,7 +3,7 @@
   "title": "Corrective fix for B-351c1115: Verify quiescence loop correctness",
   "agent_type": "developer",
   "description": "Blocked reason: run.py:149 accesses args.max_cycles unconditionally. Pre-existing tests that construct Namespace(feature_root=..., max_workers=1) without max_cycles now fail with AttributeError. Fix: replace args.max_cycles with getattr(args, 'max_cycles', 50) on that line to match the defensive getattr pattern used for verbose on line 97.\n\nRemaining work: Fix regression: src/agent_takt/cli/commands/run.py line 149 uses args.max_cycles directly. Pre-existing tests that pass Namespace without max_cycles now crash with AttributeError. Change to getattr(args, 'max_cycles', 50) \u2014 the same defensive pattern used for verbose on line 97.",
-  "status": "ready",
+  "status": "in_progress",
   "bead_type": "task",
   "parent_id": "B-351c1115",
   "dependencies": [],
@@ -57,9 +57,12 @@
   },
   "block_reason": "file-scope conflict with in-progress B-6f7ced77",
   "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
-  "branch_name": "",
-  "worktree_path": "",
-  "lease": null,
+  "branch_name": "feature/b-53425f62",
+  "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "lease": {
+    "owner": "developer:B-351c1115-corrective",
+    "expires_at": "2026-05-07T08:16:03.404304+00:00"
+  },
   "retries": 0,
   "execution_history": [
     {
@@ -75,10 +78,48 @@
       "agent_type": "developer",
       "summary": "file-scope conflict with in-progress B-6f7ced77",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T07:46:03.829599+00:00",
+      "event": "skills_loaded",
+      "agent_type": "developer",
+      "summary": "Loaded 7 skill(s) for isolated execution",
+      "details": {
+        "loaded_skills": [
+          "core/base-orchestrator",
+          "role/developer-implementation",
+          "capability/code-edit",
+          "task/corrective-implementation",
+          "task/refactor-safe",
+          "task/migration",
+          "memory"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-05-07T07:46:03.829621+00:00",
+      "event": "started",
+      "agent_type": "developer",
+      "summary": "Worker started",
+      "details": {}
     }
   ],
   "metadata": {
-    "auto_corrective_for": "B-351c1115"
+    "auto_corrective_for": "B-351c1115",
+    "execution_root": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-351c1115-corrective",
+    "workspace_repo_path": "repo",
+    "loaded_skills": [
+      "core/base-orchestrator",
+      "role/developer-implementation",
+      "capability/code-edit",
+      "task/corrective-implementation",
+      "task/refactor-safe",
+      "task/migration",
+      "memory"
+    ],
+    "skill_bundle_hash": "ecae5633083d1bbec41a6e5ec6ea05bbab117f60499c19b2ed76dbbe3e1aec7c",
+    "isolated_home": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/agent-runs/B-351c1115-corrective/home",
+    "runner_backend": "claude"
   },
   "labels": [],
   "recovery_for": null,
