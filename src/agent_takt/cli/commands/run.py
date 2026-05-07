@@ -111,16 +111,17 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             return 1
     scope = f", feature_root={feature_root_id}" if feature_root_id else ""
     console.info(f"Starting scheduler loop with max_workers={args.max_workers}{scope}")
-    scheduler.storage.record_event("scheduler_cycle_started", {
-        "max_workers": args.max_workers,
-        "feature_root_id": feature_root_id,
-        "pid": os.getpid(),
-    })
     try:
         cycle_index = 1
         while True:
             if cycle_index > 1:
                 console.info(f"Cycle {cycle_index}")
+            scheduler.storage.record_event("scheduler_cycle_started", {
+                "cycle_index": cycle_index,
+                "max_workers": args.max_workers,
+                "feature_root_id": feature_root_id,
+                "pid": os.getpid(),
+            })
             result = scheduler.run_once(
                 max_workers=args.max_workers,
                 feature_root_id=feature_root_id,
@@ -135,6 +136,14 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             for bead_id in result.correctives_created:
                 correctives_created[bead_id] = bead_id
             deferred_count += len(result.deferred)
+            scheduler.storage.record_event("scheduler_cycle_completed", {
+                "cycle_index": cycle_index,
+                "started_count": len(result.started),
+                "completed_count": len(result.completed),
+                "blocked_count": len(result.blocked),
+                "deferred_count": len(result.deferred),
+                "pid": os.getpid(),
+            })
             if not result.started:
                 break
             if args.max_cycles > 0 and cycle_index >= args.max_cycles:
@@ -143,14 +152,6 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             cycle_index += 1
     finally:
         reporter.stop()
-
-    scheduler.storage.record_event("scheduler_cycle_completed", {
-        "started_count": len(started),
-        "completed_count": len(completed),
-        "blocked_count": len(blocked),
-        "deferred_count": deferred_count,
-        "pid": os.getpid(),
-    })
 
     # Build final-state counts from storage.
     all_beads = scheduler.storage.list_beads()
