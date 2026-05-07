@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-53425f62",
-  "dependencies": [],
+  "dependencies": [
+    "B-fabf2d0f"
+  ],
   "acceptance_criteria": [
     "`scheduler_cycle_started` is recorded inside the loop with a `cycle_index` field (1-based).",
     "`scheduler_cycle_completed` is recorded inside the loop with a matching `cycle_index` field.",
