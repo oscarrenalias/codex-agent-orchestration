@@ -6,7 +6,14 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-53425f62",
-  "dependencies": [],
+  "dependencies": [
+    "B-f1ec0e51",
+    "B-fabf2d0f",
+    "B-79f00355",
+    "B-a166dd90",
+    "B-351c1115",
+    "B-6f7ced77"
+  ],
   "acceptance_criteria": [
     "All developer changes in parser.py and run.py are reviewed and approved.",
     "Four new tests are reviewed for correctness and coverage of edge cases.",
