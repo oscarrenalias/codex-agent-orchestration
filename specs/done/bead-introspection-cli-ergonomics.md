@@ -5,7 +5,7 @@ description: "Add CLI surface for bead introspection patterns agents currently h
 dependencies: null
 priority: medium
 complexity: low
-status: draft
+status: done
 tags:
 - cli
 - dx
@@ -13,7 +13,7 @@ tags:
 scope:
   in: "New `takt bead history` subcommand; `--field PATH` projection flag on `takt bead show`; `--status` and `--agent` filters on `takt bead list`."
   out: "TUI changes, multi-bead `show` (deferred), bead mutation commands, telemetry/metrics commands, anything outside the `takt bead` subcommand group."
-feature_root_id: null
+feature_root_id: B-e54ece26
 ---
 # Bead introspection CLI ergonomics
 

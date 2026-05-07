@@ -1,3 +1,17 @@
+---
+name: Plan Review Gate V1
+id: spec-1b7de14f
+description: null
+dependencies: null
+priority: null
+complexity: null
+status: done
+tags: []
+scope:
+  in: null
+  out: null
+feature_root_id: null
+---
 # Plan Review Gate V1
 
 ## Objective
