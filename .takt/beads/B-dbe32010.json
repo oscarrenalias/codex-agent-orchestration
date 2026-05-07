@@ -23,16 +23,19 @@
   "execution_branch_name": "feature/b-622deef1",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-622deef1",
   "expected_files": [
-    "src/agent_takt/scheduler/core.py"
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_scheduler_core.py"
   ],
   "expected_globs": [
     "tests/**/*.py"
   ],
   "touched_files": [
-    "src/agent_takt/scheduler/core.py"
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_scheduler_core.py"
   ],
   "changed_files": [
-    "src/agent_takt/scheduler/core.py"
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_scheduler_core.py"
   ],
   "updated_docs": [],
   "handoff_summary": {
@@ -56,7 +59,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 only `src/agent_takt/scheduler/core.py` was modified; no sibling beads claim this file.",
+  "conflict_risks": "None \u2014 only `src/agent_takt/scheduler/core.py` was modified; no sibling beads claim this file.\nNone \u2014 only tests/test_scheduler_core.py was modified; no production code touched.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
