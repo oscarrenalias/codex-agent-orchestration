@@ -6,7 +6,9 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-53425f62",
-  "dependencies": [],
+  "dependencies": [
+    "B-f1ec0e51"
+  ],
   "acceptance_criteria": [
     "`command_run` contains a `while True:` loop that calls `scheduler.run_once()` on every iteration.",
     "Loop exits via `break` when `not result.started`.",
