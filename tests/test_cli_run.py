@@ -6,7 +6,7 @@ import sys
 import unittest
 from argparse import Namespace
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -19,7 +19,7 @@ from agent_takt.cli.parser import build_parser
 from agent_takt.console import ConsoleReporter
 from agent_takt.gitutils import WorktreeManager
 from agent_takt.models import AgentRunResult
-from agent_takt.scheduler import Scheduler
+from agent_takt.scheduler import Scheduler, SchedulerResult
 from agent_takt.storage import RepositoryStorage
 from agent_takt.tui.state import TuiRuntimeState
 
@@ -327,6 +327,86 @@ class RunParserVerboseTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as ctx:
             parser.parse_args(["run", "--once"])
         self.assertEqual(2, ctx.exception.code)
+
+
+class QuiescenceLoopTests(_OrchestratorBase):
+    """Tests that verify command_run's quiescence loop by mocking Scheduler.run_once directly."""
+
+    def _make_scheduler(self) -> Scheduler:
+        worktrees = WorktreeManager(self.root, self.storage.worktrees_dir)
+        return Scheduler(self.storage, FakeRunner(), worktrees)
+
+    def test_run_loops_until_quiescence(self) -> None:
+        """run_once is called 3 times: two cycles start beads, the third starts none and exits."""
+        scheduler = self._make_scheduler()
+        side_effects = [
+            SchedulerResult(started=["B-1"]),
+            SchedulerResult(started=["B-2"]),
+            SchedulerResult(started=[]),
+        ]
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with patch.object(scheduler, "run_once", side_effect=side_effects) as mock_run:
+            exit_code = command_run(
+                Namespace(feature_root=None, max_workers=1, max_cycles=0),
+                scheduler,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        self.assertEqual(3, mock_run.call_count)
+        data = _parse_run_summary_json(stream.getvalue())
+        self.assertIn("B-1", data["started"])
+        self.assertIn("B-2", data["started"])
+
+    def test_run_stops_when_no_beads_started(self) -> None:
+        """run_once returns started=[] immediately; loop exits after one call."""
+        scheduler = self._make_scheduler()
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with patch.object(
+            scheduler, "run_once", return_value=SchedulerResult(started=[])
+        ) as mock_run:
+            exit_code = command_run(
+                Namespace(feature_root=None, max_workers=1, max_cycles=0),
+                scheduler,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        self.assertEqual(1, mock_run.call_count)
+        self.assertIn("No ready beads", stream.getvalue())
+
+    def test_run_respects_max_cycles_cap(self) -> None:
+        """run_once always starts beads; loop exits after max_cycles=5 with a warning."""
+        scheduler = self._make_scheduler()
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with patch.object(
+            scheduler, "run_once", return_value=SchedulerResult(started=["B-N"])
+        ) as mock_run:
+            exit_code = command_run(
+                Namespace(feature_root=None, max_workers=1, max_cycles=5),
+                scheduler,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        self.assertEqual(5, mock_run.call_count)
+        self.assertIn("max_cycles", stream.getvalue())
+
+    def test_run_quiescence_with_deferred_only_exits(self) -> None:
+        """Deferred beads do not count as progress; loop exits after one call."""
+        scheduler = self._make_scheduler()
+        stream = io.StringIO()
+        console = ConsoleReporter(stream=stream)
+        with patch.object(
+            scheduler, "run_once", return_value=SchedulerResult(started=[], deferred=["B-X"])
+        ) as mock_run:
+            exit_code = command_run(
+                Namespace(feature_root=None, max_workers=1, max_cycles=0),
+                scheduler,
+                console,
+            )
+        self.assertEqual(0, exit_code)
+        self.assertEqual(1, mock_run.call_count)
 
 
 if __name__ == "__main__":
