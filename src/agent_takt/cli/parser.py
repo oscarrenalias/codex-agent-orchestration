@@ -63,6 +63,7 @@ def build_parser(agent_types: list[str] | None = None) -> argparse.ArgumentParse
     run_parser.add_argument("--max-workers", type=int, default=1, help="Maximum number of parallel agent workers (default: 1)")
     run_parser.add_argument("--feature-root", help="Run only beads in the specified feature root")
     run_parser.add_argument("--verbose", action="store_true", help="Show per-bead deferral detail lines")
+    run_parser.add_argument("--max-cycles", type=int, default=50, dest="max_cycles", help="Maximum number of scheduler cycles to run (default: 50; 0 or negative means unbounded)")
 
     bead_parser = subparsers.add_parser("bead", help="Manage beads (create, list, show, graph, delete, ...)")
     bead_parser.add_argument("--root", dest="root", help=argparse.SUPPRESS)
