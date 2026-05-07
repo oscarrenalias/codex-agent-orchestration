@@ -6,7 +6,12 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-53425f62",
-  "dependencies": [],
+  "dependencies": [
+    "B-f1ec0e51",
+    "B-fabf2d0f",
+    "B-79f00355",
+    "B-a166dd90"
+  ],
   "acceptance_criteria": [
     "CLAUDE.md contains a subsection or paragraph documenting the quiescence loop behaviour.",
     "The `--max-cycles` flag is documented with its default (50) and the unbounded behaviour for 0.",
