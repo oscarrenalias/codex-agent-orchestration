@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-622deef1",
-  "dependencies": [],
+  "dependencies": [
+    "B-aa2d1f79",
+    "B-55d2863f"
+  ],
   "acceptance_criteria": [
     "uv run pytest tests/ -n auto -q exits zero",
     "test_cross_feature_tree_overlapping_files_both_dispatched passes",
