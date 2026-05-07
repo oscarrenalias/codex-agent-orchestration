@@ -1,0 +1,71 @@
+{
+  "bead_id": "B-a611c321",
+  "title": "Review cross-feature-root conflict fix and regression test",
+  "agent_type": "review",
+  "description": "Review the one-line change in src/agent_takt/scheduler/core.py and the new test in tests/test_scheduler_core.py. Verify: (1) the fix is correct and minimal \u2014 only _beads_conflict()'s final return is changed; (2) _find_conflict_reason(), _scopes_overlap(), _files_match_globs(), and _globs_overlap() are untouched; (3) the test correctly creates two independent feature roots and asserts both beads dispatch; (4) CLAUDE.md's conflict description is accurately updated; (5) no regressions in same-tree conflict detection. Issue verdict: approved or needs_changes with specific actionable feedback.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-622deef1",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "_beads_conflict() fix is confirmed correct and minimal",
+    "No unintended methods are modified",
+    "Regression test accurately covers the cross-feature-root overlap case",
+    "CLAUDE.md description is accurate after the documentation update",
+    "Verdict is approved or needs_changes with actionable feedback"
+  ],
+  "linked_docs": [
+    "specs/drafts/cross-feature-root-file-scope-conflict-false-positive.md"
+  ],
+  "feature_root_id": "B-622deef1",
+  "execution_branch_name": "feature/b-622deef1",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-622deef1",
+  "expected_files": [
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_scheduler_core.py",
+    "CLAUDE.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T06:42:35.636699+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
