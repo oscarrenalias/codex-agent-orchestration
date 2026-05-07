@@ -3,7 +3,7 @@
   "title": "Add quiescence loop tests to test_cli_run.py",
   "agent_type": "developer",
   "description": "Append four tests to `tests/test_cli_run.py` that cover the quiescence loop behaviour. Each test mocks `Scheduler.run_once` directly (no FakeRunner needed) and invokes `command_run` via the existing test harness in that file.\n\n1. `test_run_loops_until_quiescence`: `run_once` returns three SchedulerResult objects in sequence \u2014 `started=['B-1']`, `started=['B-2']`, `started=[]`. Assert `run_once` called exactly 3 times; final summary contains both bead IDs.\n2. `test_run_stops_when_no_beads_started`: `run_once` returns `started=[]` immediately. Assert called exactly once.\n3. `test_run_respects_max_cycles_cap`: `run_once` always returns `started=['B-N']`. With `--max-cycles 5`, assert called exactly 5 times and a warning was emitted.\n4. `test_run_quiescence_with_deferred_only_exits`: `run_once` returns `started=[], deferred=['B-X']`. Assert loop exits after one call \u2014 deferred beads do not prevent quiescence.",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-53425f62",
   "dependencies": [
@@ -29,37 +29,44 @@
     "tests/test_cli_run.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "tests/test_cli_run.py"
+  ],
+  "changed_files": [
+    "tests/test_cli_run.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Added `QuiescenceLoopTests` class with four tests: `test_run_loops_until_quiescence` (3 calls, accumulates B-1 and B-2), `test_run_stops_when_no_beads_started` (1 call, warns \"No ready beads\"), `test_run_respects_max_cycles_cap` (exactly 5 calls, warning contains \"max_cycles\"), `test_run_quiescence_with_deferred_only_exits` (1 call, deferred list does not prevent exit). Also added `patch` to the `unittest.mock` import and `SchedulerResult` to the `agent_takt.scheduler` import.",
+    "remaining": "N/A",
+    "risks": "None. Tests are purely additive; they mock `run_once` and use the `_OrchestratorBase` temp-repo harness already established in the file.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "tests/test_cli_run.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should run the full test suite and validate the four new tests individually.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "tests/test_cli_run.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "tests/test_cli_run.py"
+    ],
+    "conflict_risks": "None \u2014 only file touched is `tests/test_cli_run.py`, which is not claimed by any other in-progress bead.",
+    "design_decisions": "Used `patch.object(scheduler, \"run_once\", ...)` rather than subclassing Scheduler or using a MagicMock scheduler. This avoids touching the storage/worktree plumbing that `command_run` accesses on `scheduler.storage`, while cleanly controlling only the loop-driving method. `max_cycles=0` is the \"no cap\" sentinel value matching the production code condition `args.max_cycles > 0`.",
+    "test_coverage_notes": "The four tests cover every exit path of the quiescence while-loop in `command_run`: normal quiescence (started becomes empty), immediate empty start, max_cycles hard cap, and the deferred-only non-progress case. No new production code was added so no further coverage is needed from the tester beyond verifying these four tests pass.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only file touched is `tests/test_cli_run.py`, which is not claimed by any other in-progress bead.",
   "branch_name": "feature/b-53425f62",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
-  "lease": {
-    "owner": "developer:B-a166dd90",
-    "expires_at": "2026-05-07T08:09:05.902119+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -101,6 +108,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-a166dd90/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-05-07T07:42:13.644674+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Added four quiescence loop tests to `tests/test_cli_run.py` in a new `QuiescenceLoopTests` class. Each test mocks `Scheduler.run_once` directly via `patch.object`, covering: multi-cycle loop termination, immediate no-start exit, max_cycles cap with warning, and deferred-only quiescence.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -175,7 +189,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Added four quiescence loop tests to `tests/test_cli_run.py` in a new `QuiescenceLoopTests` class. Each test mocks `Scheduler.run_once` directly via `patch.object`, covering: multi-cycle loop termination, immediate no-start exit, max_cycles cap with warning, and deferred-only quiescence.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.48261885000000004,
+      "duration_ms": 174759,
+      "duration_api_ms": 170870,
+      "num_turns": 14,
+      "input_tokens": 14,
+      "output_tokens": 11630,
+      "cache_creation_tokens": 41115,
+      "cache_read_tokens": 502022,
+      "stop_reason": "end_turn",
+      "session_id": "a751a9d3-e2cb-4142-8bfd-8b98fb06d344",
+      "permission_denials": [],
+      "prompt_chars": 10108,
+      "prompt_lines": 180,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.48261885000000004,
+        "duration_ms": 174759,
+        "duration_api_ms": 170870,
+        "num_turns": 14,
+        "input_tokens": 14,
+        "output_tokens": 11630,
+        "cache_creation_tokens": 41115,
+        "cache_read_tokens": 502022,
+        "stop_reason": "end_turn",
+        "session_id": "a751a9d3-e2cb-4142-8bfd-8b98fb06d344",
+        "permission_denials": [],
+        "prompt_chars": 10108,
+        "prompt_lines": 180,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "a66353aedc36355c9199068cd277331950a2243d"
   },
   "labels": [],
   "recovery_for": null,
