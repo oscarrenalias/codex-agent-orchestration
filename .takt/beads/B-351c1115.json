@@ -59,7 +59,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 only parser.py modified; no overlap with other in-progress beads.\nNone \u2014 only `run.py` was modified; no overlap with other beads.",
+  "conflict_risks": "None \u2014 only parser.py modified; no overlap with other in-progress beads.\nNone \u2014 only `run.py` was modified; no overlap with other beads.\nNone \u2014 only `src/agent_takt/cli/commands/run.py` was modified, no shared files.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
