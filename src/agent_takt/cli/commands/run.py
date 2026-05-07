@@ -117,20 +117,30 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
         "pid": os.getpid(),
     })
     try:
-        result = scheduler.run_once(
-            max_workers=args.max_workers,
-            feature_root_id=feature_root_id,
-            reporter=reporter,
-        )
-        for bead_id in result.started:
-            started[bead_id] = bead_id
-        for bead_id in result.completed:
-            completed[bead_id] = bead_id
-        for bead_id in result.blocked:
-            blocked[bead_id] = bead_id
-        for bead_id in result.correctives_created:
-            correctives_created[bead_id] = bead_id
-        deferred_count += len(result.deferred)
+        cycle_index = 1
+        while True:
+            if cycle_index > 1:
+                console.info(f"Cycle {cycle_index}")
+            result = scheduler.run_once(
+                max_workers=args.max_workers,
+                feature_root_id=feature_root_id,
+                reporter=reporter,
+            )
+            for bead_id in result.started:
+                started[bead_id] = bead_id
+            for bead_id in result.completed:
+                completed[bead_id] = bead_id
+            for bead_id in result.blocked:
+                blocked[bead_id] = bead_id
+            for bead_id in result.correctives_created:
+                correctives_created[bead_id] = bead_id
+            deferred_count += len(result.deferred)
+            if not result.started:
+                break
+            if args.max_cycles > 0 and cycle_index >= args.max_cycles:
+                console.warn(f"Reached max_cycles={args.max_cycles}; stopping scheduler loop")
+                break
+            cycle_index += 1
     finally:
         reporter.stop()
 
