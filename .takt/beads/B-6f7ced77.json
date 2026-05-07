@@ -1,0 +1,69 @@
+{
+  "bead_id": "B-6f7ced77",
+  "title": "Document takt run quiescence loop and --max-cycles flag",
+  "agent_type": "documentation",
+  "description": "Update `CLAUDE.md` to document the quiescence loop behaviour and the `--max-cycles` flag. Add a brief subsection under (or extending) the existing 'Multi-Worker CLI Output' section. The Quick Reference line 9 (`run all beads to quiescence`) is already correct \u2014 leave it unchanged. The new subsection should describe: (1) takt run loops until the scheduler finds nothing to dispatch; (2) --max-cycles N caps iterations (default 50; 0 = unbounded); (3) beads stuck on unsatisfied dependencies (deferred) cause the loop to exit, not spin \u2014 they require operator intervention.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-53425f62",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "CLAUDE.md contains a subsection or paragraph documenting the quiescence loop behaviour.",
+    "The `--max-cycles` flag is documented with its default (50) and the unbounded behaviour for 0.",
+    "The deferred-beads exit condition is documented (loop exits, not infinite).",
+    "The Quick Reference line 9 is unchanged.",
+    "No other CLAUDE.md content is altered."
+  ],
+  "linked_docs": [
+    "specs/drafts/run-scheduler-to-full-quiescence-in-takt-run.md"
+  ],
+  "feature_root_id": "B-53425f62",
+  "execution_branch_name": "feature/b-53425f62",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "expected_files": [
+    "CLAUDE.md"
+  ],
+  "expected_globs": [],
+  "touched_files": [],
+  "changed_files": [],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T07:33:54.182060+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {},
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
