@@ -25,13 +25,16 @@
   "execution_branch_name": "feature/b-53425f62",
   "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
   "expected_files": [
+    "src/agent_takt/cli/commands/run.py",
     "src/agent_takt/cli/parser.py"
   ],
   "expected_globs": [],
   "touched_files": [
+    "src/agent_takt/cli/commands/run.py",
     "src/agent_takt/cli/parser.py"
   ],
   "changed_files": [
+    "src/agent_takt/cli/commands/run.py",
     "src/agent_takt/cli/parser.py"
   ],
   "updated_docs": [],
@@ -56,7 +59,7 @@
     "known_limitations": ""
   },
   "block_reason": "",
-  "conflict_risks": "None \u2014 only parser.py modified; no overlap with other in-progress beads.",
+  "conflict_risks": "None \u2014 only parser.py modified; no overlap with other in-progress beads.\nNone \u2014 only `run.py` was modified; no overlap with other beads.",
   "branch_name": "",
   "worktree_path": "",
   "lease": null,
