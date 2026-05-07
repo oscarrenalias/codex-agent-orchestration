@@ -3,7 +3,7 @@
   "title": "Fix _beads_conflict() to gate _scopes_overlap() on same_feature_tree",
   "agent_type": "developer",
   "description": "In src/agent_takt/scheduler/core.py, change the final return statement of _beads_conflict() from `return self._scopes_overlap(bead, active)` to `return same_feature_tree and self._scopes_overlap(bead, active)`. The variable same_feature_tree is already computed at the top of the function (line 430) so no additional lookups are needed. Do not modify _find_conflict_reason(), _scopes_overlap(), _files_match_globs(), or _globs_overlap().",
-  "status": "in_progress",
+  "status": "done",
   "bead_type": "task",
   "parent_id": "B-622deef1",
   "dependencies": [],
@@ -22,37 +22,44 @@
     "src/agent_takt/scheduler/core.py"
   ],
   "expected_globs": [],
-  "touched_files": [],
-  "changed_files": [],
+  "touched_files": [
+    "src/agent_takt/scheduler/core.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/scheduler/core.py"
+  ],
   "updated_docs": [],
   "handoff_summary": {
-    "completed": "",
-    "remaining": "",
-    "risks": "",
-    "verdict": "",
+    "completed": "Modified `_beads_conflict()` in `src/agent_takt/scheduler/core.py` (line 444): added `same_feature_tree and` guard before `self._scopes_overlap(bead, active)`. Exactly one line changed as required.",
+    "remaining": "None \u2014 the bead is fully implemented.",
+    "risks": "Low. The `same_feature_tree` variable was already computed at line 430; no additional storage lookups needed. The change tightens conflict detection: two beads in different feature trees that share overlapping file scopes will no longer block each other, which is the intended behaviour.",
+    "verdict": "approved",
     "findings_count": 0,
     "requires_followup": false,
-    "changed_files": [],
+    "changed_files": [
+      "src/agent_takt/scheduler/core.py"
+    ],
     "updated_docs": [],
-    "next_action": "",
-    "next_agent": "",
+    "next_action": "Tester agent should verify: (1) beads in different feature trees with overlapping expected_files are no longer reported as conflicting; (2) beads in the same feature tree with overlapping scopes still conflict correctly; (3) all existing scheduler conflict tests continue to pass.",
+    "next_agent": "tester",
     "block_reason": "",
-    "expected_files": [],
+    "expected_files": [
+      "src/agent_takt/scheduler/core.py"
+    ],
     "expected_globs": [],
-    "touched_files": [],
-    "conflict_risks": "",
-    "design_decisions": "",
-    "test_coverage_notes": "",
-    "known_limitations": ""
+    "touched_files": [
+      "src/agent_takt/scheduler/core.py"
+    ],
+    "conflict_risks": "None \u2014 only `src/agent_takt/scheduler/core.py` was modified; no sibling beads claim this file.",
+    "design_decisions": "The `same_feature_tree` guard is placed as the short-circuit left operand of `and`, so when beads are in different trees the expensive `_scopes_overlap()` call is skipped entirely. No alternative approach was considered because the description is precise and the variable was already computed.",
+    "test_coverage_notes": "Tester should add or verify a test case: two beads in different feature trees, each with overlapping `expected_files`, should produce `_beads_conflict() == False`. Also confirm regression: same-tree overlapping-scope beads still return `True`.",
+    "known_limitations": "N/A"
   },
   "block_reason": "",
-  "conflict_risks": "",
+  "conflict_risks": "None \u2014 only `src/agent_takt/scheduler/core.py` was modified; no sibling beads claim this file.",
   "branch_name": "feature/b-622deef1",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-622deef1",
-  "lease": {
-    "owner": "developer:B-aa2d1f79",
-    "expires_at": "2026-05-07T07:12:57.573861+00:00"
-  },
+  "lease": null,
   "retries": 0,
   "execution_history": [
     {
@@ -94,6 +101,13 @@
       "details": {
         "template_path": ".takt/agent-runs/B-aa2d1f79/repo/templates/agents/developer.md"
       }
+    },
+    {
+      "timestamp": "2026-05-07T06:43:44.275583+00:00",
+      "event": "completed",
+      "agent_type": "developer",
+      "summary": "Changed the final return in `_beads_conflict()` from `return self._scopes_overlap(bead, active)` to `return same_feature_tree and self._scopes_overlap(bead, active)`. This gates scope overlap checks on beads being in the same feature tree, eliminating false-positive conflicts between beads in different feature trees that happen to declare overlapping expected files.",
+      "details": {}
     }
   ],
   "metadata": {
@@ -161,7 +175,53 @@
         "test_coverage_notes": "",
         "known_limitations": ""
       }
-    }
+    },
+    "last_agent_result": {
+      "outcome": "completed",
+      "summary": "Changed the final return in `_beads_conflict()` from `return self._scopes_overlap(bead, active)` to `return same_feature_tree and self._scopes_overlap(bead, active)`. This gates scope overlap checks on beads being in the same feature tree, eliminating false-positive conflicts between beads in different feature trees that happen to declare overlapping expected files.",
+      "verdict": "approved",
+      "findings_count": 0,
+      "requires_followup": false,
+      "next_agent": "tester",
+      "block_reason": ""
+    },
+    "telemetry": {
+      "cost_usd": 0.15033225,
+      "duration_ms": 30382,
+      "duration_api_ms": 30937,
+      "num_turns": 6,
+      "input_tokens": 7,
+      "output_tokens": 1710,
+      "cache_creation_tokens": 21135,
+      "cache_read_tokens": 141440,
+      "stop_reason": "end_turn",
+      "session_id": "29e132f7-9835-4965-be0e-42e185682e61",
+      "permission_denials": [],
+      "prompt_chars": 9216,
+      "prompt_lines": 173,
+      "source": "provider",
+      "attempt": 1
+    },
+    "telemetry_history": [
+      {
+        "cost_usd": 0.15033225,
+        "duration_ms": 30382,
+        "duration_api_ms": 30937,
+        "num_turns": 6,
+        "input_tokens": 7,
+        "output_tokens": 1710,
+        "cache_creation_tokens": 21135,
+        "cache_read_tokens": 141440,
+        "stop_reason": "end_turn",
+        "session_id": "29e132f7-9835-4965-be0e-42e185682e61",
+        "permission_denials": [],
+        "prompt_chars": 9216,
+        "prompt_lines": 173,
+        "source": "provider",
+        "attempt": 1
+      }
+    ],
+    "last_commit": "af58aab5534fb17ba49fa3929c0e1da0a388dda4"
   },
   "labels": [],
   "recovery_for": null,
