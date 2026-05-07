@@ -1,0 +1,79 @@
+{
+  "bead_id": "B-351c1115-corrective",
+  "title": "Corrective fix for B-351c1115: Verify quiescence loop correctness",
+  "agent_type": "developer",
+  "description": "Blocked reason: run.py:149 accesses args.max_cycles unconditionally. Pre-existing tests that construct Namespace(feature_root=..., max_workers=1) without max_cycles now fail with AttributeError. Fix: replace args.max_cycles with getattr(args, 'max_cycles', 50) on that line to match the defensive getattr pattern used for verbose on line 97.\n\nRemaining work: Fix regression: src/agent_takt/cli/commands/run.py line 149 uses args.max_cycles directly. Pre-existing tests that pass Namespace without max_cycles now crash with AttributeError. Change to getattr(args, 'max_cycles', 50) \u2014 the same defensive pattern used for verbose on line 97.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-351c1115",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-351c1115.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [
+    "specs/drafts/run-scheduler-to-full-quiescence-in-takt-run.md"
+  ],
+  "feature_root_id": "B-53425f62",
+  "execution_branch_name": "feature/b-53425f62",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
+  "expected_files": [
+    "src/agent_takt/cli/commands/run.py",
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_run.py"
+  ],
+  "expected_globs": [],
+  "touched_files": [
+    "src/agent_takt/cli/commands/run.py",
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_run.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/cli/commands/run.py",
+    "src/agent_takt/cli/parser.py",
+    "tests/test_cli_run.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T07:44:40.524783+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-351c1115"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
