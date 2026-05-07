@@ -165,6 +165,15 @@
       "agent_type": "tester",
       "summary": "Worker started",
       "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T07:47:50.601466+00:00",
+      "event": "guardrails_applied",
+      "agent_type": "tester",
+      "summary": "Applied guardrails from .takt/agent-runs/B-351c1115/repo/templates/agents/tester.md",
+      "details": {
+        "template_path": ".takt/agent-runs/B-351c1115/repo/templates/agents/tester.md"
+      }
     }
   ],
   "metadata": {
@@ -185,7 +194,7 @@
       "agent_type": "tester",
       "template_path": ".takt/agent-runs/B-351c1115/repo/templates/agents/tester.md",
       "template_text": "# Tester Guardrails\n\n**CRITICAL \u2014 read before any tool use:**\n- **Never use `run_in_background: true`** on any Bash command. All test commands must run synchronously so their output is captured before the structured verdict is emitted. Background tasks cause the structured output to be lost, resulting in a failed bead.\n- **If a task-notification appears in your context**, that means a previous Bash command ran in the background in violation of this rule. Do not treat the notification as a sign that work is done. Re-run the test command synchronously (without `run_in_background`) and emit the JSON verdict block as your final response.\n- **The JSON verdict block must be the absolute last output of your response.** Never end with prose, a status summary, or a notification acknowledgement. The orchestrator parses your final message as JSON and will fail if it is not valid JSON.\n\n---\n\nPrimary responsibility: Add or update automated tests, run validation, and report defects or missing coverage.\n\nAllowed actions:\n- Write or update tests relevant to the assigned bead.\n- Run only the test files related to the bead's changed files, not the full test suite. Target individual test files or modules. If unsure which tests are relevant, use the bead's expected_files and touched_files fields as a guide. Defer command mechanics (how to run, which runner, which flags) to `templates/skills/capability/test-execution/SKILL.md`.\n- Make minimal test-enablement fixes (e.g. import corrections, fixture setup) only when strictly necessary to run the relevant tests. Do not refactor production code under the guise of test enablement.\n\nDisallowed actions:\n- Run the full test suite instead of targeting specific tests. Always run targeted, scoped commands. Running the full suite wastes time and often exceeds the agent timeout.\n- Use `run_in_background` for any Bash commands. (See CRITICAL section above.)\n- Implement feature logic beyond minimal test-enablement work.\n- Reframe a feature implementation task as testing work to bypass handoff.\n- Perform review signoff or broad documentation rewrites.\n\n## Memory\n\n**Read memory at bead start.** Before writing or running any tests, run three searches using `$TAKT_CMD` (injected by the orchestrator):\n\n```bash\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace global\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace feature:<feature_root_id>\n$TAKT_CMD memory search \"<bead topic keywords>\" --namespace specs\n```\n\nTreat results as ambient context \u2014 apply relevant entries; skip entries that don't apply.\n\n**Write to memory when you discover reusable testing knowledge** \u2014 patterns, pitfalls, or edge cases that would benefit future testers of this codebase.\n\n```bash\n$TAKT_CMD memory add \"<concise fact>\" --namespace global               # project-wide knowledge\n$TAKT_CMD memory add \"<discovery>\" --namespace feature:<feature_root_id>  # feature-scoped\n```\n\nExpected outputs:\n- Return JSON with structured verdict fields for every run: `verdict`, `findings_count`, and `requires_followup`.\n- Treat `verdict` as the tester signoff decision: `approved` means testing can complete, while `needs_changes` means the bead must block for follow-up work.\n- Use `verdict=approved`, `findings_count=0`, and `requires_followup=false` when testing is complete with no unresolved tester-scope findings.\n- Use `verdict=needs_changes`, set `findings_count` to the unresolved defect or coverage gap count, set `requires_followup=true` unless there is a stronger explicit reason not to, and always include `block_reason` when follow-up work is required.\n- Keep `completed`, `remaining`, and `risks` as free-form narrative context only. They inform operators, but they do not override the structured verdict or control scheduler state.\n- Completed or blocked JSON describing test coverage, validation status, and follow-up needs.\n- Precise defect or coverage notes when the bead cannot be completed within tester scope.\n\n**FINAL REMINDER: The JSON verdict block must be the last thing you output. Do not add any text, prose, or acknowledgement after it.**",
-      "captured_at": "2026-05-07T07:42:39.049310+00:00"
+      "captured_at": "2026-05-07T07:47:50.601446+00:00"
     },
     "worker_prompt_context": {
       "bead_id": "B-351c1115",
@@ -222,26 +231,38 @@
         "src/agent_takt/cli/parser.py",
         "tests/test_cli_run.py"
       ],
-      "conflict_risks": "None \u2014 only parser.py modified; no overlap with other in-progress beads.\nNone \u2014 only `run.py` was modified; no overlap with other beads.\nNone \u2014 only `src/agent_takt/cli/commands/run.py` was modified, no shared files.\nNone \u2014 only file touched is `tests/test_cli_run.py`, which is not claimed by any other in-progress bead.",
+      "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
       "handoff_summary": {
-        "completed": "",
-        "remaining": "",
-        "risks": "",
-        "verdict": "",
-        "findings_count": 0,
-        "requires_followup": false,
-        "changed_files": [],
+        "completed": "All 4 new QuiescenceLoopTests pass (test_run_loops_until_quiescence, test_run_stops_when_no_beads_started, test_run_respects_max_cycles_cap, test_run_quiescence_with_deferred_only_exits). RunParserVerboseTests all pass. takt run --help shows --max-cycles with default 50. Telemetry events include cycle_index in both scheduler_cycle_started and scheduler_cycle_completed.",
+        "remaining": "Fix regression: src/agent_takt/cli/commands/run.py line 149 uses args.max_cycles directly. Pre-existing tests that pass Namespace without max_cycles now crash with AttributeError. Change to getattr(args, 'max_cycles', 50) \u2014 the same defensive pattern used for verbose on line 97.",
+        "risks": "5 pre-existing RunCommandTests are failing due to this regression. The broken tests: test_cli_run_resolves_feature_root_prefix, test_cli_run_summary_json_format, test_cli_run_summary_final_state_counts_storage, test_cli_run_summary_bead_ids_are_sorted, test_cli_run_summary_feature_root_scopes_final_state.",
+        "verdict": "needs_changes",
+        "findings_count": 5,
+        "requires_followup": true,
+        "changed_files": [
+          "src/agent_takt/cli/commands/run.py",
+          "src/agent_takt/cli/parser.py",
+          "tests/test_cli_run.py"
+        ],
         "updated_docs": [],
-        "next_action": "",
-        "next_agent": "",
-        "block_reason": "",
-        "expected_files": [],
+        "next_action": "A developer corrective bead should fix run.py:149 to use getattr(args, 'max_cycles', 50) instead of args.max_cycles directly.",
+        "next_agent": "developer",
+        "block_reason": "run.py:149 accesses args.max_cycles unconditionally. Pre-existing tests that construct Namespace(feature_root=..., max_workers=1) without max_cycles now fail with AttributeError. Fix: replace args.max_cycles with getattr(args, 'max_cycles', 50) on that line to match the defensive getattr pattern used for verbose on line 97.",
+        "expected_files": [
+          "src/agent_takt/cli/commands/run.py",
+          "src/agent_takt/cli/parser.py",
+          "tests/test_cli_run.py"
+        ],
         "expected_globs": [],
-        "touched_files": [],
-        "conflict_risks": "",
-        "design_decisions": "",
-        "test_coverage_notes": "",
-        "known_limitations": ""
+        "touched_files": [
+          "src/agent_takt/cli/commands/run.py",
+          "src/agent_takt/cli/parser.py",
+          "tests/test_cli_run.py"
+        ],
+        "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
+        "design_decisions": "The fix follows the existing pattern on run.py:97 where getattr(args, 'verbose', False) is already used defensively. The default of 50 matches the parser default declared in parser.py:66.",
+        "test_coverage_notes": "All 4 new quiescence loop tests pass. The 5 failing tests are pre-existing and were green before the quiescence loop feature was added. Once run.py:149 is patched the full test_cli_run.py suite should be green.",
+        "known_limitations": "N/A"
       }
     },
     "last_agent_result": {
