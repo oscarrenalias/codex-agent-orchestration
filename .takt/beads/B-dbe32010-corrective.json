@@ -1,0 +1,78 @@
+{
+  "bead_id": "B-dbe32010-corrective",
+  "title": "Corrective fix for B-dbe32010: Verify full test suite passes after conflict fix",
+  "agent_type": "developer",
+  "description": "Blocked reason: Three pre-existing tests fail due to regression from B-aa2d1f79. Root cause: `_beads_conflict()` line 444 now returns `False` for any two root-level beads with overlapping files, because `same_feature_tree=False` when each bead has a unique feature_root_id. Fix: update the 3 failing tests to place conflicting beads under a shared parent so same_feature_tree=True, restoring conflict detection for the same-feature-tree case.\n\nRemaining work: Developer must update the 3 failing tests to use same-feature-tree setups (add a shared parent bead) so conflict detection still applies within a feature tree. Tests affected: test_scheduler_defers_overlapping_claims, test_high_priority_bead_deferred_due_to_conflict_normal_bead_runs, test_file_scope_conflict_calls_reporter_with_file_scope_reason.",
+  "status": "ready",
+  "bead_type": "task",
+  "parent_id": "B-dbe32010",
+  "dependencies": [],
+  "acceptance_criteria": [
+    "Implement the minimum fix required to unblock B-dbe32010.",
+    "Update tests/docs as needed for the corrective change.",
+    "Leave a handoff summary that states how the parent bead can be retried."
+  ],
+  "linked_docs": [
+    "specs/drafts/cross-feature-root-file-scope-conflict-false-positive.md"
+  ],
+  "feature_root_id": "B-622deef1",
+  "execution_branch_name": "feature/b-622deef1",
+  "execution_worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-622deef1",
+  "expected_files": [
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_scheduler_core.py"
+  ],
+  "expected_globs": [
+    "tests/**/*.py"
+  ],
+  "touched_files": [
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_scheduler_core.py"
+  ],
+  "changed_files": [
+    "src/agent_takt/scheduler/core.py",
+    "tests/test_scheduler_core.py"
+  ],
+  "updated_docs": [],
+  "handoff_summary": {
+    "completed": "",
+    "remaining": "",
+    "risks": "",
+    "verdict": "",
+    "findings_count": 0,
+    "requires_followup": false,
+    "changed_files": [],
+    "updated_docs": [],
+    "next_action": "",
+    "next_agent": "",
+    "block_reason": "",
+    "expected_files": [],
+    "expected_globs": [],
+    "touched_files": [],
+    "conflict_risks": "",
+    "design_decisions": "",
+    "test_coverage_notes": "",
+    "known_limitations": ""
+  },
+  "block_reason": "",
+  "conflict_risks": "None \u2014 no files were modified by this tester bead.",
+  "branch_name": "",
+  "worktree_path": "",
+  "lease": null,
+  "retries": 0,
+  "execution_history": [
+    {
+      "timestamp": "2026-05-07T06:52:15.652871+00:00",
+      "event": "created",
+      "agent_type": "scheduler",
+      "summary": "Bead created",
+      "details": {}
+    }
+  ],
+  "metadata": {
+    "auto_corrective_for": "B-dbe32010"
+  },
+  "labels": [],
+  "recovery_for": null,
+  "priority": null
+}
