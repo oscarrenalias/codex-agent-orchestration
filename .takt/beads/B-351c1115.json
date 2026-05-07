@@ -3,7 +3,7 @@
   "title": "Verify quiescence loop correctness",
   "agent_type": "tester",
   "description": "Run the full test suite and verify all four new quiescence-loop tests pass. Confirm that no existing CLI run tests regressed. Check that `takt run --help` shows the `--max-cycles` flag with its default. Review telemetry event structure (cycle_index field present) via unit test assertions.",
-  "status": "blocked",
+  "status": "ready",
   "bead_type": "task",
   "parent_id": "B-53425f62",
   "dependencies": [
@@ -73,7 +73,7 @@
     "test_coverage_notes": "All 4 new quiescence loop tests pass. The 5 failing tests are pre-existing and were green before the quiescence loop feature was added. Once run.py:149 is patched the full test_cli_run.py suite should be green.",
     "known_limitations": "N/A"
   },
-  "block_reason": "run.py:149 accesses args.max_cycles unconditionally. Pre-existing tests that construct Namespace(feature_root=..., max_workers=1) without max_cycles now fail with AttributeError. Fix: replace args.max_cycles with getattr(args, 'max_cycles', 50) on that line to match the defensive getattr pattern used for verbose on line 97.",
+  "block_reason": "",
   "conflict_risks": "None \u2014 only run.py line 149 needs changing; no overlap with other in-progress beads.",
   "branch_name": "feature/b-53425f62",
   "worktree_path": "/Users/oscar.renalias/Projects/codex-agent-orchestration/.takt/worktrees/B-53425f62",
@@ -131,6 +131,13 @@
       "event": "corrective_planned",
       "agent_type": "tester",
       "summary": "Created corrective bead B-351c1115-corrective for blocked issue",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-05-07T07:47:16.851625+00:00",
+      "event": "retried",
+      "agent_type": "tester",
+      "summary": "Requeued blocked bead after corrective bead B-351c1115-corrective completed",
       "details": {}
     }
   ],
@@ -256,7 +263,9 @@
         "attempt": 1
       }
     ],
-    "auto_corrective_bead_id": "B-351c1115-corrective"
+    "auto_corrective_bead_id": "B-351c1115-corrective",
+    "last_corrective_retry_source": "B-351c1115-corrective",
+    "last_corrective_retry_commit": "3f8cdf36731680b7062d874c5940a25f46df71fd"
   },
   "labels": [],
   "recovery_for": null,
