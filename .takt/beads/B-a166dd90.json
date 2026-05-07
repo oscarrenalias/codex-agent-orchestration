@@ -6,7 +6,11 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-53425f62",
-  "dependencies": [],
+  "dependencies": [
+    "B-f1ec0e51",
+    "B-fabf2d0f",
+    "B-79f00355"
+  ],
   "acceptance_criteria": [
     "All four tests exist in `tests/test_cli_run.py` and pass individually with `uv run pytest tests/test_cli_run.py -k 'quiescence or max_cycles or deferred_only' -v`.",
     "test_run_loops_until_quiescence: run_once call count is exactly 3.",
