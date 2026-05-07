@@ -111,6 +111,7 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             return 1
     scope = f", feature_root={feature_root_id}" if feature_root_id else ""
     console.info(f"Starting scheduler loop with max_workers={args.max_workers}{scope}")
+    max_cycles = getattr(args, "max_cycles", 50)
     try:
         cycle_index = 1
         while True:
@@ -146,8 +147,8 @@ def command_run(args: argparse.Namespace, scheduler: Scheduler, console: Console
             })
             if not result.started:
                 break
-            if args.max_cycles > 0 and cycle_index >= args.max_cycles:
-                console.warn(f"Reached max_cycles={args.max_cycles}; stopping scheduler loop")
+            if max_cycles > 0 and cycle_index >= max_cycles:
+                console.warn(f"Reached max_cycles={max_cycles}; stopping scheduler loop")
                 break
             cycle_index += 1
     finally:
