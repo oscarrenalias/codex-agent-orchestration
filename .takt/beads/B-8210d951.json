@@ -6,7 +6,10 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-622deef1",
-  "dependencies": [],
+  "dependencies": [
+    "B-aa2d1f79",
+    "B-55d2863f"
+  ],
   "acceptance_criteria": [
     "CLAUDE.md is updated so the file-scope conflict description states the check is scoped to the same feature tree",
     "No other documentation files are created or modified",
