@@ -6,7 +6,12 @@
   "status": "ready",
   "bead_type": "task",
   "parent_id": "B-622deef1",
-  "dependencies": [],
+  "dependencies": [
+    "B-aa2d1f79",
+    "B-55d2863f",
+    "B-dbe32010",
+    "B-8210d951"
+  ],
   "acceptance_criteria": [
     "_beads_conflict() fix is confirmed correct and minimal",
     "No unintended methods are modified",
